@@ -1,0 +1,42 @@
+<script lang="ts">
+    import type { PageData } from "./$types";
+    import { invalidateAll } from "$app/navigation";
+    import { useMatchMode } from "$lib/stores/store";
+
+    export let data: PageData;
+
+    const matchType = useMatchMode();
+
+    const exitActiveMatch = () => {
+        matchType.set(null);
+    };
+
+    const logout = async () => {
+        const res = await fetch("/logout", { method: "POST" });
+
+        if (res.ok) {
+            await invalidateAll();
+            return;
+        }
+    };
+</script>
+
+<header class="flex justify-between px-20 py-10">
+    <nav class="flex gap-12 items-center">
+        <h3 class="text-3xl">Website</h3>
+        <a href="/" on:click={exitActiveMatch}>Play</a>
+        <a href="/leaderboards">Leaderboards</a>
+    </nav>
+
+    {#if !data.user}
+        <a href="/login">Login</a>
+    {:else}
+        <div>
+            <button on:click={logout}>Logout</button>
+        </div>
+    {/if}
+</header>
+
+<main class="w-2/3 mx-auto">
+    <slot />
+</main>
