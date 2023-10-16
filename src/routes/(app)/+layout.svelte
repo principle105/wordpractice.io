@@ -5,10 +5,10 @@
 
     export let data: PageData;
 
-    const matchType = useMatchMode();
+    const match = useMatchMode();
 
     const exitActiveMatch = () => {
-        matchType.set(null);
+        match.set(null);
     };
 
     const logout = async () => {

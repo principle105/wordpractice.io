@@ -1,26 +1,19 @@
 import { lucia } from "lucia";
 import { sveltekit } from "lucia/middleware";
-import { dev } from "$app/environment";
 import { prisma } from "@lucia-auth/adapter-prisma";
-import { github } from "@lucia-auth/oauth/providers";
-import {
-    GITHUB_ID,
-    GITHUB_SECRET,
-    GITHUB_REDIRECT_URL,
-} from "$env/static/private";
+import { github, discord } from "@lucia-auth/oauth/providers";
 import { PrismaClient } from "./prisma";
-import { env } from "$env/dynamic/private";
 
 const client = global.__prisma || new PrismaClient();
 
-if (env.NODE_ENV === "development") {
+if (process.env.NODE_ENV === "development") {
     global.__prisma = client;
 }
 
 export default prisma;
 
 export const auth = lucia({
-    env: dev ? "DEV" : "PROD",
+    env: process.env.NODE_ENV === "development" ? "DEV" : "PROD",
     middleware: sveltekit(),
     adapter: prisma(client, {
         user: "user", // model User {}
@@ -37,10 +30,16 @@ export const auth = lucia({
 });
 
 export const githubAuth = github(auth, {
-    clientId: GITHUB_ID,
-    clientSecret: GITHUB_SECRET,
-    scope: ["user:email"],
-    redirectUri: GITHUB_REDIRECT_URL,
+    clientId: process.env.GITHUB_ID as string,
+    clientSecret: process.env.GITHUB_SECRET as string,
+    redirectUri: process.env.GITHUB_REDIRECT_URL as string,
+});
+
+export const discordAuth = discord(auth, {
+    clientId: process.env.DISCORD_ID as string,
+    clientSecret: process.env.DISCORD_SECRET as string,
+    scope: ["identify", "email"],
+    redirectUri: process.env.DISCORD_REDIRECT_URL as string,
 });
 
 export type Auth = typeof auth;

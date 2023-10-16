@@ -1,9 +1,9 @@
-import { auth, githubAuth } from "$lib/server/lucia";
+import { auth, discordAuth } from "$lib/server/lucia";
 import { OAuthRequestError } from "@lucia-auth/oauth";
 import type { RequestHandler } from "./$types";
 
 export const GET: RequestHandler = async ({ cookies, url, locals }) => {
-    const storedState = cookies.get("github_oauth_state");
+    const storedState = cookies.get("discord_oauth_state");
     const code = url.searchParams.get("code");
     const state = url.searchParams.get("state");
 
@@ -14,19 +14,17 @@ export const GET: RequestHandler = async ({ cookies, url, locals }) => {
     }
 
     try {
-        const { getExistingUser, githubUser, createUser } =
-            await githubAuth.validateCallback(code);
+        const { getExistingUser, discordUser, createUser } =
+            await discordAuth.validateCallback(code);
 
         const getUser = async () => {
             const existingUser = await getExistingUser();
             if (existingUser) return existingUser;
 
-            if (!githubUser.email || !githubUser.name) return null;
-
             return await createUser({
                 attributes: {
-                    email: githubUser.email,
-                    name: githubUser.name,
+                    name: discordUser.username,
+                    email: discordUser.email as string,
                 },
             });
         };

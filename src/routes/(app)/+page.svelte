@@ -3,22 +3,27 @@
     import { useMatchMode } from "$lib/stores/store";
     import CasualMatch from "./CasualMatch.svelte";
     import RankedMatch from "./RankedMatch.svelte";
-    import type { Match } from "$lib/types";
+    import { type Match, defaultMatch } from "$lib/types";
 
-    const matchType = useMatchMode();
+    const match = useMatchMode();
 
-    const changeMatchType = (newMatchType: Match) => {
-        matchType.set(newMatchType);
+    const changeMatchType = (newMatchType: Match["type"]) => {
+        match.update((m) => {
+            if (m === null) {
+                return { ...defaultMatch, type: newMatchType };
+            }
+
+            m.type = newMatchType;
+            return m;
+        });
     };
 
     export let data: PageData;
 </script>
 
-{#if $matchType === null}
+{#if $match === null}
     {#if !data.user}
         <div>Create an account to save your progress.</div>
-    {:else}
-        <div>Logged in as {data.user?.id}</div>
     {/if}
     <section class="flex gap-2">
         <button
@@ -40,11 +45,11 @@
     <section>
         <div>Latest High Scores</div>
     </section>
-{:else if $matchType === "ranked"}
-    <RankedMatch />
-{:else if $matchType === "casual"}
+{:else if $match.type === "ranked"}
+    <RankedMatch user={data.user} sessionId={data.sessionId} />
+{:else if $match.type === "casual"}
     <CasualMatch />
-{:else if $matchType === "private"}
+{:else if $match.type === "private"}
     <section>
         <div>Private Room</div>
     </section>
