@@ -20,7 +20,8 @@ export interface Delete {
 export type Replay = (Character | Delete)[];
 
 export interface MatchUser {
-    data: User;
+    id: string;
+    name: string;
     replay: Replay;
 }
 

@@ -1,9 +1,11 @@
 <script lang="ts">
-    import type { PageData } from "./$types";
     import { useMatchMode } from "$lib/stores/store";
-    import CasualMatch from "./CasualMatch.svelte";
-    import RankedMatch from "./RankedMatch.svelte";
-    import { type Match, defaultMatch } from "$lib/types";
+    import type { PageData } from "./$types";
+    import { defaultMatch } from "$lib/types";
+    import type { Match } from "$lib/types";
+    import MatchHandler from "./MatchHandler.svelte";
+
+    export let data: PageData;
 
     const match = useMatchMode();
 
@@ -17,8 +19,6 @@
             return m;
         });
     };
-
-    export let data: PageData;
 </script>
 
 {#if $match === null}
@@ -46,11 +46,5 @@
         <div>Latest High Scores</div>
     </section>
 {:else if $match.type === "ranked"}
-    <RankedMatch user={data.user} sessionId={data.sessionId} />
-{:else if $match.type === "casual"}
-    <CasualMatch />
-{:else if $match.type === "private"}
-    <section>
-        <div>Private Room</div>
-    </section>
+    <MatchHandler sessionId={data.sessionId} user={data.user} />
 {/if}

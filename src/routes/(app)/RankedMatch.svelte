@@ -1,95 +1,23 @@
 <script lang="ts">
     // TODO: add max wrong characters and add server-side validation for it
-    import { io } from "socket.io-client";
-    import { onDestroy, onMount } from "svelte";
-    import type { User } from "lucia";
-    import { useMatchMode } from "$lib/stores/store";
     import type {
         Character,
         Delete,
-        ExistingRoom,
         MatchUser,
         Replay,
         RoomInfo,
     } from "$lib/types";
-    import { calculateWpm, convertReplayToText, getCorrect } from "$lib/utils";
+    import { convertReplayToText, getCorrect } from "$lib/utils";
     import OpponentDisplay from "./OpponentDisplay.svelte";
     import Cursor from "./Cursor.svelte";
 
-    const match = useMatchMode();
-
-    export let user: User | undefined;
-    export let sessionId: string | undefined;
-
-    let matchUsers = new Map<string, MatchUser>();
-    let replay: Replay;
-    let roomInfo: RoomInfo | null;
+    export let userName: string;
+    export let roomInfo: RoomInfo;
+    export let matchUsers = new Map<string, MatchUser>();
+    export let replay: Replay = [];
 
     let currentIndex: number = 0;
     let currentWordInput: string = "";
-    let wpm: number = 0;
-
-    const socket = io({
-        query: {
-            token: sessionId,
-        },
-    });
-
-    socket.on("existing-room-info", (existingRoomInfo: ExistingRoom) => {
-        if (existingRoomInfo.users.length !== 0) {
-            matchUsers = new Map(
-                existingRoomInfo.users.map((user) => [user.data.id, user])
-            );
-        }
-
-        roomInfo = {
-            quote: existingRoomInfo.quote,
-            startTime: existingRoomInfo.startTime,
-        };
-    });
-
-    socket.on("update-user", (matchUser: MatchUser) => {
-        matchUsers.set(matchUser.data.id, matchUser);
-        matchUsers = matchUsers;
-    });
-
-    socket.on("disconnect", () => {
-        match.set(null);
-    });
-
-    onMount(() => {
-        const interval = setInterval(() => {
-            if (correct.length === roomInfo.quote.join(" ").length) {
-                clearInterval(interval);
-                wpm = calculateWpm(
-                    replay[replay.length - 1]?.timestamp,
-                    replay[0]?.timestamp,
-                    correct.length
-                );
-            } else {
-                wpm = calculateWpm(
-                    Date.now(),
-                    replay[0]?.timestamp,
-                    correct.length
-                );
-            }
-        }, 250);
-
-        return () => clearInterval(interval);
-    });
-
-    onDestroy(() => {
-        socket.disconnect();
-    });
-
-    $: user, replay, updateUser();
-
-    const updateUser = () => {
-        socket.emit("update-user", {
-            data: user as User,
-            replay,
-        } satisfies MatchUser);
-    };
 
     const handleInput = (e: InputEvent) => {
         if (e.target === null) return;
@@ -112,7 +40,8 @@
 
         if (
             e.data === " " &&
-            quote[currentIndex] === replayText.slice(currentIndex).join(" ")
+            roomInfo.quote[currentIndex] ===
+                replayText.slice(currentIndex).join(" ")
         ) {
             currentWordInput = "";
             currentIndex++;
@@ -136,8 +65,14 @@
     const fontSize: number = 30;
 </script>
 
+<OpponentDisplay name={userName} {replay} {roomInfo} />
+
 {#each matchUsers as [_, matchUser]}
-    <OpponentDisplay {matchUser} {roomInfo} />
+    <OpponentDisplay
+        name={matchUser.name}
+        replay={matchUser.replay}
+        {roomInfo}
+    />
 {/each}
 
 <div
@@ -164,15 +99,10 @@
                     roomInfo.quote
                 ).correct}
                 {wrapperElement}
-                name={matchUser.data.name}
+                name={matchUser.name}
             />
         {/each}
     </span>
-</div>
-
-<div class="text-center mb-4">
-    <span class="text-2xl font-bold">{wpm}</span>
-    <span class="text-gray-500"> WPM</span>
 </div>
 
 <input

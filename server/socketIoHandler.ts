@@ -1,7 +1,12 @@
 import { Server, Socket } from "socket.io";
 import type { ViteDevServer } from "vite";
 import { auth } from "../src/lib/server/lucia";
-import type { ExistingRoom, MatchUser, RoomInfo } from "../src/lib/types";
+import type {
+    ExistingRoom,
+    MatchUser,
+    Replay,
+    RoomInfo,
+} from "../src/lib/types";
 import type { Session } from "lucia";
 
 const MAX_ROOM_SIZE = 5;
@@ -16,6 +21,10 @@ export interface Room extends RoomInfo {
     roomId: string;
     users: RoomUser[];
 }
+
+const getRandomString = () => {
+    return Math.random().toString(36).substring(2, 8);
+};
 
 const removeUnnecessaryRoomInfo = (
     room: Room,
@@ -43,22 +52,22 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
 
         let session: Session | null = null;
 
-        try {
-            session = await auth.validateSession(token);
-        } catch (e) {
-            session = null;
+        if (token) {
+            try {
+                session = await auth.validateSession(token);
+            } catch (e) {
+                session = null;
+            }
         }
 
-        if (!session) {
-            socket.disconnect();
-            return;
-        }
-
+        const username: string = session ? session.user.name : "Guest";
+        const userId: string = session ? session.user.id : getRandomString();
         let joinedRoom = false;
 
-        const user: RoomUser = {
+        let user: RoomUser = {
             matchInfo: {
-                data: session.user,
+                id: userId,
+                name: username,
                 replay: [],
             },
             socket,
@@ -71,7 +80,9 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
                 joinedRoom = true;
                 console.log(`User joined room ${roomId}`);
 
-                socket.broadcast.to(roomId).emit("update-user", user.matchInfo);
+                socket.broadcast
+                    .to(roomId)
+                    .emit("server-update-user", user.matchInfo);
 
                 socket.emit(
                     "existing-room-info",
@@ -103,11 +114,11 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
             console.log(`User created and joined room ${roomId}`);
         }
 
-        socket.on("update-user", (user: MatchUser) => {
+        socket.on("client-update-user", (replay: Replay) => {
             const roomId = Array.from(socket.rooms.values())[1];
 
             const room = rooms.get(roomId);
-            if (!room) return;
+            if (!room || room.users.length <= 1) return;
 
             const index = room.users.findIndex(
                 (user) => user.socket === socket
@@ -115,9 +126,13 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
 
             if (index === -1) return;
 
-            room.users[index].matchInfo = user;
+            room.users[index].matchInfo.replay = replay;
 
-            socket.broadcast.to(roomId).emit("update-user", user);
+            user = room.users[index];
+
+            socket.broadcast
+                .to(roomId)
+                .emit("server-update-user", user.matchInfo);
         });
 
         // When the client disconnects
@@ -133,6 +148,10 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
                     if (room.users.length === 0) {
                         rooms.delete(roomId);
                         console.log(`Room ${roomId} deleted`);
+                    } else {
+                        socket.broadcast
+                            .to(roomId)
+                            .emit("user-disconnect", user.matchInfo.id);
                     }
                     break;
                 }
