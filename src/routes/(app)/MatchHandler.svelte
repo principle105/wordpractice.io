@@ -77,11 +77,14 @@
 {#if !roomInfo || $match === null}
     <div>Loading...</div>
 {:else}
-    {#if roomInfo.startTime > date}
+    {@const started = roomInfo.startTime <= date}
+    {#if !started}
         <div
             class="absolute inset-0 bg-black/30 flex justify-center items-center"
         >
-            <div>{Math.round((roomInfo.startTime - date) / 1000)}</div>
+            <div class="text-5xl text-white">
+                {Math.round((roomInfo.startTime - date) / 1000)}
+            </div>
         </div>
     {/if}
 
@@ -90,6 +93,7 @@
             userName={user ? user.name : "Guest"}
             {roomInfo}
             {matchUsers}
+            {started}
             bind:replay
         />
     {:else if $match.type === "casual"}

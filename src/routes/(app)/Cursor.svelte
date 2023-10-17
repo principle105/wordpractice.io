@@ -34,8 +34,8 @@
             newLeftPos += wordLength;
         });
 
-        topPos = newTopPos;
         leftPos = newLeftPos;
+        topPos = newTopPos;
     };
 
     $: replay, updatePositioning();
