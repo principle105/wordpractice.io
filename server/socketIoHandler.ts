@@ -126,6 +126,12 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
 
             if (index === -1) return;
 
+            // Disconnecting a user if they start before the countdown
+            if (room.startTime > Date.now()) {
+                room.users[index].socket.disconnect();
+                return;
+            }
+
             room.users[index].matchInfo.replay = replay;
 
             user = room.users[index];

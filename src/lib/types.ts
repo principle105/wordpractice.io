@@ -1,5 +1,3 @@
-import type { User } from "lucia";
-
 export interface Match {
     type: "ranked" | "casual" | "private";
     users: string[];

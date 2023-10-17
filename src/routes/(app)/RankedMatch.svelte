@@ -11,6 +11,9 @@
     import OpponentDisplay from "./OpponentDisplay.svelte";
     import Cursor from "./Cursor.svelte";
     import type { EventHandler } from "svelte/elements";
+    import { useMatchMode } from "$lib/stores/store";
+
+    const match = useMatchMode();
 
     export let userName: string;
     export let roomInfo: RoomInfo;
@@ -135,6 +138,10 @@
             <div>{wpm} wpm</div>
         </div>
     </div>
+    <button
+        class="bg-emerald-500 p-3 rounded-md text-white"
+        on:click={() => match.set(null)}>Play Again</button
+    >
 {:else}
     <input
         type="text"
