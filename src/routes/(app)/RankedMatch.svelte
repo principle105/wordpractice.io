@@ -15,7 +15,8 @@
 
     const match = useMatchMode();
 
-    export let userName: string;
+    export let userId: string;
+    export let rating: number;
     export let roomInfo: RoomInfo;
     export let matchUsers = new Map<string, MatchUser>();
     export let replay: Replay = [];
@@ -82,22 +83,19 @@
 
         replay = replay;
     };
+
+    $: matchUser = {
+        id: userId,
+        name: "You",
+        replay,
+        rating,
+    };
 </script>
 
 <div class="flex flex-col">
-    <OpponentDisplay
-        name={userName}
-        {replay}
-        {roomInfo}
-        bind:wpm
-        bind:finished
-    />
+    <OpponentDisplay user={matchUser} {roomInfo} bind:wpm bind:finished />
     {#each matchUsers as [_, matchUser]}
-        <OpponentDisplay
-            name={matchUser.name}
-            replay={matchUser.replay}
-            {roomInfo}
-        />
+        <OpponentDisplay user={matchUser} {roomInfo} />
     {/each}
 </div>
 
@@ -115,7 +113,13 @@
                 .join(" ")
                 .slice(correct.length + incorrectChars)}</span
         >
-        <Cursor {fontSize} {replay} {correct} {wrapperElement} />
+        <Cursor
+            {fontSize}
+            {replay}
+            {correct}
+            {wrapperElement}
+            quote={roomInfo.quote}
+        />
         {#each matchUsers as [_, matchUser]}
             <Cursor
                 {fontSize}
@@ -126,6 +130,7 @@
                 ).correct}
                 {wrapperElement}
                 name={matchUser.name}
+                quote={roomInfo.quote}
             />
         {/each}
     </span>

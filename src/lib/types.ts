@@ -1,3 +1,5 @@
+import type { User } from "lucia";
+
 export interface Match {
     type: "ranked" | "casual" | "private";
     users: string[];
@@ -17,19 +19,18 @@ export interface Delete {
 
 export type Replay = (Character | Delete)[];
 
-export interface MatchUser {
-    id: string;
-    name: string;
+export interface MatchUser extends Pick<User, "id" | "name" | "rating"> {
     replay: Replay;
 }
 
-export interface ExistingRoom {
+export interface Room {
+    roomId: string;
     startTime: number;
     quote: string[];
-    users: MatchUser[];
+    users: { [key: string]: MatchUser }; // not using a Map because cannot be serialized by socket.io
 }
 
-export type RoomInfo = Omit<ExistingRoom, "users">;
+export type RoomInfo = Omit<Room, "users">;
 
 export const defaultMatch: Match = {
     type: "casual",

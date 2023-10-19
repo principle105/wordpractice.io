@@ -1,9 +1,10 @@
 <script lang="ts">
-    import { useMatchMode } from "$lib/stores/store";
     import type { PageData } from "./$types";
-    import { defaultMatch } from "$lib/types";
-    import type { Match } from "$lib/types";
+    import { defaultMatch, type Match } from "$lib/types";
+    import { useMatchMode } from "$lib/stores/store";
+
     import MatchHandler from "./MatchHandler.svelte";
+    import CasualMatch from "./CasualMatch.svelte";
 
     export let data: PageData;
 
@@ -45,6 +46,6 @@
     <section>
         <div>Latest High Scores</div>
     </section>
-{:else if $match.type === "ranked"}
+{:else}
     <MatchHandler sessionId={data.sessionId} user={data.user} />
 {/if}

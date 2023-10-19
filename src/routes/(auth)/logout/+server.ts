@@ -8,9 +8,11 @@ export const POST: RequestHandler = async ({ locals }) => {
         return new Response(null, { status: 401 });
     }
 
+    // Deleting the session from the server
     await auth.invalidateSession(session.sessionId);
     await auth.deleteDeadUserSessions(session.userId);
 
+    // Deleting the session from the client
     locals.auth.setSession(null);
 
     return new Response(null, { status: 200 });

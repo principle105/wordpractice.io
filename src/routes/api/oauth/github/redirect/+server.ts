@@ -27,6 +27,7 @@ export const GET: RequestHandler = async ({ cookies, url, locals }) => {
                 attributes: {
                     email: githubUser.email,
                     name: githubUser.name,
+                    rating: 0,
                 },
             });
         };

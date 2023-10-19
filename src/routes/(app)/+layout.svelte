@@ -15,6 +15,7 @@
         const res = await fetch("/logout", { method: "POST" });
 
         if (res.ok) {
+            // Invalidating all the PageData
             await invalidateAll();
             return;
         }
@@ -23,7 +24,7 @@
 
 <header class="flex justify-between px-20 py-10">
     <nav class="flex gap-12 items-center">
-        <h3 class="text-3xl">Website</h3>
+        <h3 class="text-3xl">Typing Website</h3>
         <a href="/" on:click={exitActiveMatch}>Play</a>
         <a href="/leaderboards">Leaderboards</a>
     </nav>

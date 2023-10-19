@@ -6,7 +6,9 @@ datasource db {
 model User {
     id           String    @id @map("_id")
     name         String
-    email       String    @unique
+    email        String    @unique
+    rating       Int
+    matches      String[]
     auth_session Session[]
     key          Key[]
 }

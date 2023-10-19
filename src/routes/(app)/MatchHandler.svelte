@@ -1,16 +1,17 @@
 <script lang="ts">
+    import { onMount } from "svelte";
     import { io } from "socket.io-client";
     import type { User } from "lucia";
+    import type { Room, MatchUser, Replay, RoomInfo } from "$lib/types";
     import { useMatchMode } from "$lib/stores/store";
+
     import CasualMatch from "./CasualMatch.svelte";
     import RankedMatch from "./RankedMatch.svelte";
-    import type { ExistingRoom, MatchUser, Replay, RoomInfo } from "$lib/types";
-    import { onMount } from "svelte";
 
     export let user: User | undefined;
     export let sessionId: string | undefined;
-    let replay: Replay = [];
 
+    let replay: Replay = [];
     let roomInfo: RoomInfo;
     let matchUsers = new Map<string, MatchUser>();
 
@@ -27,14 +28,12 @@
         matchUsers = matchUsers;
     });
 
-    socket.on("existing-room-info", (existingRoomInfo: ExistingRoom) => {
-        if (existingRoomInfo.users.length !== 0) {
-            matchUsers = new Map(
-                existingRoomInfo.users.map((user) => [user.id, user])
-            );
-        }
+    socket.on("existing-room-info", (existingRoomInfo: Room) => {
+        matchUsers = new Map(Object.entries(existingRoomInfo.users));
 
+        // Separating the room info from the users to avoid rerendering static data when the uses change
         roomInfo = {
+            roomId: existingRoomInfo.roomId,
             quote: existingRoomInfo.quote,
             startTime: existingRoomInfo.startTime,
         };
@@ -90,7 +89,8 @@
 
     {#if $match.type === "ranked"}
         <RankedMatch
-            userName={user ? user.name : "Guest"}
+            userId={user ? user.id : socket.id}
+            rating={user ? user.rating : 0}
             {roomInfo}
             {matchUsers}
             {started}

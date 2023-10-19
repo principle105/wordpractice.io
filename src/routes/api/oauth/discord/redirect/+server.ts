@@ -25,6 +25,7 @@ export const GET: RequestHandler = async ({ cookies, url, locals }) => {
                 attributes: {
                     name: discordUser.username,
                     email: discordUser.email as string,
+                    rating: 1000,
                 },
             });
         };

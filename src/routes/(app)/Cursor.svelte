@@ -3,6 +3,7 @@
 
     export let fontSize: number;
     export let replay: Replay;
+    export let quote: string[];
     export let correct: string;
     export let wrapperElement: HTMLElement | null;
     export let name: string | null = null;
@@ -10,6 +11,7 @@
     let topPos = 0;
     let leftPos = 0;
 
+    // TODO: use the previous value when recalculating
     const updatePositioning = () => {
         if (wrapperElement === null) return;
 
@@ -20,18 +22,31 @@
         const charWidthIncrease = fontSize * 0.6;
         const charHeightIncrease = fontSize * 1.5;
 
+        let newLine = false;
+
         correct.split(" ").forEach((word, i) => {
-            if (i !== 0) {
+            if (i !== 0 && !newLine) {
                 newLeftPos += charWidthIncrease;
             }
 
-            const wordLength = word.length * charWidthIncrease;
-
-            if (newLeftPos + wordLength >= maxWidth) {
+            if (newLine) {
                 newLeftPos = 0;
                 newTopPos += charHeightIncrease;
+                newLine = false;
             }
-            newLeftPos += wordLength;
+
+            const wordWidth = word.length * charWidthIncrease;
+
+            if (quote[i] === word && i + 1 < quote.length) {
+                const nextWordWidth =
+                    (quote[i + 1].length + 1) * charWidthIncrease;
+
+                if (newLeftPos + wordWidth + nextWordWidth >= maxWidth) {
+                    newLine = true;
+                }
+            }
+
+            newLeftPos += wordWidth;
         });
 
         leftPos = newLeftPos;
