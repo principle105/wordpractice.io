@@ -43,23 +43,53 @@
         inputElement?.focus();
     };
 
+    const findRemovedSlice = (
+        totalText: String,
+        originalText: String,
+        newText: String
+    ) => {
+        if (newText.length >= originalText.length) {
+            return null;
+        }
+
+        let startIndex = 0;
+        while (
+            startIndex < newText.length &&
+            originalText[startIndex] === newText[startIndex]
+        ) {
+            startIndex++;
+        }
+
+        let endIndex = 0;
+        while (
+            endIndex < newText.length &&
+            originalText[originalText.length - 1 - endIndex] ===
+                newText[newText.length - 1 - endIndex]
+        ) {
+            endIndex++;
+        }
+
+        return [
+            totalText.length + startIndex + 1,
+            totalText.length + originalText.length - endIndex + 1,
+        ] as [number, number];
+    };
+
     const handleInput: EventHandler<Event, HTMLInputElement> = (e) => {
         if (e.target === null) return;
 
         const newChar = (e as any as InputEvent).data;
 
-        let charsRemoved =
-            replayText.slice(currentIndex).join(" ").length -
-            currentWordInput.length;
+        let removedSlice = findRemovedSlice(
+            roomInfo.quote.slice(0, currentIndex).join(" "),
+            replayText.slice(currentIndex).join(" "),
+            currentWordInput
+        );
 
-        if (newChar !== null) {
-            charsRemoved++;
-        }
-
-        if (charsRemoved > 0) {
+        if (removedSlice !== null) {
             replay.push({
                 type: "delete",
-                amount: charsRemoved,
+                slice: removedSlice,
                 timestamp: Date.now(),
             } satisfies Delete);
         }

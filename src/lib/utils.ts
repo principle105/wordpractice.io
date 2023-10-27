@@ -6,7 +6,7 @@ export const convertReplayToText = (replay: Replay) => {
         if (item.type === "character") {
             text += item.letter;
         } else if (item.type === "delete") {
-            text = text.slice(0, -item.amount);
+            text = text.slice(0, item.slice[0]) + text.slice(item.slice[1]);
         }
     }
     return text;

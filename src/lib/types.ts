@@ -13,7 +13,7 @@ export interface Character {
 
 export interface Delete {
     type: "delete";
-    amount: number;
+    slice: [number, number];
     timestamp: number;
 }
 
