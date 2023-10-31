@@ -1,6 +1,7 @@
 <script lang="ts">
     // TODO: add max wrong characters and add server-side validation for it
     import type {
+        CaretMovement,
         Character,
         Delete,
         MatchUser,
@@ -70,8 +71,11 @@
         }
 
         return [
-            totalText.length + startIndex + 1,
-            totalText.length + originalText.length - endIndex + 1,
+            totalText.length + startIndex + (totalText.length !== 0 ? 1 : 0),
+            totalText.length +
+                originalText.length -
+                endIndex +
+                (totalText.length !== 0 ? 1 : 0),
         ] as [number, number];
     };
 
@@ -112,6 +116,29 @@
         }
 
         replay = replay;
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+        const target = e.target as HTMLInputElement;
+
+        const selectionStart = target.selectionStart;
+        const selectionEnd = target.selectionEnd;
+
+        // Checking if the cursor is at the end of the word and not selecting
+        if (
+            selectionStart === null ||
+            selectionEnd === null ||
+            (selectionEnd === selectionStart &&
+                selectionEnd === currentWordInput.length)
+        ) {
+            return;
+        }
+        replay.push({
+            type: "caret",
+            start: selectionStart,
+            end: selectionEnd,
+            timestamp: Date.now(),
+        } satisfies CaretMovement);
     };
 
     $: matchUser = {
@@ -188,6 +215,7 @@
         maxlength={50}
         placeholder={replayText.join(" ") === "" ? "Type here" : ""}
         class="w-full p-3 outline-none border-zinc-500 border rounded-md"
+        on:keyup={handleKeyUp}
         bind:value={currentWordInput}
         on:input={handleInput}
         bind:this={inputElement}

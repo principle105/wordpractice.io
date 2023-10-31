@@ -11,7 +11,9 @@
     let topPos = 0;
     let leftPos = 0;
 
-    // TODO: use the previous value when recalculating
+    let lastWordPositions: [number, number] = [0, 0];
+    let lastWordIndex: number = 0;
+
     const updatePositioning = () => {
         if (wrapperElement === null) return;
 
@@ -24,22 +26,53 @@
 
         let newLine = false;
 
-        correct.split(" ").forEach((word, i) => {
-            if (i !== 0 && !newLine) {
+        let words = correct.split(" ");
+        const currentIndex = words.length - 1;
+
+        const loadedFromLastWord =
+            lastWordPositions[0] !== 0 || lastWordPositions[1] !== 0;
+
+        if (loadedFromLastWord) {
+            newLeftPos = lastWordPositions[0];
+            newTopPos = lastWordPositions[1];
+
+            words = words.slice(-currentIndex + lastWordIndex - 1);
+        }
+
+        words.forEach((word, i) => {
+            if (newLine) {
+                newLeftPos = 0;
+                newTopPos += charHeightIncrease;
+            }
+
+            if (i === words.length - 1 && lastWordIndex !== currentIndex) {
+                lastWordIndex = currentIndex;
+                lastWordPositions = [newLeftPos, newTopPos];
+            }
+
+            if (word === "" && newLeftPos === 0) {
+                return;
+            }
+
+            if (
+                !newLine &&
+                ((loadedFromLastWord && lastWordPositions[0] !== 0) || i !== 0)
+            ) {
                 newLeftPos += charWidthIncrease;
             }
 
             if (newLine) {
-                newLeftPos = 0;
-                newTopPos += charHeightIncrease;
                 newLine = false;
             }
 
             const wordWidth = word.length * charWidthIncrease;
 
-            if (quote[i] === word && i + 1 < quote.length) {
+            if (
+                quote[currentIndex + i - 1] === word &&
+                currentIndex + i < quote.length
+            ) {
                 const nextWordWidth =
-                    (quote[i + 1].length + 1) * charWidthIncrease;
+                    (quote[currentIndex + i].length + 1) * charWidthIncrease;
 
                 if (newLeftPos + wordWidth + nextWordWidth >= maxWidth) {
                     newLine = true;
@@ -62,7 +95,8 @@
     class="absolute"
     style="top: {topPos +
         fontSize *
-            0.1}px; left: {leftPos}px; transition: left 0.06s ease-in-out;"
+            0.1}px; left: {leftPos}px; transition: left 0.075s ease-in-out;"
+    id={"cursor-blinking"}
 >
     <div
         class="bg-orange-400 rounded-full"
@@ -78,3 +112,21 @@
         </div>
     {/if}
 </div>
+
+<style>
+    @keyframes blink {
+        0% {
+            opacity: 0;
+        }
+        50% {
+            opacity: 1;
+        }
+        100% {
+            opacity: 0;
+        }
+    }
+
+    #cursor-blinking {
+        animation: blink 1s infinite;
+    }
+</style>

@@ -11,13 +11,20 @@ export interface Character {
     timestamp: number;
 }
 
+export interface CaretMovement {
+    type: "caret";
+    start: number;
+    end: number;
+    timestamp: number;
+}
+
 export interface Delete {
     type: "delete";
     slice: [number, number];
     timestamp: number;
 }
 
-export type Replay = (Character | Delete)[];
+export type Replay = (Character | Delete | CaretMovement)[];
 
 export interface MatchUser extends Pick<User, "id" | "name" | "rating"> {
     replay: Replay;
