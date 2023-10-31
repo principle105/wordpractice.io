@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { Replay } from "$lib/types";
+    import { onMount } from "svelte";
 
     export let fontSize: number;
     export let replay: Replay;
@@ -8,11 +9,23 @@
     export let wrapperElement: HTMLElement | null;
     export let name: string | null = null;
 
+    // TODO: add this to the confrig file
+    const CURSOR_BLINKING_INTERVAL = 1 * 1000;
+
     let topPos = 0;
     let leftPos = 0;
 
     let lastWordPositions: [number, number] = [0, 0];
     let lastWordIndex: number = 0;
+
+    let date: number = Date.now();
+
+    onMount(() => {
+        const interval = setInterval(() => {
+            date = Date.now();
+        }, 250);
+        return () => clearInterval(interval);
+    });
 
     const updatePositioning = () => {
         if (wrapperElement === null) return;
@@ -96,7 +109,10 @@
     style="top: {topPos +
         fontSize *
             0.1}px; left: {leftPos}px; transition: left 0.075s ease-in-out;"
-    id={"cursor-blinking"}
+    id={replay.length === 0 ||
+    replay[replay.length - 1].timestamp + CURSOR_BLINKING_INTERVAL <= date
+        ? "cursor-blinking"
+        : ""}
 >
     <div
         class="bg-orange-400 rounded-full"
