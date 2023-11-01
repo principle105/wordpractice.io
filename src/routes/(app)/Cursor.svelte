@@ -37,9 +37,8 @@
         const charWidthIncrease = fontSize * 0.6;
         const charHeightIncrease = fontSize * 1.5;
 
-        let newLine = false;
-
-        let words = correct.split(" ");
+        const words = correct.split(" ");
+        let word: string;
         const currentIndex = words.length - 1;
 
         const loadedFromLastWord =
@@ -49,51 +48,43 @@
             newLeftPos = lastWordPositions[0];
             newTopPos = lastWordPositions[1];
 
-            words = words.slice(-currentIndex + lastWordIndex - 1);
+            word = words[lastWordIndex];
+        } else {
+            word = words[0];
         }
 
-        words.forEach((word, i) => {
-            if (newLine) {
-                newLeftPos = 0;
-                newTopPos += charHeightIncrease;
+        if (word === "" && newLeftPos === 0) {
+            return;
+        }
+
+        if (loadedFromLastWord && lastWordPositions[0] !== 0) {
+            newLeftPos += charWidthIncrease;
+        }
+
+        const wordWidth = word.length * charWidthIncrease;
+
+        let newLine: boolean = false;
+
+        if (quote[currentIndex - 1] === word && currentIndex < quote.length) {
+            const nextWordWidth =
+                (quote[currentIndex].length + 1) * charWidthIncrease;
+
+            if (newLeftPos + wordWidth + nextWordWidth >= maxWidth) {
+                newLine = true;
             }
+        }
 
-            if (i === words.length - 1 && lastWordIndex !== currentIndex) {
-                lastWordIndex = currentIndex;
-                lastWordPositions = [newLeftPos, newTopPos];
-            }
-
-            if (word === "" && newLeftPos === 0) {
-                return;
-            }
-
-            if (
-                !newLine &&
-                ((loadedFromLastWord && lastWordPositions[0] !== 0) || i !== 0)
-            ) {
-                newLeftPos += charWidthIncrease;
-            }
-
-            if (newLine) {
-                newLine = false;
-            }
-
-            const wordWidth = word.length * charWidthIncrease;
-
-            if (
-                quote[currentIndex + i - 1] === word &&
-                currentIndex + i < quote.length
-            ) {
-                const nextWordWidth =
-                    (quote[currentIndex + i].length + 1) * charWidthIncrease;
-
-                if (newLeftPos + wordWidth + nextWordWidth >= maxWidth) {
-                    newLine = true;
-                }
-            }
-
+        if (newLine) {
+            newLeftPos = 0;
+            newTopPos += charHeightIncrease;
+        } else {
             newLeftPos += wordWidth;
-        });
+        }
+
+        if (lastWordIndex !== currentIndex) {
+            lastWordIndex = currentIndex;
+            lastWordPositions = [newLeftPos, newTopPos];
+        }
 
         leftPos = newLeftPos;
         topPos = newTopPos;
