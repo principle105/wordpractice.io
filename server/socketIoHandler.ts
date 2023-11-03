@@ -313,15 +313,11 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
 
         if (!joinedRoom) {
             const roomId = Math.random().toString(36).substring(2, 8);
-            // const quote =
-            //     "You must never give into despair. Allow yourself to slip down that road, and you surrender to your lowest instincts. In the darkest times, hope is something you give yourself. That is the meaning of inner strength.".split(
-            //         " "
-            //     );
-            // const quote = generateWordList(30);
             const quote =
-                "That is the power of the person. That is the power of the person. That is the power of the person. That is the power of the person. That is the power of the person. That is the power of the person. That is the power of the person. That is the power of the person. That is the power of the person. That is the power of the person. That is the power of the person. That is the power of the person. That is the power of the person. That is the power of the person. That is the power of the person. That is the power of the person. That is the power of the person. That is the power of the person. That is the power of the person. That is the power of the person. That is the power of the person. That is the power of the person.".split(
+                "You must never give into despair. Allow yourself to slip down that road, and you surrender to your lowest instincts. In the darkest times, hope is something you give yourself. That is the meaning of inner strength.".split(
                     " "
                 );
+            // const quote = generateWordList(30);
 
             const room: RoomWithSocketInfo = {
                 roomId,

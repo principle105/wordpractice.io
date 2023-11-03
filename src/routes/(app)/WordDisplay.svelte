@@ -15,6 +15,11 @@
 
     let wrapperElement: HTMLElement | null = null;
     let topPos: number = 0;
+
+    $: maxHeight =
+        wrapperElement !== null
+            ? wrapperElement.offsetHeight - DEFAULT_LINES_SHOWN * fontSize * 1.5
+            : 0;
 </script>
 
 <div
@@ -25,7 +30,7 @@
     <div
         bind:this={wrapperElement}
         class="absolute left-0 ease-in duration-300"
-        style="top: -{topPos}px; transition: top 0.08s;"
+        style="top: -{Math.min(topPos, maxHeight)}px; transition: top 0.08s;"
     >
         <span class="text-black">{correctInput}</span><span class="bg-red-400"
             >{roomInfo.quote

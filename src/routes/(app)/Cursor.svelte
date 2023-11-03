@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { CARET_BLINKING_INTERVAL } from "$lib/config";
+    import { CARET_BLINKING_INTERVAL, DEFAULT_LINES_SHOWN } from "$lib/config";
     import type { Replay } from "$lib/types";
     import { getCaretData } from "$lib/utils";
     import { onMount } from "svelte";
@@ -105,13 +105,30 @@
     };
 
     $: replay, updatePositioning();
+
+    const getTopPos = (topPos: number) => {
+        if (name !== null) {
+            return topPos;
+        }
+
+        if (wrapperElement === null) return topPos;
+
+        const wrappedThreshold =
+            wrapperElement.offsetHeight - DEFAULT_LINES_SHOWN * fontSize * 1.5;
+
+        if (wrapperElement !== null && wrappedThreshold < topPos) {
+            return topPos - wrappedThreshold;
+        }
+
+        return 0;
+    };
 </script>
 
 <svelte:window on:resize={updatePositioning} />
 
 <div
     class="absolute ease-linear"
-    style="top: {(name === null ? 0 : topPos) +
+    style="top: {getTopPos(topPos) +
         fontSize *
             0.1}px; left: {leftPos}px; transition: left 0.085s, top 0.001s;"
     id={replay.length === 0 ||
