@@ -57,8 +57,21 @@
         replayText = "";
         timeElapsed = 0;
         currentWordIndex = 0;
+        replaySpeed = 1;
 
         resetWordDisplay = !resetWordDisplay;
+    };
+
+    const increaseReplaySpeed = () => {
+        if (replaySpeed > 0.25) {
+            replaySpeed -= 0.25;
+        }
+    };
+
+    const decreaseReplaySpeed = () => {
+        if (replaySpeed < 2) {
+            replaySpeed += 0.25;
+        }
     };
 
     let resetWordDisplay = false;
@@ -67,8 +80,8 @@
 <button on:click={play}>Play</button>
 <button on:click={reset}>Reset</button>
 
-<button on:click={() => (replaySpeed += 0.25)}>-</button>
-<button on:click={() => (replaySpeed -= 0.25)}>+</button>
+<button on:click={() => decreaseReplaySpeed()}>-</button>
+<button on:click={() => increaseReplaySpeed()}>+</button>
 
 <div>{2 - replaySpeed}</div>
 {#key resetWordDisplay}
