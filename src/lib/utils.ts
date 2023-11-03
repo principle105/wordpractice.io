@@ -1,4 +1,4 @@
-import type { Replay } from "./types";
+import type { CaretMovement, Replay } from "./types";
 
 export const convertReplayToText = (replay: Replay) => {
     let text = "";
@@ -9,7 +9,19 @@ export const convertReplayToText = (replay: Replay) => {
             text = text.slice(0, item.slice[0]) + text.slice(item.slice[1]);
         }
     }
-    return text;
+    return text.split(" ");
+};
+
+export const getCaretData = (replay: Replay) => {
+    if (replay.length === 0) return null;
+
+    const latestAction = replay[replay.length - 1];
+
+    if (latestAction.type !== "caret") {
+        return null;
+    }
+
+    return latestAction;
 };
 
 export const getCorrect = (wordsTyped: string[], quote: string[]) => {

@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { START_TIME_LENIENCY } from "$lib/config";
     import type { MatchUser, RoomInfo } from "$lib/types";
     import { calculateWpm, convertReplayToText, getCorrect } from "$lib/utils";
     import { onMount } from "svelte";
@@ -11,32 +12,34 @@
 
     onMount(() => {
         const interval = setInterval(() => {
-            // TODO: add a constant for the leniency on start time and align users based on start time instead of live
             const startTime = Math.min(
                 user.replay[0]?.timestamp,
-                roomInfo.startTime + 2 * 1000
+                roomInfo.startTime + START_TIME_LENIENCY
             );
 
-            if (correct.length === roomInfo.quote.join(" ").length) {
+            if (correctInput.length === roomInfo.quote.join(" ").length) {
                 clearInterval(interval);
                 finished = true;
                 wpm = calculateWpm(
                     user.replay[user.replay.length - 1]?.timestamp,
                     startTime,
-                    correct.length
+                    correctInput.length
                 );
             } else {
-                wpm = calculateWpm(Date.now(), startTime, correct.length);
+                wpm = calculateWpm(Date.now(), startTime, correctInput.length);
             }
         }, 250);
         return () => clearInterval(interval);
     });
 
-    $: userReplay = convertReplayToText(user.replay).split(" ");
-    $: ({ correct } = getCorrect(userReplay, roomInfo.quote));
+    $: userReplay = convertReplayToText(user.replay);
+    $: ({ correct: correctInput } = getCorrect(userReplay, roomInfo.quote));
 </script>
 
-<div class="flex items-center justify-between" style="order: {-wpm}">
+<div
+    class="flex items-center justify-between"
+    style="order: {-correctInput.length}"
+>
     <div class="flex gap-5 items-center">
         <div>{user.name} ({user.rating})</div>
         <div class="text-center">

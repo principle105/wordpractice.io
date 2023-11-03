@@ -4,7 +4,6 @@
     import { useMatchMode } from "$lib/stores/store";
 
     import MatchHandler from "./MatchHandler.svelte";
-    import CasualMatch from "./CasualMatch.svelte";
 
     export let data: PageData;
 

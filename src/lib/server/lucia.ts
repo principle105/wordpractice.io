@@ -26,6 +26,7 @@ export const auth = lucia({
             name: databaseUser.name,
             email: databaseUser.email,
             rating: databaseUser.rating,
+            fontScale: databaseUser.fontScale,
         };
     },
 });

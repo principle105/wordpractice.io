@@ -1,6 +1,7 @@
 import { auth, discordAuth } from "$lib/server/lucia";
 import { OAuthRequestError } from "@lucia-auth/oauth";
 import type { RequestHandler } from "./$types";
+import { DEFAULT_FONT_SCALE } from "$lib/config";
 
 export const GET: RequestHandler = async ({ cookies, url, locals }) => {
     const storedState = cookies.get("discord_oauth_state");
@@ -26,6 +27,7 @@ export const GET: RequestHandler = async ({ cookies, url, locals }) => {
                     name: discordUser.username,
                     email: discordUser.email as string,
                     rating: 1000,
+                    fontSize: DEFAULT_FONT_SCALE,
                 },
             });
         };

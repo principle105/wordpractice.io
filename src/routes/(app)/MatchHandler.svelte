@@ -7,6 +7,7 @@
 
     import CasualMatch from "./CasualMatch.svelte";
     import RankedMatch from "./RankedMatch.svelte";
+    import { DEFAULT_FONT_SCALE } from "$lib/config";
 
     export let user: User | undefined;
     export let sessionId: string | undefined;
@@ -69,6 +70,20 @@
         };
     });
 
+    const getUser = () => {
+        if (user) return user;
+
+        // TODO: eventually fetch this from the local storage
+        return {
+            id: "",
+            userId: "",
+            name: "Guest",
+            email: "",
+            rating: 0,
+            fontScale: DEFAULT_FONT_SCALE,
+        } satisfies User;
+    };
+
     let date: number = Date.now();
     $: replay, updateUser(replay);
 </script>
@@ -89,8 +104,7 @@
 
     {#if $match.type === "ranked"}
         <RankedMatch
-            userId={user ? user.id : socket.id}
-            rating={user ? user.rating : 0}
+            user={getUser()}
             {roomInfo}
             {matchUsers}
             {started}

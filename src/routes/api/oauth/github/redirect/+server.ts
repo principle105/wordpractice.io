@@ -1,6 +1,7 @@
 import { auth, githubAuth } from "$lib/server/lucia";
 import { OAuthRequestError } from "@lucia-auth/oauth";
 import type { RequestHandler } from "./$types";
+import { DEFAULT_FONT_SCALE } from "$lib/config";
 
 export const GET: RequestHandler = async ({ cookies, url, locals }) => {
     const storedState = cookies.get("github_oauth_state");
@@ -28,6 +29,7 @@ export const GET: RequestHandler = async ({ cookies, url, locals }) => {
                     email: githubUser.email,
                     name: githubUser.name,
                     rating: 0,
+                    fontScale: DEFAULT_FONT_SCALE,
                 },
             });
         };

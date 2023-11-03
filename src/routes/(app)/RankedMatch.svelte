@@ -8,64 +8,76 @@
         Replay,
         RoomInfo,
     } from "$lib/types";
-    import { convertReplayToText, getCorrect } from "$lib/utils";
-    import OpponentDisplay from "./OpponentDisplay.svelte";
-    import Cursor from "./Cursor.svelte";
     import type { EventHandler } from "svelte/elements";
+    import type { User } from "lucia";
+    import { convertReplayToText, getCaretData, getCorrect } from "$lib/utils";
+    import OpponentDisplay from "./OpponentDisplay.svelte";
     import { useMatchMode } from "$lib/stores/store";
+    import { BASE_FONT_SIZE } from "$lib/config";
+    import ReplayText from "./ReplayText.svelte";
+    import WordDisplay from "./WordDisplay.svelte";
 
     const match = useMatchMode();
 
-    export let userId: string;
-    export let rating: number;
+    export let user: User;
     export let roomInfo: RoomInfo;
     export let matchUsers = new Map<string, MatchUser>();
     export let replay: Replay = [];
     export let started: boolean;
 
-    const fontSize: number = 30;
+    let showReplay: boolean = false;
 
-    let currentIndex: number = 0;
-    let currentWordInput: string = "";
+    const fontSize: number = user.fontScale * BASE_FONT_SIZE;
 
-    let wrapperElement: HTMLElement | null = null;
+    let currentWordIndex: number = 0;
+    let wordInput: string = "";
+
     let inputElement: HTMLInputElement | null = null;
 
     let wpm: number = 0;
-    let finished: boolean = false;
+    let isFinished: boolean = false;
 
-    $: replayText = convertReplayToText(replay).split(" ");
-    $: ({ correct, incorrectChars } = getCorrect(replayText, roomInfo.quote));
-    $: started, inputElement, checkStart();
+    $: replayText = convertReplayToText(replay);
+    $: ({ correct: correctInput, incorrectChars } = getCorrect(
+        replayText,
+        roomInfo.quote
+    ));
+    $: started, inputElement, focusInputWhenRaceStarts();
+    $: matchUser = {
+        id: user.userId,
+        name: user.name,
+        replay,
+        rating: user.rating,
+    } satisfies MatchUser;
 
-    const checkStart = () => {
+    const focusInputWhenRaceStarts = () => {
         if (!started) return;
 
         inputElement?.focus();
     };
 
     const findRemovedSlice = (
-        totalText: String,
-        originalText: String,
-        newText: String
+        totalText: string,
+        beforeDelete: string,
+        afterDelete: string
     ) => {
-        if (newText.length >= originalText.length) {
+        if (afterDelete.length >= beforeDelete.length) {
             return null;
         }
 
         let startIndex = 0;
         while (
-            startIndex < newText.length &&
-            originalText[startIndex] === newText[startIndex]
+            startIndex < afterDelete.length &&
+            beforeDelete[startIndex] === afterDelete[startIndex]
         ) {
             startIndex++;
         }
 
         let endIndex = 0;
         while (
-            endIndex < newText.length &&
-            originalText[originalText.length - 1 - endIndex] ===
-                newText[newText.length - 1 - endIndex]
+            endIndex < afterDelete.length &&
+            beforeDelete[beforeDelete.length - 1 - endIndex] ===
+                afterDelete[afterDelete.length - 1 - endIndex]
         ) {
             endIndex++;
         }
@@ -73,7 +85,7 @@
         return [
             totalText.length + startIndex + (totalText.length !== 0 ? 1 : 0),
             totalText.length +
-                originalText.length -
+                beforeDelete.length -
                 endIndex +
                 (totalText.length !== 0 ? 1 : 0),
         ] as [number, number];
@@ -85,9 +97,9 @@
         const newChar = (e as any as InputEvent).data;
 
         let removedSlice = findRemovedSlice(
-            roomInfo.quote.slice(0, currentIndex).join(" "),
-            replayText.slice(currentIndex).join(" "),
-            currentWordInput
+            roomInfo.quote.slice(0, currentWordIndex).join(" "),
+            replayText.slice(currentWordIndex).join(" "),
+            wordInput
         );
 
         if (removedSlice !== null) {
@@ -98,13 +110,14 @@
             } satisfies Delete);
         }
 
+        // Checking if the word is completed
         if (
             newChar === " " &&
-            roomInfo.quote[currentIndex] ===
-                replayText.slice(currentIndex).join(" ")
+            roomInfo.quote[currentWordIndex] ===
+                replayText.slice(currentWordIndex).join(" ")
         ) {
-            currentWordInput = "";
-            currentIndex++;
+            wordInput = "";
+            currentWordIndex++;
         }
 
         if (newChar !== null) {
@@ -124,12 +137,13 @@
         const selectionStart = target.selectionStart;
         const selectionEnd = target.selectionEnd;
 
-        // Checking if the cursor is at the end of the word and not selecting
+        // Checking if the caret is at the end of the word and not selecting
         if (
             selectionStart === null ||
             selectionEnd === null ||
             (selectionEnd === selectionStart &&
-                selectionEnd === currentWordInput.length)
+                selectionEnd === wordInput.length &&
+                !(replay[replay.length - 1]?.type === "caret"))
         ) {
             return;
         }
@@ -139,61 +153,33 @@
             end: selectionEnd,
             timestamp: Date.now(),
         } satisfies CaretMovement);
-    };
 
-    $: matchUser = {
-        id: userId,
-        name: "You",
-        replay,
-        rating,
+        replay = replay;
     };
 </script>
 
 <div class="flex flex-col">
-    <OpponentDisplay user={matchUser} {roomInfo} bind:wpm bind:finished />
+    <OpponentDisplay
+        user={matchUser}
+        {roomInfo}
+        bind:wpm
+        bind:finished={isFinished}
+    />
     {#each matchUsers as [_, matchUser]}
         <OpponentDisplay user={matchUser} {roomInfo} />
     {/each}
 </div>
 
-<div
-    class="whitespace-pre-line relative font-mono"
-    style="font-size: {fontSize}px"
->
-    <span bind:this={wrapperElement}>
-        <span class="text-black">{correct}</span><span class="bg-red-400"
-            >{roomInfo.quote
-                .join(" ")
-                .slice(correct.length, correct.length + incorrectChars)}</span
-        ><span class="text-zinc-500"
-            >{roomInfo.quote
-                .join(" ")
-                .slice(correct.length + incorrectChars)}</span
-        >
-        <Cursor
-            {fontSize}
-            {replay}
-            {correct}
-            {wrapperElement}
-            quote={roomInfo.quote}
-        />
-        {#each matchUsers as [_, matchUser]}
-            <Cursor
-                {fontSize}
-                replay={matchUser.replay}
-                correct={getCorrect(
-                    convertReplayToText(matchUser.replay).split(" "),
-                    roomInfo.quote
-                ).correct}
-                {wrapperElement}
-                name={matchUser.name}
-                quote={roomInfo.quote}
-            />
-        {/each}
-    </span>
-</div>
+<WordDisplay
+    {correctInput}
+    {incorrectChars}
+    {fontSize}
+    matchUsers={Array.from(matchUsers.values())}
+    {replay}
+    {roomInfo}
+/>
 
-{#if finished}
+{#if isFinished}
     <div class="mt-16 flex flex-col justify-center">
         <h2 class="text-3xl">Your Stats</h2>
         <div>
@@ -201,9 +187,20 @@
         </div>
     </div>
     <button
-        class="bg-emerald-500 p-3 rounded-md text-white"
-        on:click={() => match.set(null)}>Play Again</button
+        class="bg-zinc-500 p-3 rounded-md text-white"
+        on:click={() => (showReplay = true)}
     >
+        Replay
+    </button>
+    <button
+        class="bg-emerald-500 p-3 rounded-md text-white"
+        on:click={() => match.set(null)}
+    >
+        Play Again
+    </button>
+    {#if showReplay}
+        <ReplayText {fontSize} {replay} {roomInfo} />
+    {/if}
 {:else}
     <input
         type="text"
@@ -216,7 +213,7 @@
         placeholder={replayText.join(" ") === "" ? "Type here" : ""}
         class="w-full p-3 outline-none border-zinc-500 border rounded-md"
         on:keyup={handleKeyUp}
-        bind:value={currentWordInput}
+        bind:value={wordInput}
         on:input={handleInput}
         bind:this={inputElement}
     />

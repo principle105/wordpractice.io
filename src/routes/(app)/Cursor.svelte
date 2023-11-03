@@ -1,48 +1,50 @@
 <script lang="ts">
+    import { CARET_BLINKING_INTERVAL } from "$lib/config";
     import type { Replay } from "$lib/types";
+    import { getCaretData } from "$lib/utils";
     import { onMount } from "svelte";
 
     export let fontSize: number;
+    export let timingOffset: number;
     export let replay: Replay;
     export let quote: string[];
-    export let correct: string;
+    export let correctInput: string;
     export let wrapperElement: HTMLElement | null;
     export let name: string | null = null;
+    export let topPos: number = 0;
 
-    // TODO: add this to the confrig file
-    const CURSOR_BLINKING_INTERVAL = 1 * 1000;
-
-    let topPos = 0;
     let leftPos = 0;
 
     let lastWordPositions: [number, number] = [0, 0];
     let lastWordIndex: number = 0;
 
-    let date: number = Date.now();
+    let currentTime: number = Date.now();
 
     onMount(() => {
         const interval = setInterval(() => {
-            date = Date.now();
+            currentTime = Date.now();
         }, 250);
         return () => clearInterval(interval);
     });
 
+    // TODO: correct positioning on delete last word
     const updatePositioning = () => {
         if (wrapperElement === null) return;
-
-        let newLeftPos = 0;
-        let newTopPos = 0;
 
         const maxWidth = wrapperElement.offsetWidth;
         const charWidthIncrease = fontSize * 0.6;
         const charHeightIncrease = fontSize * 1.5;
 
-        const words = correct.split(" ");
+        const words = correctInput.split(" ");
+
         let word: string;
         const currentIndex = words.length - 1;
 
         const loadedFromLastWord =
             lastWordPositions[0] !== 0 || lastWordPositions[1] !== 0;
+
+        let newLeftPos = 0;
+        let newTopPos = 0;
 
         if (loadedFromLastWord) {
             newLeftPos = lastWordPositions[0];
@@ -53,7 +55,19 @@
             word = words[0];
         }
 
+        const caretMovement = getCaretData(replay);
+
+        if (caretMovement !== null) {
+            newLeftPos += (caretMovement.start + 1) * charWidthIncrease;
+            leftPos = newLeftPos;
+            topPos = newTopPos;
+            return;
+        }
+
+        // If nothing has been typed yet
         if (word === "" && newLeftPos === 0) {
+            leftPos = newLeftPos;
+            topPos = newTopPos;
             return;
         }
 
@@ -63,7 +77,7 @@
 
         const wordWidth = word.length * charWidthIncrease;
 
-        let newLine: boolean = false;
+        let newLine = false;
 
         if (quote[currentIndex - 1] === word && currentIndex < quote.length) {
             const nextWordWidth =
@@ -96,18 +110,21 @@
 <svelte:window on:resize={updatePositioning} />
 
 <div
-    class="absolute"
-    style="top: {topPos +
+    class="absolute ease-linear"
+    style="top: {(name === null ? 0 : topPos) +
         fontSize *
-            0.1}px; left: {leftPos}px; transition: left 0.075s ease-in-out;"
+            0.1}px; left: {leftPos}px; transition: left 0.085s, top 0.001s;"
     id={replay.length === 0 ||
-    replay[replay.length - 1].timestamp + CURSOR_BLINKING_INTERVAL <= date
-        ? "cursor-blinking"
+    replay[replay.length - 1].timestamp +
+        timingOffset +
+        CARET_BLINKING_INTERVAL <=
+        currentTime
+        ? "caret-blinking"
         : ""}
 >
     <div
         class="bg-orange-400 rounded-full"
-        style="height: {fontSize * 1.2}px; width: {fontSize * 0.1}px;"
+        style="height: {fontSize * 1.3}px; width: {fontSize * 0.1}px;"
     />
     {#if name !== null}
         <div
@@ -133,7 +150,7 @@
         }
     }
 
-    #cursor-blinking {
+    #caret-blinking {
         animation: blink 1s infinite;
     }
 </style>
