@@ -10,7 +10,7 @@
     } from "$lib/types";
     import type { EventHandler } from "svelte/elements";
     import type { User } from "lucia";
-    import { convertReplayToText, getCaretData, getCorrect } from "$lib/utils";
+    import { convertReplayToText, getCorrect } from "$lib/utils";
     import OpponentDisplay from "./OpponentDisplay.svelte";
     import { useMatchMode } from "$lib/stores/store";
     import { BASE_FONT_SIZE } from "$lib/config";
