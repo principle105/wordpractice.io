@@ -94,6 +94,8 @@
     const handleInput: EventHandler<Event, HTMLInputElement> = (e) => {
         if (e.target === null) return;
 
+        const now = Date.now();
+
         const newChar = (e as any as InputEvent).data;
 
         let removedSlice = findRemovedSlice(
@@ -106,7 +108,7 @@
             replay.push({
                 type: "delete",
                 slice: removedSlice,
-                timestamp: Date.now(),
+                timestamp: now,
             } satisfies Delete);
         }
 
@@ -124,37 +126,41 @@
             replay.push({
                 type: "character",
                 letter: newChar,
-                timestamp: Date.now(),
+                timestamp: now,
             } satisfies Character);
         }
 
         replay = replay;
     };
 
-    const handleKeyUp = (e: KeyboardEvent) => {
-        const target = e.target as HTMLInputElement;
+    const handleKeyUp = () => {
+        setTimeout(() => {
+            if (inputElement === null) return;
 
-        const selectionStart = target.selectionStart;
-        const selectionEnd = target.selectionEnd;
+            const now = Date.now();
 
-        // Checking if the caret is at the end of the word and not selecting
-        if (
-            selectionStart === null ||
-            selectionEnd === null ||
-            (selectionEnd === selectionStart &&
-                selectionEnd === wordInput.length &&
-                !(replay[replay.length - 1]?.type === "caret"))
-        ) {
-            return;
-        }
-        replay.push({
-            type: "caret",
-            start: selectionStart,
-            end: selectionEnd,
-            timestamp: Date.now(),
-        } satisfies CaretMovement);
+            const selectionStart = inputElement.selectionStart;
+            const selectionEnd = inputElement.selectionEnd;
 
-        replay = replay;
+            // Checking if the caret is at the end of the word and not selecting
+            if (
+                selectionStart === null ||
+                selectionEnd === null ||
+                (selectionEnd === selectionStart &&
+                    selectionEnd === wordInput.length &&
+                    !(replay[replay.length - 1]?.type === "caret"))
+            ) {
+                return;
+            }
+            replay.push({
+                type: "caret",
+                start: selectionStart,
+                end: selectionEnd,
+                timestamp: now,
+            } satisfies CaretMovement);
+
+            replay = replay;
+        });
     };
 </script>
 
@@ -212,7 +218,7 @@
         maxlength={50}
         placeholder={replayText.join(" ") === "" ? "Type here" : ""}
         class="w-full p-3 outline-none border-zinc-500 border rounded-md"
-        on:keyup={handleKeyUp}
+        on:keydown={handleKeyUp}
         bind:value={wordInput}
         on:input={handleInput}
         bind:this={inputElement}

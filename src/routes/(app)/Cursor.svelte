@@ -58,7 +58,13 @@
         const caretMovement = getCaretData(replay);
 
         if (caretMovement !== null) {
-            newLeftPos += (caretMovement.start + 1) * charWidthIncrease;
+            // If the caret is on the first word
+            if (currentIndex == 0 && newLeftPos === 0) {
+                newLeftPos += caretMovement.start * charWidthIncrease;
+            } else {
+                newLeftPos += (caretMovement.start + 1) * charWidthIncrease;
+            }
+
             leftPos = newLeftPos;
             topPos = newTopPos;
             return;
