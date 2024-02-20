@@ -1,4 +1,4 @@
-import type { CaretMovement, Replay } from "./types";
+import type { Replay } from "./types";
 
 export const convertReplayToText = (replay: Replay) => {
     let text = "";

@@ -12,6 +12,7 @@
         replay[0].timestamp,
         roomInfo.startTime + START_TIME_LENIENCY
     );
+    let actualStartTime: number = 0;
 
     let timeElapsed: number = 0;
     let currentWordIndex: number = 0;
@@ -26,15 +27,18 @@
 
     let actionTimeout: NodeJS.Timeout;
 
+    $: slicedReplay = replay.slice(
+        0,
+        currentWordIndex - (currentWordIndex === replay.length ? 0 : 1)
+    );
+
     const play = () => {
         const action = replay[currentWordIndex];
 
-        const actionTimeSinceStart = action.timestamp - startTime;
+        timeElapsed = Date.now() - actualStartTime;
+        const replayTimeElapsedUntilAction = action.timestamp - startTime;
 
         actionTimeout = setTimeout(() => {
-            currentWordIndex += 1;
-            timeElapsed = actionTimeSinceStart;
-
             if (action.type === "character") {
                 replayText += action.letter;
             } else if (action.type === "delete") {
@@ -43,13 +47,15 @@
                     replayText.slice(action.slice[1]);
             }
 
+            currentWordIndex += 1;
+
             // Checking if the replay is over
             if (currentWordIndex === replay.length) {
                 return;
             }
 
             play();
-        }, (actionTimeSinceStart - timeElapsed) * replaySpeed);
+        }, replayTimeElapsedUntilAction - timeElapsed);
     };
 
     const reset = () => {
@@ -77,7 +83,14 @@
     let resetWordDisplay = false;
 </script>
 
-<button on:click={play}>Play</button>
+<button
+    on:click={() => {
+        actualStartTime = Date.now();
+        play();
+    }}
+>
+    Play
+</button>
 <button on:click={reset}>Reset</button>
 
 <button on:click={() => decreaseReplaySpeed()}>-</button>
@@ -90,10 +103,7 @@
         {incorrectChars}
         {fontSize}
         {roomInfo}
-        replay={replay.slice(
-            0,
-            currentWordIndex - (currentWordIndex === replay.length ? 0 : 1)
-        )}
+        replay={slicedReplay}
         timingOffset={Date.now() - (timeElapsed + startTime)}
         matchUsers={[]}
     />
