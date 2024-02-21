@@ -56,6 +56,7 @@ export const GET: RequestHandler = async ({ cookies, url, locals }) => {
             },
         });
     } catch (e) {
+        console.log(e);
         if (e instanceof OAuthRequestError) {
             return new Response(null, {
                 status: 400,

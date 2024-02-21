@@ -4,7 +4,7 @@
     "private": true,
     "scripts": {
         "dev": "vite dev",
-        "build": "vite build",
+        "build": "prisma generate && vite build",
         "preview": "vite preview",
         "start": "npm run build && tsm ./server/index.ts",
         "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { CARET_BLINKING_INTERVAL, DEFAULT_LINES_SHOWN } from "$lib/config";
+    import { CARET_BLINKING_INTERVAL } from "$lib/config";
     import type { Replay } from "$lib/types";
     import { getCaretData } from "$lib/utils";
     import { onMount } from "svelte";
@@ -109,10 +109,9 @@
 <svelte:window on:resize={updatePositioning} />
 
 <div
-    class="absolute ease-linear"
+    class="absolute"
     style="top: {topPos +
-        fontSize *
-            0.1}px; left: {leftPos}px; transition: left 0.1s, top 0.001s;"
+        fontSize * 0.1}px; left: {leftPos}px; transition: left 0.1s linear"
     id={replay.length === 0 ||
     replay[replay.length - 1].timestamp +
         timingOffset +
