@@ -80,7 +80,7 @@
 
         if (word === "" && currentIndex !== 0) {
             const nextWordWidth =
-                (quote[currentIndex].length + 1) * charWidthIncrease;
+                quote[currentIndex].length * charWidthIncrease;
 
             if (newLeftPos + wordWidth + nextWordWidth >= maxWidth) {
                 newLine = true;
@@ -104,32 +104,15 @@
     };
 
     $: replay, updatePositioning();
-
-    const getTopPos = (topPos: number) => {
-        if (name !== null) {
-            return topPos;
-        }
-
-        if (wrapperElement === null) return topPos;
-
-        const wrappedThreshold =
-            wrapperElement.offsetHeight - DEFAULT_LINES_SHOWN * fontSize * 1.5;
-
-        if (wrapperElement !== null && wrappedThreshold < topPos) {
-            return topPos - wrappedThreshold;
-        }
-
-        return 0;
-    };
 </script>
 
 <svelte:window on:resize={updatePositioning} />
 
 <div
     class="absolute ease-linear"
-    style="top: {getTopPos(topPos) +
+    style="top: {topPos +
         fontSize *
-            0.1}px; left: {leftPos}px; transition: left 0.085s, top 0.001s;"
+            0.1}px; left: {leftPos}px; transition: left 0.1s, top 0.001s;"
     id={replay.length === 0 ||
     replay[replay.length - 1].timestamp +
         timingOffset +
@@ -140,7 +123,7 @@
 >
     <div
         class="bg-orange-400 rounded-full"
-        style="height: {fontSize * 1.3}px; width: {fontSize * 0.1}px;"
+        style="height: {fontSize * 1.25}px; width: {fontSize * 0.075}px;"
     />
     {#if name !== null}
         <div
