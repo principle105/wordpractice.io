@@ -3,6 +3,7 @@
     import type { Replay, RoomInfo } from "$lib/types";
     import { getCorrect } from "$lib/utils";
     import WordDisplay from "./WordDisplay.svelte";
+    import { onDestroy } from "svelte";
 
     export let replay: Replay;
     export let fontSize: number;
@@ -15,7 +16,7 @@
     let actualStartTime: number = 0;
 
     let timeElapsed: number = 0;
-    let currentWordIndex: number = 0;
+    let actionIndex: number = 0;
     let replayText: string = "";
 
     let replaySpeed: number = 1;
@@ -29,16 +30,18 @@
 
     $: slicedReplay = replay.slice(
         0,
-        currentWordIndex - (currentWordIndex === replay.length ? 0 : 1)
+        actionIndex - (actionIndex === replay.length ? 0 : 1)
     );
 
+    let animationFrameId: number;
+
     const play = () => {
-        const action = replay[currentWordIndex];
+        const action = replay[actionIndex];
 
         timeElapsed = Date.now() - actualStartTime;
         const replayTimeElapsedUntilAction = action.timestamp - startTime;
 
-        actionTimeout = setTimeout(() => {
+        if (replayTimeElapsedUntilAction - timeElapsed <= 0) {
             if (action.type === "character") {
                 replayText += action.letter;
             } else if (action.type === "delete") {
@@ -47,22 +50,30 @@
                     replayText.slice(action.slice[1]);
             }
 
-            currentWordIndex += 1;
+            actionIndex++;
+
+            // if (action.type === "character" && action.letter === " ") {
+            //     actionIndex++;
+            // }
 
             // Checking if the replay is over
-            if (currentWordIndex === replay.length) {
+            if (actionIndex === replay.length) {
                 return;
             }
+        }
 
-            play();
-        }, replayTimeElapsedUntilAction - timeElapsed);
+        animationFrameId = requestAnimationFrame(play);
     };
+
+    onDestroy(() => {
+        cancelAnimationFrame(animationFrameId);
+    });
 
     const reset = () => {
         clearTimeout(actionTimeout);
         replayText = "";
         timeElapsed = 0;
-        currentWordIndex = 0;
+        actionIndex = 0;
         replaySpeed = 1;
 
         resetWordDisplay = !resetWordDisplay;

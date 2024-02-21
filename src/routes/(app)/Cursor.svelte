@@ -78,7 +78,7 @@
 
         let newLine = false;
 
-        if (word === "" && currentIndex !== 0) {
+        if (words[currentIndex] === "" && currentIndex !== 0) {
             const nextWordWidth =
                 quote[currentIndex].length * charWidthIncrease;
 
