@@ -1,7 +1,7 @@
 <script lang="ts">
     import { START_TIME_LENIENCY } from "$lib/config";
     import type { Replay, RoomInfo } from "$lib/types";
-    import { getCorrect } from "$lib/utils";
+    import { calculateWpm, getCorrect } from "$lib/utils";
     import WordDisplay from "./WordDisplay.svelte";
     import { onDestroy } from "svelte";
 
@@ -34,11 +34,16 @@
     );
 
     let animationFrameId: number;
+    let wpm: number = NaN;
+    let resetWordDisplay = false;
 
     const play = () => {
         const action = replay[actionIndex];
 
         timeElapsed = Date.now() - actualStartTime;
+
+        wpm = calculateWpm(Date.now(), actualStartTime, correctInput.length);
+
         const replayTimeElapsedUntilAction = action.timestamp - startTime;
 
         if (replayTimeElapsedUntilAction - timeElapsed <= 0) {
@@ -51,10 +56,6 @@
             }
 
             actionIndex++;
-
-            // if (action.type === "character" && action.letter === " ") {
-            //     actionIndex++;
-            // }
 
             // Checking if the replay is over
             if (actionIndex === replay.length) {
@@ -90,8 +91,6 @@
             replaySpeed += 0.25;
         }
     };
-
-    let resetWordDisplay = false;
 </script>
 
 <button
@@ -108,6 +107,8 @@
 <button on:click={() => increaseReplaySpeed()}>+</button>
 
 <div>{2 - replaySpeed}</div>
+<div>{wpm} wpm</div>
+
 {#key resetWordDisplay}
     <WordDisplay
         {correctInput}

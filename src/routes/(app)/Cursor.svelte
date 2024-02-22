@@ -14,6 +14,7 @@
     export let topPos: number = 0;
 
     let leftPos = 0;
+    let highlightWidth = 0;
 
     let lastWordPositions: [number, number] = [0, 0];
     let lastWordIndex: number = 0;
@@ -65,6 +66,14 @@
                 newLeftPos += (caretMovement.start + 1) * charWidthIncrease;
             }
 
+            if (caretMovement.start !== caretMovement.end) {
+                highlightWidth =
+                    (caretMovement.end - caretMovement.start) *
+                    charWidthIncrease;
+            } else {
+                highlightWidth = 0;
+            }
+
             leftPos = newLeftPos;
             topPos = newTopPos;
             return;
@@ -112,18 +121,24 @@
     class="absolute"
     style="top: {topPos +
         fontSize * 0.1}px; left: {leftPos}px; transition: left 0.06s linear"
-    id={replay.length === 0 ||
-    replay[replay.length - 1].timestamp +
-        timingOffset +
-        CARET_BLINKING_INTERVAL <=
-        currentTime
-        ? "caret-blinking"
-        : ""}
 >
-    <div
-        class="bg-orange-400 rounded-full"
-        style="height: {fontSize * 1.25}px; width: {fontSize * 0.1}px;"
-    />
+    <div class="flex">
+        <div
+            class="bg-orange-400 rounded-full"
+            style="height: {fontSize * 1.25}px; width: {fontSize * 0.1}px;"
+            id={replay.length === 0 ||
+            replay[replay.length - 1].timestamp +
+                timingOffset +
+                CARET_BLINKING_INTERVAL <=
+                currentTime
+                ? "caret-blinking"
+                : ""}
+        />
+        <div
+            class="bg-blue-500/30"
+            style="height: {fontSize * 1.25}px; width: {highlightWidth}px;"
+        />
+    </div>
     {#if name !== null}
         <div
             class="bg-zinc-300 px-1"
