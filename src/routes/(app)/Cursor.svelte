@@ -111,7 +111,7 @@
 <div
     class="absolute"
     style="top: {topPos +
-        fontSize * 0.1}px; left: {leftPos}px; transition: left 0.1s linear"
+        fontSize * 0.1}px; left: {leftPos}px; transition: left 0.06s linear"
     id={replay.length === 0 ||
     replay[replay.length - 1].timestamp +
         timingOffset +
@@ -122,7 +122,7 @@
 >
     <div
         class="bg-orange-400 rounded-full"
-        style="height: {fontSize * 1.25}px; width: {fontSize * 0.075}px;"
+        style="height: {fontSize * 1.25}px; width: {fontSize * 0.1}px;"
     />
     {#if name !== null}
         <div

@@ -1,214 +1,19 @@
 import { Server, Socket } from "socket.io";
 import type { ViteDevServer } from "vite";
+import type { Session } from "lucia";
+
 import { auth } from "../src/lib/server/lucia";
 import type { Room, MatchUser, Replay } from "../src/lib/types";
-import type { Session } from "lucia";
+import {
+    getCorrect,
+    convertReplayToText,
+    calculateWpm,
+} from "../src/lib/utils";
+import { START_TIME_LENIENCY } from "../src/lib/config";
 
 const MAX_ROOM_SIZE = 5;
 const COUNTDOWN_TIME = 6 * 1000;
 const MIN_JOIN_COUNTDOWN_TIME = 3 * 1000;
-const WORD_LIST = [
-    "the",
-    "be",
-    "of",
-    "and",
-    "a",
-    "to",
-    "in",
-    "he",
-    "have",
-    "it",
-    "that",
-    "for",
-    "they",
-    "I",
-    "with",
-    "as",
-    "not",
-    "on",
-    "she",
-    "at",
-    "by",
-    "this",
-    "we",
-    "you",
-    "do",
-    "but",
-    "from",
-    "or",
-    "which",
-    "one",
-    "would",
-    "all",
-    "will",
-    "there",
-    "say",
-    "who",
-    "make",
-    "when",
-    "can",
-    "more",
-    "if",
-    "no",
-    "man",
-    "out",
-    "other",
-    "so",
-    "what",
-    "time",
-    "up",
-    "go",
-    "about",
-    "than",
-    "into",
-    "could",
-    "state",
-    "only",
-    "new",
-    "year",
-    "some",
-    "take",
-    "come",
-    "these",
-    "know",
-    "see",
-    "use",
-    "get",
-    "like",
-    "then",
-    "first",
-    "any",
-    "work",
-    "now",
-    "may",
-    "such",
-    "give",
-    "over",
-    "think",
-    "most",
-    "even",
-    "find",
-    "day",
-    "also",
-    "after",
-    "way",
-    "many",
-    "must",
-    "look",
-    "before",
-    "great",
-    "back",
-    "through",
-    "long",
-    "where",
-    "much",
-    "should",
-    "well",
-    "people",
-    "down",
-    "own",
-    "just",
-    "because",
-    "good",
-    "each",
-    "those",
-    "feel",
-    "seem",
-    "how",
-    "high",
-    "too",
-    "place",
-    "little",
-    "world",
-    "very",
-    "still",
-    "nation",
-    "hand",
-    "old",
-    "life",
-    "tell",
-    "write",
-    "become",
-    "here",
-    "show",
-    "house",
-    "both",
-    "between",
-    "need",
-    "mean",
-    "call",
-    "develop",
-    "under",
-    "last",
-    "right",
-    "move",
-    "thing",
-    "general",
-    "school",
-    "never",
-    "same",
-    "another",
-    "begin",
-    "while",
-    "number",
-    "part",
-    "turn",
-    "real",
-    "leave",
-    "might",
-    "want",
-    "point",
-    "form",
-    "off",
-    "child",
-    "few",
-    "small",
-    "since",
-    "against",
-    "ask",
-    "late",
-    "home",
-    "interest",
-    "large",
-    "person",
-    "end",
-    "open",
-    "public",
-    "follow",
-    "during",
-    "present",
-    "without",
-    "again",
-    "hold",
-    "govern",
-    "around",
-    "possible",
-    "head",
-    "consider",
-    "word",
-    "program",
-    "problem",
-    "however",
-    "lead",
-    "system",
-    "set",
-    "order",
-    "eye",
-    "plan",
-    "run",
-    "keep",
-    "face",
-    "fact",
-    "group",
-    "play",
-    "stand",
-    "increase",
-    "early",
-    "course",
-    "change",
-    "help",
-    "line",
-];
 
 export interface RoomWithSocketInfo extends Room {
     sockets: Map<string, Socket>;
@@ -234,13 +39,13 @@ const removeSocketInformationFromRoom = (
     };
 };
 
-const generateWordList = (length: number) => {
-    const words: string[] = [];
-    for (let i = 0; i < length; i++) {
-        words.push(WORD_LIST[Math.floor(Math.random() * WORD_LIST.length)]);
-    }
-    return words;
-};
+// const generateWordList = (length: number) => {
+//     const words: string[] = [];
+//     for (let i = 0; i < length; i++) {
+//         words.push(WORD_LIST[Math.floor(Math.random() * WORD_LIST.length)]);
+//     }
+//     return words;
+// };
 
 const getUserInfoFromSession = async (token: string, socket: Socket) => {
     let session: Session | null = null;
@@ -268,6 +73,30 @@ const getUserInfoFromSession = async (token: string, socket: Socket) => {
     };
 };
 
+const getWpmFromReplay = (
+    replay: Replay,
+    roomStartTime: number,
+    quote: string[]
+) => {
+    const startTime = Math.min(
+        replay[0]?.timestamp,
+        roomStartTime + START_TIME_LENIENCY
+    );
+
+    // Checking if the user didn't finish
+    if (convertReplayToText(replay).join(" ") !== quote.join(" ")) {
+        return 0;
+    }
+
+    const wpm = calculateWpm(
+        replay[replay.length - 1]?.timestamp,
+        startTime,
+        quote.join(" ").length
+    );
+
+    return wpm;
+};
+
 const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
     if (!server) return;
 
@@ -289,6 +118,7 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
             name: username,
             replay: [],
             rating,
+            connected: true,
         };
 
         for (const [roomId, room] of rooms) {
@@ -300,7 +130,9 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
                 socket.join(roomId);
                 joinedRoom = true;
 
-                socket.broadcast.to(roomId).emit("server-update-user", user);
+                socket.broadcast
+                    .to(roomId)
+                    .emit("server-update-match-user", user);
 
                 socket.emit(
                     "existing-room-info",
@@ -317,7 +149,6 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
                 "power power power power power power power power power power".split(
                     " "
                 );
-            // const quote = generateWordList(30);
 
             const room: RoomWithSocketInfo = {
                 roomId,
@@ -336,11 +167,88 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
             socket.join(roomId);
         }
 
-        socket.on("client-update-user", (replay: Replay) => {
+        const handleIfRankedMatchOver = async (room: RoomWithSocketInfo) => {
+            const allUsersFinished = Object.values(room.users).every((user) => {
+                if (user.connected === false) return true;
+
+                const correctInput = getCorrect(
+                    convertReplayToText(user.replay),
+                    room.quote
+                ).correct;
+
+                return correctInput.length === room.quote.join(" ").length;
+            });
+
+            if (!allUsersFinished) {
+                return;
+            }
+
+            // Rank the users based on their wpm
+            const users = Object.values(room.users);
+            users.sort((a, b) => {
+                const aWpm = getWpmFromReplay(
+                    a.replay,
+                    room.startTime,
+                    room.quote
+                );
+                const bWpm = getWpmFromReplay(
+                    b.replay,
+                    room.startTime,
+                    room.quote
+                );
+
+                return bWpm - aWpm;
+            });
+
+            const K_FACTOR = 32;
+
+            users.forEach((winner, ranking) => {
+                if (ranking === users.length - 1) return;
+
+                const loser = users[ranking + 1];
+
+                const winnerChance =
+                    1.0 /
+                    (1.0 + Math.pow(10, (loser.rating - winner.rating) / 400));
+
+                const loserChance =
+                    1.0 /
+                    (1.0 + Math.pow(10, (winner.rating - loser.rating) / 400));
+
+                const winnerNewRating = Math.round(
+                    winner.rating + K_FACTOR * (1 - winnerChance)
+                );
+                const loserNewRating = Math.round(
+                    loser.rating + K_FACTOR * (0 - loserChance)
+                );
+
+                users[ranking].rating = winnerNewRating;
+                users[ranking + 1].rating = loserNewRating;
+            });
+
+            socket.broadcast.to(room.roomId).emit("update-rating", users);
+
+            // Update the rating for each match user in the database
+            users.forEach(async (user) => {
+                await auth.updateUserAttributes(user.id, {
+                    rating: user.rating,
+                });
+            });
+
+            rooms.delete(room.roomId);
+
+            // Disconnect all the users and delete the room
+            for (const [_, socket] of room.sockets) {
+                socket.disconnect();
+            }
+        };
+
+        socket.on("client-update-match-user", async (replay: Replay) => {
             const roomId = Array.from(socket.rooms.values())[1];
 
             const room = rooms.get(roomId);
 
+            // Disconnecting a user if they are not in the room
             if (!room || !(userId in room.users)) {
                 socket.disconnect();
                 return;
@@ -355,24 +263,21 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
             user.replay = replay;
             room.users[userId] = user;
 
-            socket.broadcast.to(roomId).emit("server-update-user", user);
+            socket.broadcast.to(roomId).emit("server-update-match-user", user);
+
+            await handleIfRankedMatchOver(room);
         });
 
         // When the client disconnects
-        socket.on("disconnect", () => {
+        socket.on("disconnect", async () => {
             for (const [roomId, room] of rooms) {
                 if (!(userId in room.users)) return;
 
-                delete room.users[userId];
-                room.sockets.delete(userId);
+                room.users[userId].connected = false;
 
-                if (Object.keys(room.users).length === 0) {
-                    rooms.delete(roomId);
-                } else {
-                    socket.broadcast
-                        .to(roomId)
-                        .emit("user-disconnect", user.id);
-                }
+                socket.broadcast.to(roomId).emit("user-disconnect", user.id);
+
+                await handleIfRankedMatchOver(room);
                 break;
             }
         });

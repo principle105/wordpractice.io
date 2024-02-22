@@ -38,10 +38,12 @@
 
 <div
     class="flex items-center justify-between"
-    style="order: {-correctInput.length}"
+    style="order: {-correctInput.length - (finished ? wpm : 0)}"
 >
     <div class="flex gap-5 items-center">
-        <div>{user.name} ({user.rating})</div>
+        <div class={user.connected ? "text-black" : "text-red-500"}>
+            {user.name} ({user.rating})
+        </div>
         <div class="text-center">
             <span class="text-xl font-bold">{wpm}</span>
             <span class="text-gray-500"> WPM</span>

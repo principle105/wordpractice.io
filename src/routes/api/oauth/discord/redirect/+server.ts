@@ -27,7 +27,7 @@ export const GET: RequestHandler = async ({ cookies, url, locals }) => {
                     name: discordUser.username,
                     email: discordUser.email as string,
                     rating: 1000,
-                    fontSize: DEFAULT_FONT_SCALE,
+                    fontScale: DEFAULT_FONT_SCALE,
                 },
             });
         };

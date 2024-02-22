@@ -8,6 +8,7 @@
     import CasualMatch from "./CasualMatch.svelte";
     import RankedMatch from "./RankedMatch.svelte";
     import { DEFAULT_FONT_SCALE } from "$lib/config";
+    import { invalidateAll } from "$app/navigation";
 
     export let user: User | undefined;
     export let sessionId: string | undefined;
@@ -25,7 +26,12 @@
     });
 
     socket.on("user-disconnect", (userId: string) => {
-        matchUsers.delete(userId);
+        let disconnectedUser = matchUsers.get(userId);
+
+        if (!disconnectedUser) return;
+
+        disconnectedUser.connected = false;
+        matchUsers.set(userId, disconnectedUser);
         matchUsers = matchUsers;
     });
 
@@ -40,19 +46,32 @@
         };
     });
 
-    socket.on("server-update-user", (matchUser: MatchUser) => {
+    socket.on("server-update-match-user", (matchUser: MatchUser) => {
         matchUsers.set(matchUser.id, matchUser);
         matchUsers = matchUsers;
     });
 
+    socket.on("update-rating", (users: MatchUser[]) => {
+        users.forEach((u) => {
+            if (u.id === user?.id) {
+                user.rating = u.rating;
+            } else {
+                matchUsers.set(u.id, u);
+            }
+        });
+
+        matchUsers = matchUsers;
+    });
+
     socket.on("disconnect", () => {
-        match.set(null);
+        // match.set(null);
+        invalidateAll();
     });
 
     const updateUser = (replay: Replay) => {
         if (replay.length === 0) return;
 
-        socket.emit("client-update-user", replay);
+        socket.emit("client-update-match-user", replay);
     };
 
     onMount(() => {
@@ -70,7 +89,7 @@
         };
     });
 
-    const getUser = () => {
+    const getUser = (user: User | undefined) => {
         if (user) return user;
 
         // TODO: eventually fetch this from the local storage
@@ -104,7 +123,7 @@
 
     {#if $match.type === "ranked"}
         <RankedMatch
-            user={getUser()}
+            user={getUser(user)}
             {roomInfo}
             {matchUsers}
             {started}

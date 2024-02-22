@@ -28,7 +28,7 @@ export const GET: RequestHandler = async ({ cookies, url, locals }) => {
                 attributes: {
                     email: githubUser.email,
                     name: githubUser.name,
-                    rating: 0,
+                    rating: 1000,
                     fontScale: DEFAULT_FONT_SCALE,
                 },
             });
@@ -56,7 +56,6 @@ export const GET: RequestHandler = async ({ cookies, url, locals }) => {
             },
         });
     } catch (e) {
-        console.log(e);
         if (e instanceof OAuthRequestError) {
             return new Response(null, {
                 status: 400,

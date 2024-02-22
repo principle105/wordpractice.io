@@ -48,6 +48,7 @@
         name: user.name,
         replay,
         rating: user.rating,
+        connected: true,
     } satisfies MatchUser;
 
     const focusInputWhenRaceStarts = () => {
