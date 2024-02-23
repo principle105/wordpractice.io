@@ -113,11 +113,6 @@
     $: started = !!(countDown === null || countDown <= 0);
 </script>
 
-<div class="font-mono bottom-0 fixed">
-    {started}
-    {countDown}
-</div>
-
 {#if !roomInfo || $match === null}
     <div>Loading...</div>
 {:else}
