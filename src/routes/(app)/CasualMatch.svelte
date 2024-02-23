@@ -36,6 +36,10 @@
     ));
 </script>
 
+<svelte:head>
+    <title>Casual Match - WordPractice</title>
+</svelte:head>
+
 <div class="flex flex-col">
     <OpponentDisplay
         username={user.name}

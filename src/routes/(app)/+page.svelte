@@ -27,6 +27,10 @@
     };
 </script>
 
+<svelte:head>
+    <title>WordPractice</title>
+</svelte:head>
+
 {#if $match === null}
     {#if !data.user}
         <div>Create an account to save your progress.</div>

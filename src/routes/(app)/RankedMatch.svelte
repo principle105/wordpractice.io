@@ -48,6 +48,10 @@
     });
 </script>
 
+<svelte:head>
+    <title>Ranked Match - WordPractice</title>
+</svelte:head>
+
 <div class="flex flex-col">
     <OpponentDisplay
         username={user.name}

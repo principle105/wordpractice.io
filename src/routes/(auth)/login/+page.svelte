@@ -3,6 +3,10 @@
     import FaDiscord from "svelte-icons/fa/FaDiscord.svelte";
 </script>
 
+<svelte:head>
+    <title>Login - WordPractice</title>
+</svelte:head>
+
 <main
     class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-sm text-center"
 >
