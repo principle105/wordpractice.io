@@ -18,6 +18,8 @@
     let roomInfo: RoomInfo | null = null;
     let matchUsers = new Map<string, MatchUser>();
     let finished: boolean = false;
+    let countDown: number | null = null;
+    let interval: ReturnType<typeof setInterval>;
 
     const match = useMatchMode();
 
@@ -61,6 +63,9 @@
         }
 
         finished = true;
+        countDown = null;
+
+        if (interval) clearInterval(interval);
 
         invalidateAll();
     });
@@ -72,13 +77,17 @@
     };
 
     onMount(() => {
-        const interval = setInterval(() => {
-            date = Date.now();
+        interval = setInterval(() => {
+            if (roomInfo) {
+                countDown = Math.round(
+                    (roomInfo.startTime - Date.now()) / 1000
+                );
 
-            if (roomInfo && roomInfo.startTime <= date) {
-                clearInterval(interval);
+                if (countDown <= 0) {
+                    clearInterval(interval);
+                }
             }
-        }, 250);
+        }, 100);
 
         return () => {
             socket.disconnect();
@@ -100,20 +109,24 @@
         } satisfies User;
     };
 
-    let date: number = Date.now();
     $: replay, updateUser(replay);
+    $: started = !!(countDown === null || countDown <= 0);
 </script>
+
+<div class="font-mono bottom-0 fixed">
+    {started}
+    {countDown}
+</div>
 
 {#if !roomInfo || $match === null}
     <div>Loading...</div>
 {:else}
-    {@const started = roomInfo.startTime <= date}
     {#if !started}
         <div
             class="absolute inset-0 bg-black/30 flex justify-center items-center"
         >
             <div class="text-5xl text-white">
-                {Math.round((roomInfo.startTime - date) / 1000)}
+                {countDown}
             </div>
         </div>
     {/if}
