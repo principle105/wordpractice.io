@@ -79,9 +79,8 @@
     onMount(() => {
         interval = setInterval(() => {
             if (roomInfo) {
-                countDown = Math.round(
-                    (roomInfo.startTime - Date.now()) / 1000
-                );
+                countDown =
+                    1 + Math.round((roomInfo.startTime - Date.now()) / 1000);
 
                 if (countDown <= 0) {
                     clearInterval(interval);
