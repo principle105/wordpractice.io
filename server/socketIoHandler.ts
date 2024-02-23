@@ -6,6 +6,7 @@ import { auth } from "../src/lib/server/lucia";
 import type { Room, MatchUser, MatchType } from "../src/lib/types";
 import registerRankedHandler from "./rankedHandler";
 import registerCasualHandler from "./casualHandler";
+import { checkIfUserIsInRoom } from "./state";
 export interface RoomWithSocketInfo extends Room {
     sockets: Map<string, Socket>;
 }
@@ -57,6 +58,11 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
             rating,
             connected: true,
         };
+
+        if (checkIfUserIsInRoom(userId)) {
+            socket.disconnect();
+            return;
+        }
 
         if (matchType === "ranked") {
             // Disconnecting a user if they are not authenticated
