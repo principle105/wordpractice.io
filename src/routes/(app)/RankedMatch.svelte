@@ -21,9 +21,9 @@
     export let replay: Replay = [];
     export let started: boolean;
     export let socket: Socket;
+    export let finished: boolean;
 
     let showReplay: boolean = false;
-    let isFinished: boolean = false;
 
     let wpm: number = 0;
 
@@ -56,7 +56,7 @@
         rating={user.rating}
         {roomInfo}
         bind:wpm
-        bind:finished={isFinished}
+        bind:finished
     />
     {#each matchUsers as [_, matchUser]}
         <OpponentDisplay
@@ -69,16 +69,7 @@
     {/each}
 </div>
 
-<WordDisplay
-    {correctInput}
-    {incorrectChars}
-    {fontSize}
-    matchUsers={Array.from(matchUsers.values())}
-    {replay}
-    {roomInfo}
-/>
-
-{#if isFinished}
+{#if finished}
     <div class="mt-16 flex flex-col justify-center">
         <h2 class="text-3xl">Your Stats</h2>
         <div>
@@ -101,5 +92,13 @@
         <ReplayText {fontSize} {replay} {roomInfo} />
     {/if}
 {:else}
+    <WordDisplay
+        {correctInput}
+        {incorrectChars}
+        {fontSize}
+        matchUsers={Array.from(matchUsers.values())}
+        {replay}
+        {roomInfo}
+    />
     <TestInput bind:replayText bind:replay {started} {roomInfo} />
 {/if}

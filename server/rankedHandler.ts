@@ -8,7 +8,7 @@ import { getWpmFromReplay } from "./utils";
 import { rankedRooms } from "./state";
 
 const MAX_ROOM_SIZE = 5;
-const COUNTDOWN_TIME = 6 * 1000;
+const COUNTDOWN_TIME = 8 * 1000;
 const MIN_JOIN_COUNTDOWN_TIME = 3 * 1000;
 
 const removeSocketInformationFromRoom = (
@@ -87,18 +87,25 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
     }
 
     const handleIfRankedMatchOver = async (room: RoomWithSocketInfo) => {
-        const allUsersFinished = Object.values(room.users).every((user) => {
-            if (user.connected === false) return true;
+        const totalUsersFinished = Object.values(room.users).reduce(
+            (count, user) => {
+                if (user.connected === false) return count + 1;
 
-            const correctInput = getCorrect(
-                convertReplayToText(user.replay),
-                room.quote
-            ).correct;
+                const correctInput = getCorrect(
+                    convertReplayToText(user.replay),
+                    room.quote
+                ).correct;
 
-            return correctInput.length === room.quote.join(" ").length;
-        });
+                if (correctInput.length === room.quote.join(" ").length) {
+                    return count + 1;
+                }
 
-        if (!allUsersFinished) {
+                return count;
+            },
+            0
+        );
+
+        if (totalUsersFinished < Object.keys(room.users).length - 1) {
             return;
         }
 

@@ -9,10 +9,17 @@
     export let fontSize: number;
     export let roomInfo: RoomInfo;
 
-    const startTime = Math.min(
-        replay[0].timestamp,
-        roomInfo.startTime + START_TIME_LENIENCY
-    );
+    const getStartTime = () => {
+        const maxStartTime = roomInfo.startTime + START_TIME_LENIENCY;
+
+        if (replay.length === 0) {
+            return maxStartTime;
+        }
+
+        return Math.min(replay[0]?.timestamp, maxStartTime);
+    };
+
+    const startTime = getStartTime();
     let actualStartTime: number = 0;
 
     let timeElapsed: number = 0;

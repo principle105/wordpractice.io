@@ -1,14 +1,15 @@
 <script lang="ts">
     import { onMount } from "svelte";
+    import { invalidateAll } from "$app/navigation";
     import { io } from "socket.io-client";
     import type { User } from "lucia";
+
     import type { Room, MatchUser, Replay, RoomInfo } from "$lib/types";
     import { useMatchMode } from "$lib/stores/store";
+    import { DEFAULT_FONT_SCALE } from "$lib/config";
 
     import CasualMatch from "./CasualMatch.svelte";
     import RankedMatch from "./RankedMatch.svelte";
-    import { DEFAULT_FONT_SCALE } from "$lib/config";
-    import { invalidateAll } from "$app/navigation";
 
     export let user: User | undefined;
     export let sessionId: string | undefined;
@@ -16,6 +17,7 @@
     let replay: Replay = [];
     let roomInfo: RoomInfo | null = null;
     let matchUsers = new Map<string, MatchUser>();
+    let finished: boolean = false;
 
     const match = useMatchMode();
 
@@ -57,6 +59,8 @@
         if (roomInfo === null) {
             match.set(null);
         }
+
+        finished = true;
 
         invalidateAll();
     });
@@ -120,6 +124,7 @@
             {roomInfo}
             {matchUsers}
             {started}
+            {finished}
             bind:replay
             {socket}
         />
@@ -129,6 +134,7 @@
             {roomInfo}
             {matchUsers}
             {started}
+            {finished}
             bind:replay
             {socket}
         />
