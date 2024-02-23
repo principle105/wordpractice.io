@@ -1,7 +1,10 @@
 import type { User } from "lucia";
+import type { Socket } from "socket.io";
+
+export type MatchType = "ranked" | "casual" | "private";
 
 export interface Match {
-    type: "ranked" | "casual" | "private";
+    type: MatchType;
     users: string[];
 }
 
@@ -32,10 +35,15 @@ export interface MatchUser extends Pick<User, "id" | "name" | "rating"> {
 }
 
 export interface Room {
+    matchType: MatchType;
     roomId: string;
     startTime: number;
     quote: string[];
     users: { [key: string]: MatchUser }; // not using a Map because cannot be serialized by socket.io
+}
+
+export interface RoomWithSocketInfo extends Room {
+    sockets: Map<string, Socket>;
 }
 
 export type RoomInfo = Omit<Room, "users">;

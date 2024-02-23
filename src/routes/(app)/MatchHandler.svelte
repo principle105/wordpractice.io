@@ -14,7 +14,7 @@
     export let sessionId: string | undefined;
 
     let replay: Replay = [];
-    let roomInfo: RoomInfo;
+    let roomInfo: RoomInfo | null = null;
     let matchUsers = new Map<string, MatchUser>();
 
     const match = useMatchMode();
@@ -22,6 +22,7 @@
     const socket = io({
         query: {
             token: sessionId ? sessionId : "",
+            matchType: $match?.type,
         },
     });
 
@@ -43,42 +44,34 @@
             roomId: existingRoomInfo.roomId,
             quote: existingRoomInfo.quote,
             startTime: existingRoomInfo.startTime,
+            matchType: existingRoomInfo.matchType,
         };
     });
 
-    socket.on("server-update-match-user", (matchUser: MatchUser) => {
+    socket.on("update-user", (matchUser: MatchUser) => {
         matchUsers.set(matchUser.id, matchUser);
         matchUsers = matchUsers;
     });
 
-    socket.on("update-rating", (users: MatchUser[]) => {
-        users.forEach((u) => {
-            if (u.id === user?.id) {
-                user.rating = u.rating;
-            } else {
-                matchUsers.set(u.id, u);
-            }
-        });
-
-        matchUsers = matchUsers;
-    });
-
     socket.on("disconnect", () => {
-        // match.set(null);
+        if (roomInfo === null) {
+            match.set(null);
+        }
+
         invalidateAll();
     });
 
     const updateUser = (replay: Replay) => {
         if (replay.length === 0) return;
 
-        socket.emit("client-update-match-user", replay);
+        socket.emit("update-user", replay);
     };
 
     onMount(() => {
         const interval = setInterval(() => {
             date = Date.now();
 
-            if (roomInfo.startTime <= date) {
+            if (roomInfo && roomInfo.startTime <= date) {
                 clearInterval(interval);
             }
         }, 250);
@@ -128,9 +121,17 @@
             {matchUsers}
             {started}
             bind:replay
+            {socket}
         />
     {:else if $match.type === "casual"}
-        <CasualMatch />
+        <CasualMatch
+            user={getUser(user)}
+            {roomInfo}
+            {matchUsers}
+            {started}
+            bind:replay
+            {socket}
+        />
     {:else if $match.type === "private"}
         <section>
             <div>Private Room</div>

@@ -2,6 +2,7 @@
     import type { PageData } from "./$types";
     import { invalidateAll } from "$app/navigation";
     import { useMatchMode } from "$lib/stores/store";
+    import { Toaster } from "svelte-french-toast";
 
     export let data: PageData;
 
@@ -21,6 +22,8 @@
         }
     };
 </script>
+
+<Toaster />
 
 <header class="flex justify-between px-20 py-10">
     <nav class="flex gap-12 items-center">

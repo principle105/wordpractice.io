@@ -1,7 +1,8 @@
 <script lang="ts">
     import type { PageData } from "./$types";
-    import { defaultMatch, type Match } from "$lib/types";
+    import { defaultMatch, type MatchType } from "$lib/types";
     import { useMatchMode } from "$lib/stores/store";
+    import toast from "svelte-french-toast";
 
     import MatchHandler from "./MatchHandler.svelte";
 
@@ -9,7 +10,12 @@
 
     const match = useMatchMode();
 
-    const changeMatchType = (newMatchType: Match["type"]) => {
+    const changeMatchType = (newMatchType: MatchType) => {
+        if (newMatchType === "ranked" && !data.user) {
+            toast.error("You need to be logged in to play ranked matches.");
+            return;
+        }
+
         match.update((m) => {
             if (m === null) {
                 return { ...defaultMatch, type: newMatchType };
