@@ -15,19 +15,43 @@ export const GET: RequestHandler = async ({ cookies, url, locals }) => {
     }
 
     try {
-        const { getExistingUser, githubUser, createUser } =
+        const { getExistingUser, githubUser, createUser, githubTokens } =
             await githubAuth.validateCallback(code);
 
         const getUser = async () => {
             const existingUser = await getExistingUser();
             if (existingUser) return existingUser;
 
-            if (!githubUser.email || !githubUser.name) return null;
+            if (!githubUser.email) {
+                const oauthEmailResponse = await fetch(
+                    "https://api.github.com/user/emails",
+                    {
+                        headers: {
+                            Authorization: `token ${githubTokens.accessToken}`,
+                        },
+                    }
+                );
+                const oauthEmails: {
+                    email: string;
+                    verified: boolean;
+                    primary: boolean;
+                }[] = await oauthEmailResponse.json();
+
+                githubUser.email =
+                    oauthEmails.find((email) => email.primary && email.verified)
+                        ?.email ??
+                    oauthEmails.find((email) => email.verified)?.email ??
+                    null;
+            }
+
+            if (!githubUser.email) {
+                return null;
+            }
 
             return await createUser({
                 attributes: {
                     email: githubUser.email,
-                    name: githubUser.name,
+                    name: githubUser.name ?? githubUser.login,
                     rating: 1000,
                     fontScale: DEFAULT_FONT_SCALE,
                 },

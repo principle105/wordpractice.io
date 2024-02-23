@@ -35,6 +35,7 @@ export const githubAuth = github(auth, {
     clientId: process.env.GITHUB_ID as string,
     clientSecret: process.env.GITHUB_SECRET as string,
     redirectUri: process.env.GITHUB_REDIRECT_URL as string,
+    scope: ["read:user", "user:email"],
 });
 
 export const discordAuth = discord(auth, {
