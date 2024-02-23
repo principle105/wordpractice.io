@@ -45,6 +45,10 @@
     let resetWordDisplay = false;
 
     const play = () => {
+        if (replay.length === 0) {
+            return;
+        }
+
         const action = replay[actionIndex];
 
         timeElapsed = Date.now() - actualStartTime;
@@ -66,6 +70,11 @@
 
             // Checking if the replay is over
             if (actionIndex === replay.length) {
+                wpm = calculateWpm(
+                    replay[replay.length - 1].timestamp,
+                    startTime,
+                    correctInput.length
+                );
                 return;
             }
         }
@@ -102,6 +111,7 @@
 
 <button
     on:click={() => {
+        reset();
         actualStartTime = Date.now();
         play();
     }}
