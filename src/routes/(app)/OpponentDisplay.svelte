@@ -13,14 +13,20 @@
     export let wpm: number = 0;
     export let finished: boolean = false;
 
+    let interval: ReturnType<typeof setInterval>;
+
     onMount(() => {
-        const interval = setInterval(() => {
+        interval = setInterval(() => {
             const startTime = Math.min(
                 replay[0]?.timestamp,
                 roomInfo.startTime + START_TIME_LENIENCY
             );
 
-            if (correctInput.length === roomInfo.quote.join(" ").length) {
+            if (
+                finished ||
+                correctInput.length === roomInfo.quote.join(" ").length ||
+                !connected
+            ) {
                 clearInterval(interval);
                 finished = true;
                 wpm = calculateWpm(

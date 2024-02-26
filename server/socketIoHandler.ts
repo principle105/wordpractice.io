@@ -3,13 +3,27 @@ import type { ViteDevServer } from "vite";
 import type { Session } from "lucia";
 
 import { auth } from "../src/lib/server/lucia";
-import type { Room, MatchUser, MatchType } from "../src/lib/types";
+import type { MatchUser, MatchType } from "../src/lib/types";
 import registerRankedHandler from "./rankedHandler";
 import registerCasualHandler from "./casualHandler";
 import { checkIfUserIsInRoom } from "./state";
-export interface RoomWithSocketInfo extends Room {
-    sockets: Map<string, Socket>;
-}
+import { rankedRooms, casualRooms } from "./state";
+
+const MAX_MATCH_LENGTH = 10 * 1000;
+
+// Periodically checking if any rooms have gone over the time limit
+setInterval(() => {
+    const allRooms = new Map([...rankedRooms, ...casualRooms]).values();
+
+    for (const room of allRooms) {
+        if (room && Date.now() > room.startTime + MAX_MATCH_LENGTH) {
+            room.sockets.forEach((socket) => {
+                socket.emit("match-ended");
+                socket.disconnect();
+            });
+        }
+    }
+}, 5000);
 
 const getUserInfoFromSession = async (token: string, socket: Socket) => {
     let session: Session | null = null;

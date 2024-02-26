@@ -10,6 +10,7 @@
 
     import CasualMatch from "./CasualMatch.svelte";
     import RankedMatch from "./RankedMatch.svelte";
+    import toast from "svelte-french-toast";
 
     export let user: User | undefined;
     export let sessionId: string | undefined;
@@ -55,6 +56,20 @@
     socket.on("update-user", (matchUser: MatchUser) => {
         matchUsers.set(matchUser.id, matchUser);
         matchUsers = matchUsers;
+    });
+
+    socket.on("match-ended", () => {
+        if (finished === false) {
+            finished = true;
+            toast.error("Sorry the match has ended.");
+        }
+
+        matchUsers = new Map(
+            Array.from(matchUsers, ([id, user]) => [
+                id,
+                { ...user, connected: false } satisfies MatchUser,
+            ])
+        );
     });
 
     socket.on("disconnect", () => {

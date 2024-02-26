@@ -8,8 +8,10 @@ import { getWpmFromReplay } from "./utils";
 import { rankedRooms } from "./state";
 
 const MAX_ROOM_SIZE = 5;
-const COUNTDOWN_TIME = 8 * 1000;
+const COUNTDOWN_TIME = 6 * 1000;
 const MIN_JOIN_COUNTDOWN_TIME = 3 * 1000;
+
+const K_FACTOR = 32;
 
 const removeSocketInformationFromRoom = (
     room: RoomWithSocketInfo,
@@ -118,8 +120,6 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
             return bWpm - aWpm;
         });
 
-        const K_FACTOR = 32;
-
         users.forEach((winner, ranking) => {
             if (ranking === users.length - 1) return;
 
@@ -148,9 +148,11 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
 
         // Update the rating for each match user in the database
         users.forEach(async (user) => {
-            await auth.updateUserAttributes(user.id, {
-                rating: user.rating,
-            });
+            try {
+                await auth.updateUserAttributes(user.id, {
+                    rating: user.rating,
+                });
+            } catch {}
         });
 
         rankedRooms.delete(room.roomId);

@@ -97,13 +97,13 @@
     };
 
     const increaseReplaySpeed = () => {
-        if (replaySpeed > 0.25) {
+        if (replaySpeed > 0) {
             replaySpeed -= 0.25;
         }
     };
 
     const decreaseReplaySpeed = () => {
-        if (replaySpeed < 2) {
+        if (replaySpeed < 1.75) {
             replaySpeed += 0.25;
         }
     };
@@ -123,8 +123,11 @@
 <button on:click={() => decreaseReplaySpeed()}>-</button>
 <button on:click={() => increaseReplaySpeed()}>+</button>
 
-<div>{2 - replaySpeed}</div>
-<div>{wpm} wpm</div>
+<div class="flex gap-6">
+    <div>{2 - replaySpeed}x speed</div>
+    <div>{(timeElapsed / 1000).toFixed(1)}</div>
+    <div>{wpm} wpm</div>
+</div>
 
 {#key resetWordDisplay}
     <WordDisplay
