@@ -6,7 +6,7 @@ import { getCorrect, convertReplayToText } from "../src/lib/utils";
 import { rankedRooms } from "./state";
 
 const MAX_ROOM_SIZE = 5;
-const COUNTDOWN_TIME = 1 * 1000;
+const COUNTDOWN_TIME = 6 * 1000;
 const MIN_JOIN_COUNTDOWN_TIME = 3 * 1000;
 
 const removeSocketInformationFromRoom = (
