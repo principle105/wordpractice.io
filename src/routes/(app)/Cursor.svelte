@@ -79,10 +79,6 @@
             return;
         }
 
-        if (loadedFromLastWord && lastWordPositions[0] !== 0) {
-            newLeftPos += charWidthIncrease;
-        }
-
         const wordWidth = word.length * charWidthIncrease;
 
         let newLine = false;
@@ -100,7 +96,11 @@
             newLeftPos = 0;
             newTopPos += charHeightIncrease;
         } else {
-            newLeftPos += wordWidth;
+            newLeftPos +=
+                wordWidth +
+                (words[currentIndex] === "" && currentIndex !== 0
+                    ? charWidthIncrease
+                    : 0);
         }
 
         if (lastWordIndex !== currentIndex || newLine) {
