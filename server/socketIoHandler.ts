@@ -9,7 +9,7 @@ import registerCasualHandler from "./casualHandler";
 import { checkIfUserIsInRoom } from "./state";
 import { rankedRooms, casualRooms } from "./state";
 
-const MAX_MATCH_LENGTH = 20 * 1000;
+const MAX_MATCH_LENGTH = 60 * 1000;
 
 // Periodically checking if any rooms have gone over the time limit
 setInterval(() => {
