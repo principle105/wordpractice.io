@@ -58,6 +58,7 @@
 
         const caretMovement = getCaretData(replay);
 
+        // Caret Movement
         if (caretMovement !== null) {
             // If the caret is on the first word
             if (currentIndex == 0 && newLeftPos === 0) {
@@ -89,6 +90,9 @@
 
             if (newLeftPos + wordWidth + nextWordWidth >= maxWidth) {
                 newLine = true;
+            } else {
+                // Handling spaces
+                newLeftPos += charWidthIncrease;
             }
         }
 
@@ -96,11 +100,7 @@
             newLeftPos = 0;
             newTopPos += charHeightIncrease;
         } else {
-            newLeftPos +=
-                wordWidth +
-                (words[currentIndex] === "" && currentIndex !== 0
-                    ? charWidthIncrease
-                    : 0);
+            newLeftPos += wordWidth;
         }
 
         if (lastWordIndex !== currentIndex || newLine) {
