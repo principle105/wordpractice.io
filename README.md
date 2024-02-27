@@ -7,9 +7,9 @@
     </a>
 </div>
 
-# Local Development
+## Local Development
 
-## Setup
+### Setup
 
 1. Install [Node.js 20.x.x](https://nodejs.org/en)
 2. Clone the repository locally.
@@ -24,7 +24,7 @@
 
 5. Copy the content from `.env.example` into `.env` and fill it with the necessary information.
 
-## Usage
+### Usage
 
 To start the development server, run
 
