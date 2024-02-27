@@ -84,7 +84,6 @@
         }
 
         finished = true;
-        countDown = null;
 
         if (interval) clearInterval(interval);
 
@@ -138,11 +137,6 @@
     $: replay, updateUser(replay);
     $: started = !!(countDown !== null && countDown <= 0);
 </script>
-
-<div class="font-mono fixed bottom-0">
-    {countDown}
-    {JSON.stringify(roomInfo)}
-</div>
 
 {#if !roomInfo || $match === null}
     <div>Loading...</div>

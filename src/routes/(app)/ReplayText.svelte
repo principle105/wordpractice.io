@@ -81,7 +81,7 @@
                 wpm = calculateWpm(
                     replay[replay.length - 1].timestamp,
                     startTime,
-                    correctInput.length
+                    correctInput.length + 1 // TODO: Quick fix for the last character not being counted
                 );
                 return;
             }
