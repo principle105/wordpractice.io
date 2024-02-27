@@ -107,7 +107,9 @@
                 return;
             }
 
-            countDown = Math.round((roomInfo.startTime - Date.now()) / 1000);
+            // Adding 1 to prevent the user from starting too early
+            countDown =
+                1 + Math.round((roomInfo.startTime - Date.now()) / 1000);
 
             if (countDown <= 0) {
                 clearInterval(interval);

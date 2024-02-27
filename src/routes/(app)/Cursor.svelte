@@ -90,7 +90,9 @@
 
             if (newLeftPos + wordWidth + nextWordWidth >= maxWidth) {
                 newLine = true;
-            } else {
+            }
+            // Checking if a new word is being added instead of a delete
+            else if (lastWordIndex !== currentIndex) {
                 // Handling spaces
                 newLeftPos += charWidthIncrease;
             }
