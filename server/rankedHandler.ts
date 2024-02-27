@@ -1,8 +1,12 @@
 import type { Socket } from "socket.io";
-import type { MatchUser, Room, RoomWithSocketInfo } from "../src/lib/types";
+import type {
+    Replay,
+    MatchUser,
+    Room,
+    RoomWithSocketInfo,
+} from "../src/lib/types";
 
 import { auth } from "../src/lib/server/lucia";
-import type { Replay } from "../src/lib/types";
 import { getCorrect, convertReplayToText } from "../src/lib/utils";
 import { getWpmFromReplay } from "./utils";
 import { rankedRooms } from "./state";

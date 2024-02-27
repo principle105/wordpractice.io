@@ -13,10 +13,8 @@
     export let wpm: number = 0;
     export let finished: boolean = false;
 
-    let interval: ReturnType<typeof setInterval>;
-
     onMount(() => {
-        interval = setInterval(() => {
+        const interval = setInterval(() => {
             if (roomInfo.startTime === null) return;
 
             const startTime = Math.min(

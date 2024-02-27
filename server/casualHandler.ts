@@ -1,7 +1,10 @@
 import type { Socket } from "socket.io";
-import type { MatchUser, Room, RoomWithSocketInfo } from "../src/lib/types";
-
-import type { Replay } from "../src/lib/types";
+import type {
+    Replay,
+    MatchUser,
+    Room,
+    RoomWithSocketInfo,
+} from "../src/lib/types";
 import { getCorrect, convertReplayToText } from "../src/lib/utils";
 import { rankedRooms } from "./state";
 
