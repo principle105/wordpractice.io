@@ -10,6 +10,10 @@
     export let roomInfo: RoomInfo;
 
     const getStartTime = () => {
+        if (roomInfo.startTime === null) {
+            return null;
+        }
+
         const maxStartTime = roomInfo.startTime + START_TIME_LENIENCY;
 
         if (replay.length === 0) {
@@ -19,7 +23,7 @@
         return Math.min(replay[0]?.timestamp, maxStartTime);
     };
 
-    const startTime = getStartTime();
+    const startTime: number | null = getStartTime();
     let actualStartTime: number = 0;
 
     let timeElapsed: number = 0;
@@ -46,6 +50,10 @@
 
     const play = () => {
         if (replay.length === 0) {
+            return;
+        }
+
+        if (startTime === null) {
             return;
         }
 
@@ -129,14 +137,16 @@
     <div>{wpm} wpm</div>
 </div>
 
-{#key resetWordDisplay}
-    <WordDisplay
-        {correctInput}
-        {incorrectChars}
-        {fontSize}
-        {roomInfo}
-        replay={slicedReplay}
-        timingOffset={Date.now() - (timeElapsed + startTime)}
-        matchUsers={[]}
-    />
-{/key}
+{#if startTime !== null}
+    {#key resetWordDisplay}
+        <WordDisplay
+            {correctInput}
+            {incorrectChars}
+            {fontSize}
+            {roomInfo}
+            replay={slicedReplay}
+            timingOffset={Date.now() - (timeElapsed + startTime)}
+            matchUsers={[]}
+        />
+    {/key}
+{/if}

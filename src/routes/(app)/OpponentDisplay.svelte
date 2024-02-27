@@ -17,6 +17,8 @@
 
     onMount(() => {
         interval = setInterval(() => {
+            if (roomInfo.startTime === null) return;
+
             const startTime = Math.min(
                 replay[0]?.timestamp,
                 roomInfo.startTime + START_TIME_LENIENCY

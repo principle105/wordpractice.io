@@ -41,21 +41,29 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
         // If the room is not full and the countdown has not started
         if (
             Object.keys(room.users).length < MAX_ROOM_SIZE &&
-            room.startTime > Date.now() + MIN_JOIN_COUNTDOWN_TIME
+            (!room.startTime ||
+                room.startTime > Date.now() + MIN_JOIN_COUNTDOWN_TIME)
         ) {
-            rankedRooms.set(roomId, {
+            let newRoomInfo = {
                 ...room,
                 users: { ...room.users, [user.id]: user },
                 sockets: new Map([...room.sockets, [user.id, socket]]),
-            });
+                startTime: room.startTime ?? Date.now() + COUNTDOWN_TIME,
+            };
+
+            rankedRooms.set(roomId, newRoomInfo);
             socket.join(roomId);
             joinedRoom = true;
 
-            socket.broadcast.to(roomId).emit("update-user", user);
             socket.emit(
                 "existing-room-info",
-                removeSocketInformationFromRoom(room, user.id)
+                removeSocketInformationFromRoom(newRoomInfo, user.id)
             );
+
+            socket.broadcast
+                .to(roomId)
+                .emit("update-start-time", newRoomInfo.startTime);
+            socket.broadcast.to(roomId).emit("update-user", user);
 
             break;
         }
@@ -74,7 +82,7 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
             roomId,
             users: { [user.id]: user },
             quote,
-            startTime: Date.now() + COUNTDOWN_TIME,
+            startTime: null,
             sockets: new Map([[user.id, socket]]),
             matchType: "ranked",
         };
@@ -114,8 +122,16 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
         // Rank the users based on their wpm
         const users = Object.values(room.users);
         users.sort((a, b) => {
-            const aWpm = getWpmFromReplay(a.replay, room.startTime, room.quote);
-            const bWpm = getWpmFromReplay(b.replay, room.startTime, room.quote);
+            const aWpm = getWpmFromReplay(
+                a.replay,
+                room.startTime as number,
+                room.quote
+            );
+            const bWpm = getWpmFromReplay(
+                b.replay,
+                room.startTime as number,
+                room.quote
+            );
 
             return bWpm - aWpm;
         });
@@ -175,7 +191,7 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
         }
 
         // Disconnecting a user if they start before the countdown
-        if (room.startTime > replay[0].timestamp) {
+        if (room.startTime && room.startTime > replay[0].timestamp) {
             socket.disconnect();
             return;
         }
@@ -191,9 +207,9 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
     // When the client disconnects
     socket.on("disconnect", async () => {
         for (const [roomId, room] of rankedRooms) {
-            if (!(user.id in room.users)) return;
-
-            room.users[user.id].connected = false;
+            if (user.id in room.users) {
+                room.users[user.id].connected = false;
+            }
 
             socket.broadcast.to(roomId).emit("user-disconnect", user.id);
 

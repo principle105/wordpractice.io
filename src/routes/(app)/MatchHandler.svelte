@@ -53,6 +53,12 @@
         };
     });
 
+    socket.on("update-start-time", (startTime: number | null) => {
+        if (roomInfo === null) return;
+
+        roomInfo = { ...roomInfo, startTime };
+    });
+
     socket.on("update-user", (matchUser: MatchUser) => {
         matchUsers.set(matchUser.id, matchUser);
         matchUsers = matchUsers;
@@ -93,13 +99,19 @@
 
     onMount(() => {
         interval = setInterval(() => {
-            if (roomInfo) {
-                countDown =
-                    1 + Math.round((roomInfo.startTime - Date.now()) / 1000);
+            if (!roomInfo) {
+                return;
+            }
 
-                if (countDown <= 0) {
-                    clearInterval(interval);
-                }
+            if (roomInfo.startTime === null) {
+                countDown = null;
+                return;
+            }
+
+            countDown = Math.round((roomInfo.startTime - Date.now()) / 1000);
+
+            if (countDown <= 0) {
+                clearInterval(interval);
             }
         }, 100);
 
@@ -124,8 +136,13 @@
     };
 
     $: replay, updateUser(replay);
-    $: started = !!(countDown === null || countDown <= 0);
+    $: started = !!(countDown !== null && countDown <= 0);
 </script>
+
+<div class="font-mono fixed bottom-0">
+    {countDown}
+    {JSON.stringify(roomInfo)}
+</div>
 
 {#if !roomInfo || $match === null}
     <div>Loading...</div>
@@ -135,7 +152,13 @@
             class="absolute inset-0 bg-black/30 flex justify-center items-center"
         >
             <div class="text-5xl text-white">
-                {countDown}
+                {#if countDown === null}
+                    {#if $match.type === "ranked"}
+                        Waiting for players...
+                    {/if}
+                {:else}
+                    {countDown}
+                {/if}
             </div>
         </div>
     {/if}

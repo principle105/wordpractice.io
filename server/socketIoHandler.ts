@@ -16,7 +16,11 @@ setInterval(() => {
     const allRooms = new Map([...rankedRooms, ...casualRooms]).values();
 
     for (const room of allRooms) {
-        if (room && Date.now() > room.startTime + MAX_MATCH_LENGTH) {
+        if (
+            room &&
+            room.startTime &&
+            Date.now() > room.startTime + MAX_MATCH_LENGTH
+        ) {
             room.sockets.forEach((socket) => {
                 socket.emit("match-ended");
                 socket.disconnect();

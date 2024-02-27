@@ -37,7 +37,7 @@ export interface MatchUser extends Pick<User, "id" | "name" | "rating"> {
 export interface Room {
     matchType: MatchType;
     roomId: string;
-    startTime: number;
+    startTime: number | null;
     quote: string[];
     users: { [key: string]: MatchUser }; // not using a Map because cannot be serialized by socket.io
 }

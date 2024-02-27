@@ -37,7 +37,8 @@ const registerCasualHandler = (socket: Socket, user: MatchUser) => {
         // If the room is not full and the countdown has not started
         if (
             Object.keys(room.users).length < MAX_ROOM_SIZE &&
-            room.startTime > Date.now() + MIN_JOIN_COUNTDOWN_TIME
+            (!room.startTime ||
+                room.startTime > Date.now() + MIN_JOIN_COUNTDOWN_TIME)
         ) {
             rankedRooms.set(roomId, {
                 ...room,
@@ -117,7 +118,7 @@ const registerCasualHandler = (socket: Socket, user: MatchUser) => {
         }
 
         // Disconnecting a user if they start before the countdown
-        if (room.startTime > replay[0].timestamp) {
+        if (room.startTime && room.startTime > replay[0].timestamp) {
             socket.disconnect();
             return;
         }

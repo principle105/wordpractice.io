@@ -12,5 +12,5 @@ injectSocketIO(server);
 app.use(handler);
 
 server.listen(port, () => {
-    console.log("Running on http://localhost:3000");
+    console.log(`Server is running on port ${port}`);
 });
