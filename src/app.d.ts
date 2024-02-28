@@ -12,6 +12,7 @@ declare global {
             name: string;
             email: string;
             rating: number;
+            avatar: string;
             fontScale: number;
         };
         type DatabaseSessionAttributes = {};

@@ -18,7 +18,7 @@
     let replay: Replay = [];
     let roomInfo: RoomInfo | null = null;
     let matchUsers = new Map<string, MatchUser>();
-    let finished: boolean = false;
+    let finished = false;
     let countDown: number | null = null;
     let interval: ReturnType<typeof setInterval>;
 
@@ -133,6 +133,7 @@
             email: "",
             rating: 0,
             fontScale: DEFAULT_FONT_SCALE,
+            avatar: "",
         } satisfies User;
     };
 

@@ -19,11 +19,14 @@ const getUserInfoFromSession = async (token: string, socket: Socket) => {
         }
     }
 
+    // TODO: prevent having to have this defined on both the client and server
+    // TODO: add a default avatar
     if (!session) {
         return {
             username: "Guest",
             userId: socket.id,
             rating: 0,
+            avatar: "",
         };
     }
 
@@ -31,6 +34,7 @@ const getUserInfoFromSession = async (token: string, socket: Socket) => {
         username: session.user.name,
         userId: session.user.id,
         rating: session.user.rating,
+        avatar: session.user.avatar,
     };
 };
 
@@ -43,10 +47,8 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
         const token = socket.handshake.query.token as string;
         const matchType = socket.handshake.query.matchType as MatchType;
 
-        const { username, userId, rating } = await getUserInfoFromSession(
-            token,
-            socket
-        );
+        const { username, userId, rating, avatar } =
+            await getUserInfoFromSession(token, socket);
 
         let user: MatchUser = {
             id: userId,
@@ -54,6 +56,7 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
             replay: [],
             rating,
             connected: true,
+            avatar,
         };
 
         if (checkIfUserIsInRoom(userId)) {

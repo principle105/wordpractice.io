@@ -24,20 +24,18 @@
     };
 
     const startTime: number | null = getStartTime();
-    let actualStartTime: number = 0;
+    let actualStartTime = 0;
 
-    let timeElapsed: number = 0;
-    let actionIndex: number = 0;
-    let replayText: string = "";
+    let timeElapsed = 0;
+    let actionIndex = 0;
+    let replayText = "";
 
-    let replaySpeed: number = 1;
+    let replaySpeed = 1;
 
     $: ({ correct: correctInput, incorrectChars } = getCorrect(
         replayText.split(" "),
         roomInfo.quote
     ));
-
-    let actionTimeout: NodeJS.Timeout;
 
     $: slicedReplay = replay.slice(
         0,
@@ -45,7 +43,7 @@
     );
 
     let animationFrameId: number;
-    let wpm: number = NaN;
+    let wpm = NaN;
     let resetWordDisplay = false;
 
     const play = () => {
@@ -95,7 +93,6 @@
     });
 
     const resetLastReplay = () => {
-        clearTimeout(actionTimeout);
         replayText = "";
         timeElapsed = 0;
         actionIndex = 0;

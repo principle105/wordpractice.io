@@ -11,13 +11,13 @@
     export let correctInput: string;
     export let wrapperElement: HTMLElement | null;
     export let name: string | null = null;
-    export let topPos: number = 0;
+    export let topPos = 0;
 
     let leftPos = 0;
     let highlightWidth = 0;
 
     let lastWordPositions: [number, number] = [0, 0];
-    let lastWordIndex: number = 0;
+    let lastWordIndex = 0;
 
     let currentTime: number = Date.now();
 

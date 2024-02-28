@@ -5,13 +5,14 @@
     import { onMount } from "svelte";
 
     export let username: string;
+    export let avatar: string;
     export let replay: Replay;
     export let connected: boolean;
     export let rating: number | null = null;
     export let roomInfo: RoomInfo;
 
-    export let wpm: number = 0;
-    export let finished: boolean = false;
+    export let wpm = 0;
+    export let finished = false;
 
     onMount(() => {
         const interval = setInterval(() => {
@@ -50,8 +51,15 @@
     style="order: {-correctInput.length - (finished ? wpm : 0)}"
 >
     <div class="flex gap-5 items-center">
-        <div class={connected ? "text-black" : "text-red-500"}>
-            {username}{rating ? `(${rating})` : ""}
+        <div class="flex items-center gap-3">
+            <img
+                src={avatar || "https://i.imgur.com/oPyoVMy.jpg"}
+                alt="{username}'s Avatar"
+                class="h-12 w-12 object-cover rounded-full"
+            />
+            <div class={connected ? "text-black" : "text-red-500"}>
+                {username}{rating ? `(${rating})` : ""}
+            </div>
         </div>
         <div class="text-center">
             <span class="text-xl font-bold">{wpm}</span>

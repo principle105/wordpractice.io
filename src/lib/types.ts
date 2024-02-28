@@ -29,7 +29,8 @@ export interface Delete {
 
 export type Replay = (Character | Delete | CaretMovement)[];
 
-export interface MatchUser extends Pick<User, "id" | "name" | "rating"> {
+export interface MatchUser
+    extends Pick<User, "id" | "name" | "rating" | "avatar"> {
     replay: Replay;
     connected: boolean;
 }

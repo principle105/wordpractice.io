@@ -54,6 +54,7 @@ export const GET: RequestHandler = async ({ cookies, url, locals }) => {
                     name: githubUser.name ?? githubUser.login,
                     rating: 1000,
                     fontScale: DEFAULT_FONT_SCALE,
+                    avatar: githubUser.avatar_url,
                 },
             });
         };

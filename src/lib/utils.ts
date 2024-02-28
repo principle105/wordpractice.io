@@ -25,7 +25,7 @@ export const getCaretData = (replay: Replay) => {
 };
 
 export const getCorrect = (wordsTyped: string[], quote: string[]) => {
-    let correctWords: string[] = [];
+    const correctWords: string[] = [];
 
     let i = 0;
 
@@ -40,7 +40,7 @@ export const getCorrect = (wordsTyped: string[], quote: string[]) => {
             continue;
         }
 
-        let correctChars: string = "";
+        let correctChars = "";
 
         let n = 0;
 
@@ -55,9 +55,9 @@ export const getCorrect = (wordsTyped: string[], quote: string[]) => {
         break;
     }
 
-    let correct = correctWords.join(" ");
+    const correct = correctWords.join(" ");
 
-    let incorrectChars = wordsTyped.join(" ").length - correct.length;
+    const incorrectChars = wordsTyped.join(" ").length - correct.length;
 
     return { correct, incorrectChars };
 };

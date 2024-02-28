@@ -35,8 +35,16 @@
     {#if !data.user}
         <a href="/login">Login</a>
     {:else}
-        <div>
-            <button on:click={logout}>Logout</button>
+        <div class="flex items-center gap-2">
+            <img
+                src={data.user.avatar || "https://i.imgur.com/oPyoVMy.jpg"}
+                alt="{data.user.name}'s Avatar"
+                class="h-12 w-12 object-cover rounded-full"
+            />
+
+            <div>
+                <button on:click={logout}>Logout</button>
+            </div>
         </div>
     {/if}
 </header>

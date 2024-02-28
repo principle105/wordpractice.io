@@ -28,6 +28,7 @@ export const GET: RequestHandler = async ({ cookies, url, locals }) => {
                     email: discordUser.email as string,
                     rating: 1000,
                     fontScale: DEFAULT_FONT_SCALE,
+                    avatar: `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`,
                 },
             });
         };

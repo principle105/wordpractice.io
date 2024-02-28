@@ -8,13 +8,13 @@
     export let fontSize: number;
     export let correctInput: string;
     export let incorrectChars: number;
-    export let timingOffset: number = 0;
+    export let timingOffset = 0;
 
     export let replay: Replay;
     export let matchUsers: MatchUser[];
 
     let wrapperElement: HTMLElement | null = null;
-    let topPos: number = 0;
+    let topPos = 0;
 
     $: maxHeight =
         wrapperElement !== null

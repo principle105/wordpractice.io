@@ -13,8 +13,8 @@
     export let replay: Replay;
     export let started: boolean;
 
-    let currentWordIndex: number = 0;
-    let wordInput: string = "";
+    let currentWordIndex = 0;
+    let wordInput = "";
 
     let inputElement: HTMLInputElement | null = null;
 

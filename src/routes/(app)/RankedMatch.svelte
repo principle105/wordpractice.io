@@ -23,9 +23,9 @@
     export let socket: Socket;
     export let finished: boolean;
 
-    let showReplay: boolean = false;
+    let showReplay = false;
 
-    let wpm: number = 0;
+    let wpm = 0;
 
     const fontSize: number = user.fontScale * BASE_FONT_SIZE;
 
@@ -55,6 +55,7 @@
 <div class="flex flex-col">
     <OpponentDisplay
         username={user.name}
+        avatar={user.avatar}
         {replay}
         connected={true}
         rating={user.rating}
@@ -68,6 +69,7 @@
             replay={matchUser.replay}
             connected={matchUser.connected}
             rating={matchUser.rating}
+            avatar={matchUser.avatar}
             {roomInfo}
         />
     {/each}
