@@ -6,7 +6,7 @@ import type {
     RoomWithSocketInfo,
 } from "../src/lib/types";
 import { getCorrect, convertReplayToText } from "../src/lib/utils";
-import { rankedRooms } from "./state";
+import { casualRooms } from "./state";
 
 const MAX_ROOM_SIZE = 5;
 const COUNTDOWN_TIME = 6 * 1000;
@@ -36,14 +36,14 @@ const removeSocketInformationFromRoom = (
 const registerCasualHandler = (socket: Socket, user: MatchUser) => {
     let joinedRoom = false;
 
-    for (const [roomId, room] of rankedRooms) {
+    for (const [roomId, room] of casualRooms) {
         // If the room is not full and the countdown has not started
         if (
             Object.keys(room.users).length < MAX_ROOM_SIZE &&
             (!room.startTime ||
                 room.startTime > Date.now() + MIN_JOIN_COUNTDOWN_TIME)
         ) {
-            rankedRooms.set(roomId, {
+            casualRooms.set(roomId, {
                 ...room,
                 users: { ...room.users, [user.id]: user },
                 sockets: new Map([...room.sockets, [user.id, socket]]),
@@ -81,7 +81,7 @@ const registerCasualHandler = (socket: Socket, user: MatchUser) => {
             removeSocketInformationFromRoom(room, user.id)
         );
 
-        rankedRooms.set(roomId, room);
+        casualRooms.set(roomId, room);
         socket.join(roomId);
     }
 
@@ -101,7 +101,7 @@ const registerCasualHandler = (socket: Socket, user: MatchUser) => {
             return;
         }
 
-        rankedRooms.delete(room.roomId);
+        casualRooms.delete(room.roomId);
 
         // Disconnect all the users and delete the room
         for (const [_, socket] of room.sockets) {
@@ -112,7 +112,7 @@ const registerCasualHandler = (socket: Socket, user: MatchUser) => {
     socket.on("update-user", async (replay: Replay) => {
         const roomId = Array.from(socket.rooms.values())[1];
 
-        const room = rankedRooms.get(roomId);
+        const room = casualRooms.get(roomId);
 
         // Disconnecting a user if they are not in the room
         if (!room || !(user.id in room.users)) {
@@ -136,7 +136,7 @@ const registerCasualHandler = (socket: Socket, user: MatchUser) => {
 
     // When the client disconnects
     socket.on("disconnect", async () => {
-        for (const [roomId, room] of rankedRooms) {
+        for (const [roomId, room] of casualRooms) {
             if (!(user.id in room.users)) return;
 
             room.users[user.id].connected = false;

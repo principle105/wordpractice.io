@@ -80,6 +80,25 @@
                 slice: removedSlice,
                 timestamp: now,
             } satisfies Delete);
+
+            if (inputElement === null) {
+                return;
+            }
+
+            const selectionStart = inputElement.selectionStart;
+            const selectionEnd = inputElement.selectionEnd;
+
+            if (selectionStart === null || selectionEnd === null) {
+                return;
+            }
+
+            // TODO: Limit doing this only when the caret has actually moved
+            replay.push({
+                type: "caret",
+                start: selectionStart,
+                end: selectionEnd,
+                timestamp: now,
+            } satisfies CaretMovement);
         }
 
         // Checking if the word is completed
@@ -103,7 +122,7 @@
         replay = replay;
     };
 
-    const handleKeyUp = () => {
+    const checkForCursorEvent = () => {
         setTimeout(() => {
             if (inputElement === null) return;
 
@@ -144,7 +163,7 @@
     maxlength={50}
     placeholder={replayText.join(" ") === "" ? "Type here" : ""}
     class="w-full p-3 outline-none border-zinc-500 border rounded-md"
-    on:keydown={handleKeyUp}
+    on:keydown={checkForCursorEvent}
     bind:value={wordInput}
     on:input={handleInput}
     bind:this={inputElement}

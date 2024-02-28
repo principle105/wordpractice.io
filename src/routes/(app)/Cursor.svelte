@@ -28,7 +28,7 @@
         return () => clearInterval(interval);
     });
 
-    // TODO: correct positioning on delete last word
+    // TODO: Fix correcting a word in the middle
     const updatePositioning = () => {
         if (wrapperElement === null) return;
 
@@ -60,12 +60,7 @@
 
         // Caret Movement
         if (caretMovement !== null) {
-            // If the caret is on the first word
-            if (currentIndex == 0 && newLeftPos === 0) {
-                newLeftPos += caretMovement.start * charWidthIncrease;
-            } else {
-                newLeftPos += (caretMovement.start + 1) * charWidthIncrease;
-            }
+            newLeftPos += caretMovement.start * charWidthIncrease;
 
             if (caretMovement.start !== caretMovement.end) {
                 highlightWidth =

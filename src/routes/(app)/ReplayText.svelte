@@ -94,14 +94,18 @@
         cancelAnimationFrame(animationFrameId);
     });
 
-    const reset = () => {
+    const resetLastReplay = () => {
         clearTimeout(actionTimeout);
         replayText = "";
         timeElapsed = 0;
         actionIndex = 0;
-        replaySpeed = 1;
 
         resetWordDisplay = !resetWordDisplay;
+    };
+
+    const reset = () => {
+        resetLastReplay();
+        replaySpeed = 1;
     };
 
     const increaseReplaySpeed = () => {
@@ -119,17 +123,18 @@
 
 <button
     on:click={() => {
-        reset();
+        resetLastReplay();
         actualStartTime = Date.now();
         play();
     }}
 >
     Play
 </button>
+
 <button on:click={reset}>Reset</button>
 
-<button on:click={() => decreaseReplaySpeed()}>-</button>
-<button on:click={() => increaseReplaySpeed()}>+</button>
+<button on:click={decreaseReplaySpeed}>-</button>
+<button on:click={increaseReplaySpeed}>+</button>
 
 <div class="flex gap-6">
     <div>{2 - replaySpeed}x speed</div>
