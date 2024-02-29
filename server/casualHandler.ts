@@ -33,6 +33,35 @@ const removeSocketInformationFromRoom = (
     };
 };
 
+export const handleIfCasualMatchOver = async (
+    room: RoomWithSocketInfo,
+    force: boolean = false
+) => {
+    if (!force) {
+        const allUsersFinished = Object.values(room.users).every((user) => {
+            if (user.connected === false) return true;
+
+            const correctInput = getCorrect(
+                convertReplayToText(user.replay),
+                room.quote
+            ).correct;
+
+            return correctInput.length === room.quote.join(" ").length;
+        });
+
+        if (!allUsersFinished) {
+            return;
+        }
+    }
+
+    casualRooms.delete(room.roomId);
+
+    // Disconnect all the users and delete the room
+    for (const [_, socket] of room.sockets) {
+        socket.disconnect();
+    }
+};
+
 const registerCasualHandler = (socket: Socket, user: MatchUser) => {
     let joinedRoom = false;
 
@@ -84,30 +113,6 @@ const registerCasualHandler = (socket: Socket, user: MatchUser) => {
         casualRooms.set(roomId, room);
         socket.join(roomId);
     }
-
-    const handleIfCasualMatchOver = async (room: RoomWithSocketInfo) => {
-        const allUsersFinished = Object.values(room.users).every((user) => {
-            if (user.connected === false) return true;
-
-            const correctInput = getCorrect(
-                convertReplayToText(user.replay),
-                room.quote
-            ).correct;
-
-            return correctInput.length === room.quote.join(" ").length;
-        });
-
-        if (!allUsersFinished) {
-            return;
-        }
-
-        casualRooms.delete(room.roomId);
-
-        // Disconnect all the users and delete the room
-        for (const [_, socket] of room.sockets) {
-            socket.disconnect();
-        }
-    };
 
     socket.on("update-user", async (replay: Replay) => {
         const roomId = Array.from(socket.rooms.values())[1];

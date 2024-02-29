@@ -7,9 +7,13 @@ import type {
 } from "../src/lib/types";
 
 import { auth } from "../src/lib/server/lucia";
-import { getCorrect, convertReplayToText } from "../src/lib/utils";
-import { getWpmFromReplay } from "./utils";
+import {
+    getCorrect,
+    convertReplayToText,
+    calculateWpm,
+} from "../src/lib/utils";
 import { rankedRooms } from "./state";
+import { START_TIME_LENIENCY } from "../src/lib/config";
 
 const MAX_ROOM_SIZE = 5;
 const COUNTDOWN_TIME = 6 * 1000;
@@ -36,6 +40,111 @@ const removeSocketInformationFromRoom = (
         users: usersWithoutSocket,
         matchType: room.matchType,
     };
+};
+
+export const handleIfRankedMatchOver = async (
+    room: RoomWithSocketInfo,
+    socket: Socket,
+    force: boolean = false
+) => {
+    if (!room) {
+        return;
+    }
+
+    if (!force) {
+        const totalUsersFinished = Object.values(room.users).reduce(
+            (count, user) => {
+                if (user.connected === false) return count + 1;
+
+                const correctInput = getCorrect(
+                    convertReplayToText(user.replay),
+                    room.quote
+                ).correct;
+
+                if (correctInput.length === room.quote.join(" ").length) {
+                    return count + 1;
+                }
+
+                return count;
+            },
+            0
+        );
+
+        // Checking if all the users - 1 have finished
+        if (totalUsersFinished < Object.keys(room.users).length - 1) {
+            return;
+        }
+    }
+
+    rankedRooms.delete(room.roomId);
+
+    // Rank the users based on their wpm
+    const users = Object.values(room.users);
+
+    // Calculating wpm based on the current time to account for users who haven't finished
+    const endTime = Date.now();
+
+    const getWpmFromReplay = (replay: Replay) => {
+        const startTime = Math.min(
+            replay[0]?.timestamp,
+            (room.startTime as number) + START_TIME_LENIENCY
+        );
+
+        const { correct } = getCorrect(convertReplayToText(replay), room.quote);
+
+        return calculateWpm(endTime, startTime, correct.length);
+    };
+
+    users.sort((a, b) => {
+        const aWpm = getWpmFromReplay(a.replay);
+        const bWpm = getWpmFromReplay(b.replay);
+
+        return bWpm - aWpm;
+    });
+
+    users.forEach((winner, ranking) => {
+        if (ranking === users.length - 1) return;
+
+        const loser = users[ranking + 1];
+
+        const winnerChance =
+            1.0 / (1.0 + Math.pow(10, (loser.rating - winner.rating) / 400));
+
+        const loserChance =
+            1.0 / (1.0 + Math.pow(10, (winner.rating - loser.rating) / 400));
+
+        const winnerNewRating = Math.round(
+            winner.rating + K_FACTOR * (1 - winnerChance)
+        );
+        const loserNewRating = Math.round(
+            loser.rating + K_FACTOR * (0 - loserChance)
+        );
+
+        users[ranking].rating = winnerNewRating;
+        users[ranking + 1].rating = loserNewRating;
+    });
+
+    // Update the rating for each match user in the database
+    users.forEach(async (user) => {
+        try {
+            await auth.updateUserAttributes(user.id, {
+                rating: user.rating,
+            });
+        } catch {}
+    });
+
+    const userRatings = users.map((user) => ({
+        id: user.id,
+        rating: user.rating,
+    }));
+
+    socket.broadcast.to(room.roomId).emit("update-rating", userRatings);
+    socket.emit("update-rating", userRatings);
+
+    // Disconnect all the users and delete the room
+    for (const [_, socket] of room.sockets) {
+        socket.disconnect();
+    }
 };
 
 const registerRankedHandler = (socket: Socket, user: MatchUser) => {
@@ -100,96 +209,17 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
         socket.join(roomId);
     }
 
-    const handleIfRankedMatchOver = async (room: RoomWithSocketInfo) => {
-        const totalUsersFinished = Object.values(room.users).reduce(
-            (count, user) => {
-                if (user.connected === false) return count + 1;
-
-                const correctInput = getCorrect(
-                    convertReplayToText(user.replay),
-                    room.quote
-                ).correct;
-
-                if (correctInput.length === room.quote.join(" ").length) {
-                    return count + 1;
-                }
-
-                return count;
-            },
-            0
-        );
-
-        if (totalUsersFinished < Object.keys(room.users).length - 1) {
-            return;
-        }
-
-        // Rank the users based on their wpm
-        const users = Object.values(room.users);
-        users.sort((a, b) => {
-            const aWpm = getWpmFromReplay(
-                a.replay,
-                room.startTime as number,
-                room.quote
-            );
-            const bWpm = getWpmFromReplay(
-                b.replay,
-                room.startTime as number,
-                room.quote
-            );
-
-            return bWpm - aWpm;
-        });
-
-        users.forEach((winner, ranking) => {
-            if (ranking === users.length - 1) return;
-
-            const loser = users[ranking + 1];
-
-            const winnerChance =
-                1.0 /
-                (1.0 + Math.pow(10, (loser.rating - winner.rating) / 400));
-
-            const loserChance =
-                1.0 /
-                (1.0 + Math.pow(10, (winner.rating - loser.rating) / 400));
-
-            const winnerNewRating = Math.round(
-                winner.rating + K_FACTOR * (1 - winnerChance)
-            );
-            const loserNewRating = Math.round(
-                loser.rating + K_FACTOR * (0 - loserChance)
-            );
-
-            users[ranking].rating = winnerNewRating;
-            users[ranking + 1].rating = loserNewRating;
-        });
-
-        socket.broadcast.to(room.roomId).emit("ranked:update-rating", users);
-
-        // Update the rating for each match user in the database
-        users.forEach(async (user) => {
-            try {
-                await auth.updateUserAttributes(user.id, {
-                    rating: user.rating,
-                });
-            } catch {}
-        });
-
-        rankedRooms.delete(room.roomId);
-
-        // Disconnect all the users and delete the room
-        for (const [_, socket] of room.sockets) {
-            socket.disconnect();
-        }
-    };
-
     socket.on("update-user", async (replay: Replay) => {
         const roomId = Array.from(socket.rooms.values())[1];
 
         const room = rankedRooms.get(roomId);
 
+        if (!room) {
+            return;
+        }
+
         // Disconnecting a user if they are not in the room
-        if (!room || !(user.id in room.users)) {
+        if (!(user.id in room.users)) {
             socket.disconnect();
             return;
         }
@@ -205,7 +235,7 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
 
         socket.broadcast.to(roomId).emit("update-user", user);
 
-        await handleIfRankedMatchOver(room);
+        await handleIfRankedMatchOver(room, socket);
     });
 
     // When the client disconnects
@@ -217,7 +247,7 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
 
             socket.broadcast.to(roomId).emit("user-disconnect", user.id);
 
-            await handleIfRankedMatchOver(room);
+            await handleIfRankedMatchOver(room, socket);
             break;
         }
     });

@@ -35,18 +35,35 @@
         roomInfo.quote
     ));
 
-    socket.on("ranked:update-rating", (users: MatchUser[]) => {
-        users.forEach((u) => {
-            if (u.id === user?.id) {
+    socket.on("update-rating", (ratings: { id: string; rating: number }[]) => {
+        ratings.forEach((u) => {
+            if (u.id === user.id) {
                 user.rating = u.rating;
             } else {
-                matchUsers.set(u.id, u);
+                let user = matchUsers.get(u.id);
+
+                if (user) {
+                    matchUsers.set(u.id, {
+                        ...user,
+                        rating: u.rating,
+                    });
+                }
             }
         });
 
         matchUsers = matchUsers;
     });
+
+    let connected = false;
+
+    setInterval(() => {
+        connected = socket.connected;
+    }, 100);
 </script>
+
+<div class="fixed bottom-0 font-mono">
+    {connected ? "Connected" : "Disconnected"}
+</div>
 
 <svelte:head>
     <title>Ranked Match - WordPractice</title>
