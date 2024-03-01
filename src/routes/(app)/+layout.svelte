@@ -1,12 +1,10 @@
 <script lang="ts">
     import type { PageData } from "./$types";
     import { invalidateAll } from "$app/navigation";
-    import { useMatchMode } from "$lib/stores/store";
+    import { match } from "$lib/stores/match";
     import { Toaster } from "svelte-french-toast";
 
     export let data: PageData;
-
-    const match = useMatchMode();
 
     const exitActiveMatch = () => {
         match.set(null);
@@ -37,7 +35,7 @@
     {:else}
         <div class="flex items-center gap-2">
             <img
-                src={data.user.avatar || "https://i.imgur.com/oPyoVMy.jpg"}
+                src={data.user.avatar}
                 alt="{data.user.name}'s Avatar"
                 class="h-12 w-12 object-cover rounded-full"
             />

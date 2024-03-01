@@ -220,12 +220,17 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
 
         // Disconnecting a user if they are not in the room
         if (!(user.id in room.users)) {
+            socket.emit(
+                "error",
+                "Something unexpected happened, please refresh!"
+            );
             socket.disconnect();
             return;
         }
 
         // Disconnecting a user if they start before the countdown
         if (room.startTime && room.startTime > replay[0].timestamp) {
+            socket.emit("error", "You started before the countdown!");
             socket.disconnect();
             return;
         }

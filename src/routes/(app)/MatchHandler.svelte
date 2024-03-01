@@ -2,15 +2,17 @@
     import { onMount } from "svelte";
     import { invalidateAll } from "$app/navigation";
     import { io } from "socket.io-client";
+    import toast from "svelte-french-toast";
     import type { User } from "lucia";
 
     import type { Room, MatchUser, Replay, RoomInfo } from "$lib/types";
-    import { useMatchMode } from "$lib/stores/store";
+    import { getGuestAvatar, getGuestName } from "$lib/utils";
     import { DEFAULT_FONT_SCALE } from "$lib/config";
+    import { match } from "$lib/stores/match";
+    import { guestAccountSeed } from "$lib/stores/guestAccountSeed";
 
     import CasualMatch from "./CasualMatch.svelte";
     import RankedMatch from "./RankedMatch.svelte";
-    import toast from "svelte-french-toast";
 
     export let user: User | undefined;
     export let sessionId: string | undefined;
@@ -22,12 +24,11 @@
     let countDown: number | null = null;
     let interval: ReturnType<typeof setInterval>;
 
-    const match = useMatchMode();
-
     const socket = io({
         query: {
             token: sessionId ? sessionId : "",
             matchType: $match?.type,
+            guestAccountSeed: $guestAccountSeed,
         },
     });
 
@@ -51,6 +52,10 @@
             startTime: existingRoomInfo.startTime,
             matchType: existingRoomInfo.matchType,
         };
+    });
+
+    socket.on("error", (errorMessage: string) => {
+        toast.error(errorMessage);
     });
 
     socket.on("update-start-time", (startTime: number | null) => {
@@ -125,15 +130,17 @@
     const getUser = (user: User | undefined) => {
         if (user) return user;
 
+        const name = getGuestName($guestAccountSeed);
+
         // TODO: eventually fetch this from the local storage
         return {
             id: "",
             userId: "",
-            name: "Guest",
+            name,
             email: "",
             rating: 0,
             fontScale: DEFAULT_FONT_SCALE,
-            avatar: "",
+            avatar: getGuestAvatar(name),
         } satisfies User;
     };
 

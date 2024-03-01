@@ -53,7 +53,7 @@
     <div class="flex gap-5 items-center">
         <div class="flex items-center gap-3">
             <img
-                src={avatar || "https://i.imgur.com/oPyoVMy.jpg"}
+                src={avatar}
                 alt="{username}'s Avatar"
                 class="h-12 w-12 object-cover rounded-full"
             />

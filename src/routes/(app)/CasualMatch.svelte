@@ -5,15 +5,13 @@
 
     import type { MatchUser, Replay, RoomInfo } from "$lib/types";
     import { convertReplayToText, getCorrect } from "$lib/utils";
-    import { useMatchMode } from "$lib/stores/store";
+    import { match } from "$lib/stores/match";
     import { BASE_FONT_SIZE } from "$lib/config";
 
     import OpponentDisplay from "./OpponentDisplay.svelte";
     import ReplayText from "./ReplayText.svelte";
     import WordDisplay from "./WordDisplay.svelte";
     import TestInput from "./TestInput.svelte";
-
-    const match = useMatchMode();
 
     export let user: User;
     export let roomInfo: RoomInfo;

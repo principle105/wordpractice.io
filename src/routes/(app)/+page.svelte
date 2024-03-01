@@ -1,18 +1,16 @@
 <script lang="ts">
     import type { PageData } from "./$types";
     import { defaultMatch, type MatchType } from "$lib/types";
-    import { useMatchMode } from "$lib/stores/store";
+    import { match } from "$lib/stores/match";
     import toast from "svelte-french-toast";
 
     import MatchHandler from "./MatchHandler.svelte";
 
     export let data: PageData;
 
-    const match = useMatchMode();
-
     const changeMatchType = (newMatchType: MatchType) => {
         if (newMatchType === "ranked" && !data.user) {
-            toast.error("You need to be logged in to play ranked matches.");
+            toast.error("You need to be logged in to play ranked mode.");
             return;
         }
 

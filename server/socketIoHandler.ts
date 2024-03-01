@@ -7,8 +7,17 @@ import type { MatchUser, MatchType } from "../src/lib/types";
 import registerRankedHandler from "./rankedHandler";
 import registerCasualHandler from "./casualHandler";
 import { checkIfUserIsInRoom } from "./state";
+import {
+    getGuestName,
+    convertStringToInteger,
+    getGuestAvatar,
+} from "../src/lib/utils";
 
-const getUserInfoFromSession = async (token: string, socket: Socket) => {
+const getMatchUserFromSession = async (
+    token: string | undefined,
+    guestAccountSeed: number,
+    socket: Socket
+): Promise<MatchUser> => {
     let session: Session | null = null;
 
     if (token) {
@@ -19,22 +28,26 @@ const getUserInfoFromSession = async (token: string, socket: Socket) => {
         }
     }
 
-    // TODO: prevent having to have this defined on both the client and server
-    // TODO: add a default avatar
     if (!session) {
+        const name = getGuestName(guestAccountSeed);
+
         return {
-            username: "Guest",
-            userId: socket.id,
+            name,
+            id: socket.id,
             rating: 0,
-            avatar: "",
+            avatar: getGuestAvatar(name),
+            connected: true,
+            replay: [],
         };
     }
 
     return {
-        username: session.user.name,
-        userId: session.user.id,
+        name: session.user.name,
+        id: session.user.id,
         rating: session.user.rating,
         avatar: session.user.avatar,
+        connected: true,
+        replay: [],
     };
 };
 
@@ -44,22 +57,31 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
     const io = new Server(server);
 
     io.on("connection", async (socket) => {
-        const token = socket.handshake.query.token as string;
-        const matchType = socket.handshake.query.matchType as MatchType;
+        const token = socket.handshake.query.token as string | undefined;
+        const matchType = socket.handshake.query.matchType as
+            | MatchType
+            | undefined;
+        const guestAccountSeed = socket.handshake.query.guestAccountSeed as
+            | string
+            | undefined;
 
-        const { username, userId, rating, avatar } =
-            await getUserInfoFromSession(token, socket);
+        const guestAccountSeedNumber = guestAccountSeed
+            ? convertStringToInteger(guestAccountSeed as string)
+            : null;
 
-        let user: MatchUser = {
-            id: userId,
-            name: username,
-            replay: [],
-            rating,
-            connected: true,
-            avatar,
-        };
+        if (guestAccountSeedNumber === null) {
+            socket.emit("error", "Invalid guest account seed.");
+            socket.disconnect();
+            return;
+        }
 
-        if (checkIfUserIsInRoom(userId)) {
+        let user = await getMatchUserFromSession(
+            token,
+            guestAccountSeedNumber,
+            socket
+        );
+
+        if (checkIfUserIsInRoom(user.id)) {
             socket.disconnect();
             return;
         }
@@ -67,20 +89,21 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
         if (matchType === "ranked") {
             // Disconnecting a user if they are not authenticated
             if (!token) {
+                socket.emit(
+                    "error",
+                    "You need to be logged in to play ranked mode."
+                );
                 socket.disconnect();
                 return;
             }
 
             registerRankedHandler(socket, user);
-            return;
-        }
-
-        if (matchType === "casual") {
+        } else if (matchType === "casual") {
             registerCasualHandler(socket, user);
+        } else {
+            socket.disconnect();
             return;
         }
-
-        socket.disconnect();
     });
 };
 
