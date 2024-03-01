@@ -27,7 +27,7 @@ const connectionAttempts = new Map<
     { attempts: number; lastAttempt: number }
 >();
 
-const CHECK_DUPLICATE_IPS = process.env.NODE_ENV !== "development";
+const PRODUCTION = process.env.NODE_ENV !== "development";
 
 const getMatchUserFromSession = async (
     token: string | undefined,
@@ -68,13 +68,15 @@ const getMatchUserFromSession = async (
 };
 
 const getCurrentRateLimit = (socket: Socket): number => {
-    let { lastAttempt, attempts } = connectionAttempts.get(socket.id) ?? {
+    let { lastAttempt, attempts } = connectionAttempts.get(
+        socket.handshake.address
+    ) ?? {
         lastAttempt: 0,
         attempts: 0,
     };
 
     if (Date.now() - lastAttempt > COOLDOWN_DURATION) {
-        connectionAttempts.delete(socket.id);
+        connectionAttempts.delete(socket.handshake.address);
         attempts = 0;
     } else if (attempts >= MAX_CONNECTION_ATTEMPTS) {
         const timeUntilCooldown = Math.ceil(
@@ -84,7 +86,7 @@ const getCurrentRateLimit = (socket: Socket): number => {
         return timeUntilCooldown;
     }
 
-    connectionAttempts.set(socket.id, {
+    connectionAttempts.set(socket.handshake.address, {
         attempts: attempts + 1,
         lastAttempt: Date.now(),
     });
@@ -120,15 +122,17 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
     const io = new Server(server);
 
     io.on("connection", async (socket) => {
-        const rateLimit = getCurrentRateLimit(socket);
+        if (PRODUCTION) {
+            const rateLimit = getCurrentRateLimit(socket);
 
-        if (rateLimit > 0) {
-            socket.emit(
-                "error",
-                `You are making too many connection attempts. Please wait ${rateLimit} seconds.`
-            );
-            socket.disconnect();
-            return;
+            if (rateLimit > 0) {
+                socket.emit(
+                    "error",
+                    `You are making too many connection attempts. Please wait ${rateLimit} seconds.`
+                );
+                socket.disconnect();
+                return;
+            }
         }
 
         const { token, matchType, guestAccountSeed } = socket.handshake
@@ -157,7 +161,7 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
         if (
             checkIfUserIsInRoom(
                 user.id,
-                CHECK_DUPLICATE_IPS ? socket.handshake.address : null
+                PRODUCTION ? socket.handshake.address : null
             )
         ) {
             socket.emit("error", "You are already in a match.");
