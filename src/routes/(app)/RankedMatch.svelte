@@ -51,17 +51,7 @@
 
         matchUsers = matchUsers;
     });
-
-    let connected = false;
-
-    setInterval(() => {
-        connected = socket.connected;
-    }, 100);
 </script>
-
-<div class="fixed bottom-0 font-mono">
-    {connected ? "Connected" : "Disconnected"}
-</div>
 
 <svelte:head>
     <title>Ranked Match - WordPractice</title>
