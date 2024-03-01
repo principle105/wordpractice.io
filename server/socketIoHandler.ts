@@ -4,6 +4,12 @@ import type { Session } from "lucia";
 
 import { auth } from "../src/lib/server/lucia";
 import type { MatchUser, MatchType } from "../src/lib/types";
+import {
+    getGuestName,
+    convertStringToInteger,
+    getGuestAvatar,
+} from "../src/lib/utils";
+
 import registerRankedHandler, {
     handleIfRankedMatchOver,
 } from "./rankedHandler";
@@ -11,13 +17,15 @@ import registerCasualHandler, {
     handleIfCasualMatchOver,
 } from "./casualHandler";
 import { checkIfUserIsInRoom, rankedRooms, casualRooms } from "./state";
-import {
-    getGuestName,
-    convertStringToInteger,
-    getGuestAvatar,
-} from "../src/lib/utils";
 
 const MAX_MATCH_LENGTH = 20 * 1000;
+
+const MAX_CONNECTION_ATTEMPTS = 5;
+const COOLDOWN_DURATION = 10000;
+const connectionAttempts = new Map<
+    string,
+    { attempts: number; lastAttempt: number }
+>();
 
 const getMatchUserFromSession = async (
     token: string | undefined,
@@ -85,6 +93,35 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
     const io = new Server(server);
 
     io.on("connection", async (socket) => {
+        const ipAddress = socket.handshake.address;
+
+        const { lastAttempt, attempts } = connectionAttempts.get(ipAddress) ?? {
+            lastAttempt: 0,
+            attempts: 0,
+        };
+
+        if (Date.now() - lastAttempt > COOLDOWN_DURATION) {
+            connectionAttempts.delete(ipAddress);
+        }
+
+        if (attempts >= MAX_CONNECTION_ATTEMPTS) {
+            const timeUntilCooldown = Math.ceil(
+                (COOLDOWN_DURATION - (Date.now() - lastAttempt)) / 1000
+            );
+
+            socket.emit(
+                "error",
+                `Too many connection attempts. Please try again in ${timeUntilCooldown} seconds.`
+            );
+            socket.disconnect();
+            return;
+        }
+
+        connectionAttempts.set(ipAddress, {
+            attempts: attempts + 1,
+            lastAttempt: Date.now(),
+        });
+
         const token = socket.handshake.query.token as string | undefined;
         const matchType = socket.handshake.query.matchType as
             | MatchType
