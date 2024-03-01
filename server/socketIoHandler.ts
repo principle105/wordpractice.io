@@ -158,12 +158,12 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
             socket
         );
 
-        if (
-            checkIfUserIsInRoom(
-                user.id,
-                PRODUCTION ? socket.handshake.address : null
-            )
-        ) {
+        const isUserInRoom = checkIfUserIsInRoom(
+            user.id,
+            PRODUCTION ? socket.handshake.address : null
+        );
+
+        if (isUserInRoom) {
             socket.emit("error", "You are already in a match.");
             socket.disconnect();
             return;
