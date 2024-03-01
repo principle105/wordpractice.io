@@ -27,6 +27,8 @@ const connectionAttempts = new Map<
     { attempts: number; lastAttempt: number }
 >();
 
+const CHECK_DUPLICATE_IPS = process.env.NODE_ENV !== "development";
+
 const getMatchUserFromSession = async (
     token: string | undefined,
     guestAccountSeed: number,
@@ -65,6 +67,31 @@ const getMatchUserFromSession = async (
     };
 };
 
+const getCurrentRateLimit = (socket: Socket): number => {
+    let { lastAttempt, attempts } = connectionAttempts.get(socket.id) ?? {
+        lastAttempt: 0,
+        attempts: 0,
+    };
+
+    if (Date.now() - lastAttempt > COOLDOWN_DURATION) {
+        connectionAttempts.delete(socket.id);
+        attempts = 0;
+    } else if (attempts >= MAX_CONNECTION_ATTEMPTS) {
+        const timeUntilCooldown = Math.ceil(
+            (COOLDOWN_DURATION - (Date.now() - lastAttempt)) / 1000
+        );
+
+        return timeUntilCooldown;
+    }
+
+    connectionAttempts.set(socket.id, {
+        attempts: attempts + 1,
+        lastAttempt: Date.now(),
+    });
+
+    return 0;
+};
+
 const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
     // Periodically checking if any rooms have gone over the time limit
     setInterval(() => {
@@ -93,42 +120,23 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
     const io = new Server(server);
 
     io.on("connection", async (socket) => {
-        const ipAddress = socket.handshake.address;
+        const rateLimit = getCurrentRateLimit(socket);
 
-        const { lastAttempt, attempts } = connectionAttempts.get(ipAddress) ?? {
-            lastAttempt: 0,
-            attempts: 0,
-        };
-
-        if (Date.now() - lastAttempt > COOLDOWN_DURATION) {
-            connectionAttempts.delete(ipAddress);
-        }
-
-        if (attempts >= MAX_CONNECTION_ATTEMPTS) {
-            const timeUntilCooldown = Math.ceil(
-                (COOLDOWN_DURATION - (Date.now() - lastAttempt)) / 1000
-            );
-
+        if (rateLimit > 0) {
             socket.emit(
                 "error",
-                `Too many connection attempts. Please try again in ${timeUntilCooldown} seconds.`
+                `You are making too many connection attempts. Please wait ${rateLimit} seconds.`
             );
             socket.disconnect();
             return;
         }
 
-        connectionAttempts.set(ipAddress, {
-            attempts: attempts + 1,
-            lastAttempt: Date.now(),
-        });
-
-        const token = socket.handshake.query.token as string | undefined;
-        const matchType = socket.handshake.query.matchType as
-            | MatchType
-            | undefined;
-        const guestAccountSeed = socket.handshake.query.guestAccountSeed as
-            | string
-            | undefined;
+        const { token, matchType, guestAccountSeed } = socket.handshake
+            .query as {
+            token: string | undefined;
+            matchType: MatchType | undefined;
+            guestAccountSeed: string | undefined;
+        };
 
         const guestAccountSeedNumber = guestAccountSeed
             ? convertStringToInteger(guestAccountSeed as string)
@@ -146,7 +154,13 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
             socket
         );
 
-        if (checkIfUserIsInRoom(user.id)) {
+        if (
+            checkIfUserIsInRoom(
+                user.id,
+                CHECK_DUPLICATE_IPS ? socket.handshake.address : null
+            )
+        ) {
+            socket.emit("error", "You are already in a match.");
             socket.disconnect();
             return;
         }
