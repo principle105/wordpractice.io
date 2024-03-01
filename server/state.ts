@@ -14,11 +14,3 @@ export const checkIfUserIsInRoom = (userId: string) => {
 
     return false;
 };
-
-export const getRoomsFromMatchType = (matchType: MatchType) => {
-    if (matchType === "ranked") {
-        return rankedRooms;
-    }
-
-    return casualRooms;
-};

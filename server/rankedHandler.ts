@@ -1,10 +1,5 @@
 import type { Socket } from "socket.io";
-import type {
-    Replay,
-    MatchUser,
-    Room,
-    RoomWithSocketInfo,
-} from "../src/lib/types";
+import type { Replay, MatchUser, RoomWithSocketInfo } from "../src/lib/types";
 
 import { auth } from "../src/lib/server/lucia";
 import {
@@ -14,33 +9,13 @@ import {
 } from "../src/lib/utils";
 import { rankedRooms } from "./state";
 import { START_TIME_LENIENCY } from "../src/lib/config";
+import { removeSocketInformationFromRoom } from "./utils";
 
-const MAX_ROOM_SIZE = 5;
+const MAX_ROOM_SIZE = 3;
 const COUNTDOWN_TIME = 6 * 1000;
 const MIN_JOIN_COUNTDOWN_TIME = 3 * 1000;
 
 const K_FACTOR = 32;
-
-const removeSocketInformationFromRoom = (
-    room: RoomWithSocketInfo,
-    userId: string
-): Room => {
-    const usersWithoutSocket = {
-        ...room.users,
-    };
-
-    if (userId in usersWithoutSocket) {
-        delete usersWithoutSocket[userId];
-    }
-
-    return {
-        roomId: room.roomId,
-        quote: room.quote,
-        startTime: room.startTime,
-        users: usersWithoutSocket,
-        matchType: room.matchType,
-    };
-};
 
 export const handleIfRankedMatchOver = async (
     room: RoomWithSocketInfo,
@@ -241,20 +216,6 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
         socket.broadcast.to(roomId).emit("update-user", user);
 
         await handleIfRankedMatchOver(room, socket);
-    });
-
-    // When the client disconnects
-    socket.on("disconnect", async () => {
-        for (const [roomId, room] of rankedRooms) {
-            if (user.id in room.users) {
-                room.users[user.id].connected = false;
-            }
-
-            socket.broadcast.to(roomId).emit("user-disconnect", user.id);
-
-            await handleIfRankedMatchOver(room, socket);
-            break;
-        }
     });
 };
 

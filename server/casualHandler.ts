@@ -1,37 +1,12 @@
 import type { Socket } from "socket.io";
-import type {
-    Replay,
-    MatchUser,
-    Room,
-    RoomWithSocketInfo,
-} from "../src/lib/types";
+import type { Replay, MatchUser, RoomWithSocketInfo } from "../src/lib/types";
 import { getCorrect, convertReplayToText } from "../src/lib/utils";
 import { casualRooms } from "./state";
+import { removeSocketInformationFromRoom } from "./utils";
 
 const MAX_ROOM_SIZE = 5;
-const COUNTDOWN_TIME = 6 * 1000;
+const COUNTDOWN_TIME = 8 * 1000;
 const MIN_JOIN_COUNTDOWN_TIME = 3 * 1000;
-
-const removeSocketInformationFromRoom = (
-    room: RoomWithSocketInfo,
-    userId: string
-): Room => {
-    const usersWithoutSocket = {
-        ...room.users,
-    };
-
-    if (userId in usersWithoutSocket) {
-        delete usersWithoutSocket[userId];
-    }
-
-    return {
-        roomId: room.roomId,
-        quote: room.quote,
-        startTime: room.startTime,
-        users: usersWithoutSocket,
-        matchType: room.matchType,
-    };
-};
 
 export const handleIfCasualMatchOver = async (
     room: RoomWithSocketInfo,
@@ -142,20 +117,6 @@ const registerCasualHandler = (socket: Socket, user: MatchUser) => {
         socket.broadcast.to(roomId).emit("update-user", user);
 
         await handleIfCasualMatchOver(room);
-    });
-
-    // When the client disconnects
-    socket.on("disconnect", async () => {
-        for (const [roomId, room] of casualRooms) {
-            if (!(user.id in room.users)) return;
-
-            room.users[user.id].connected = false;
-
-            socket.broadcast.to(roomId).emit("user-disconnect", user.id);
-
-            await handleIfCasualMatchOver(room);
-            break;
-        }
     });
 };
 

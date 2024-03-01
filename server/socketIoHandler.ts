@@ -4,14 +4,20 @@ import type { Session } from "lucia";
 
 import { auth } from "../src/lib/server/lucia";
 import type { MatchUser, MatchType } from "../src/lib/types";
-import registerRankedHandler from "./rankedHandler";
-import registerCasualHandler from "./casualHandler";
-import { checkIfUserIsInRoom } from "./state";
+import registerRankedHandler, {
+    handleIfRankedMatchOver,
+} from "./rankedHandler";
+import registerCasualHandler, {
+    handleIfCasualMatchOver,
+} from "./casualHandler";
+import { checkIfUserIsInRoom, rankedRooms, casualRooms } from "./state";
 import {
     getGuestName,
     convertStringToInteger,
     getGuestAvatar,
 } from "../src/lib/utils";
+
+const MAX_MATCH_LENGTH = 20 * 1000;
 
 const getMatchUserFromSession = async (
     token: string | undefined,
@@ -52,6 +58,28 @@ const getMatchUserFromSession = async (
 };
 
 const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
+    // Periodically checking if any rooms have gone over the time limit
+    setInterval(() => {
+        const allRooms = new Map([...rankedRooms, ...casualRooms]).values();
+
+        for (const room of allRooms) {
+            if (
+                room &&
+                room.startTime &&
+                Date.now() > room.startTime + MAX_MATCH_LENGTH
+            ) {
+                room.sockets.forEach((socket) => {
+                    socket.emit("match-ended");
+                    if (room.matchType === "casual") {
+                        handleIfCasualMatchOver(room);
+                    } else if (room.matchType === "ranked") {
+                        handleIfRankedMatchOver(room, socket);
+                    }
+                });
+            }
+        }
+    }, 5000);
+
     if (!server) return;
 
     const io = new Server(server);
@@ -104,6 +132,34 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
             socket.disconnect();
             return;
         }
+
+        // When the client disconnects
+        socket.on("disconnect", async () => {
+            let rooms =
+                matchType === "ranked"
+                    ? rankedRooms
+                    : matchType === "casual"
+                    ? casualRooms
+                    : null;
+
+            if (!rooms) return;
+
+            for (const [roomId, room] of rooms) {
+                if (user.id in room.users) {
+                    room.users[user.id].connected = false;
+                }
+
+                socket.broadcast.to(roomId).emit("user-disconnect", user.id);
+
+                if (matchType === "ranked") {
+                    await handleIfRankedMatchOver(room, socket);
+                } else if (matchType === "casual") {
+                    await handleIfCasualMatchOver(room);
+                }
+
+                break;
+            }
+        });
     });
 };
 
