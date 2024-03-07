@@ -17,6 +17,7 @@ import registerCasualHandler, {
     handleIfCasualMatchOver,
 } from "./casualHandler";
 import { checkIfUserIsInRoom, rankedRooms, casualRooms } from "./state";
+import { GUEST_SEED_SIZE } from "../src/lib/config";
 
 const MAX_MATCH_LENGTH = 20 * 1000;
 
@@ -26,8 +27,6 @@ const connectionAttempts = new Map<
     string,
     { attempts: number; lastAttempt: number }
 >();
-
-const PRODUCTION = process.env.NODE_ENV !== "development";
 
 const getMatchUserFromSession = async (
     token: string | undefined,
@@ -67,16 +66,14 @@ const getMatchUserFromSession = async (
     };
 };
 
-const getCurrentRateLimit = (socket: Socket): number => {
-    let { lastAttempt, attempts } = connectionAttempts.get(
-        socket.handshake.address
-    ) ?? {
+const getCurrentRateLimit = (userId: string): number => {
+    let { lastAttempt, attempts } = connectionAttempts.get(userId) ?? {
         lastAttempt: 0,
         attempts: 0,
     };
 
     if (Date.now() - lastAttempt > COOLDOWN_DURATION) {
-        connectionAttempts.delete(socket.handshake.address);
+        connectionAttempts.delete(userId);
         attempts = 0;
     } else if (attempts >= MAX_CONNECTION_ATTEMPTS) {
         const timeUntilCooldown = Math.ceil(
@@ -86,7 +83,7 @@ const getCurrentRateLimit = (socket: Socket): number => {
         return timeUntilCooldown;
     }
 
-    connectionAttempts.set(socket.handshake.address, {
+    connectionAttempts.set(userId, {
         attempts: attempts + 1,
         lastAttempt: Date.now(),
     });
@@ -122,19 +119,6 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
     const io = new Server(server);
 
     io.on("connection", async (socket) => {
-        if (PRODUCTION) {
-            const rateLimit = getCurrentRateLimit(socket);
-
-            if (rateLimit > 0) {
-                socket.emit(
-                    "error",
-                    `You are making too many connection attempts. Please wait ${rateLimit} seconds.`
-                );
-                socket.disconnect();
-                return;
-            }
-        }
-
         const { token, matchType, guestAccountSeed } = socket.handshake
             .query as {
             token: string | undefined;
@@ -146,8 +130,24 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
             ? convertStringToInteger(guestAccountSeed as string)
             : null;
 
-        if (guestAccountSeedNumber === null) {
+        if (
+            guestAccountSeedNumber === null ||
+            guestAccountSeedNumber.toString().length === GUEST_SEED_SIZE
+        ) {
             socket.emit("error", "Invalid guest account seed.");
+            socket.disconnect();
+            return;
+        }
+
+        const rateLimit = getCurrentRateLimit(
+            token ?? guestAccountSeedNumber.toString()
+        );
+
+        if (rateLimit > 0) {
+            socket.emit(
+                "error",
+                `You are making too many connection attempts. Please wait ${rateLimit} seconds.`
+            );
             socket.disconnect();
             return;
         }
@@ -158,10 +158,7 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
             socket
         );
 
-        const isUserInRoom = checkIfUserIsInRoom(
-            user.id,
-            PRODUCTION ? socket.handshake.address : null
-        );
+        const isUserInRoom = checkIfUserIsInRoom(user.id);
 
         if (isUserInRoom) {
             socket.emit("error", "You are already in a match.");

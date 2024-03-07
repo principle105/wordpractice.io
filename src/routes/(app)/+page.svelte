@@ -5,8 +5,31 @@
     import toast from "svelte-french-toast";
 
     import MatchHandler from "./MatchHandler.svelte";
+    import { getGuestAvatar, getGuestName } from "$lib/utils";
+    import type { User } from "lucia";
+    import { guestAccountSeed } from "$lib/stores/guestAccountSeed";
+    import { DEFAULT_FONT_SCALE } from "$lib/config";
 
     export let data: PageData;
+
+    const getUser = () => {
+        if (data.user) return data.user;
+
+        const name = getGuestName($guestAccountSeed);
+
+        // TODO: eventually fetch this from the local storage
+        return {
+            id: "",
+            userId: "",
+            name,
+            email: "",
+            rating: 0,
+            fontScale: DEFAULT_FONT_SCALE,
+            avatar: getGuestAvatar(name),
+        } satisfies User;
+    };
+
+    const user = getUser();
 
     const changeMatchType = (newMatchType: MatchType) => {
         if (newMatchType === "ranked" && !data.user) {
@@ -54,5 +77,5 @@
         <div>Latest High Scores</div>
     </section>
 {:else}
-    <MatchHandler sessionId={data.sessionId} user={data.user} />
+    <MatchHandler sessionId={data.sessionId} {user} />
 {/if}

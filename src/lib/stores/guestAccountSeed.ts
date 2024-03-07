@@ -1,6 +1,7 @@
 import { writable } from "svelte/store";
 import { browser } from "$app/environment";
 import { convertStringToInteger } from "$lib/utils";
+import { GUEST_SEED_SIZE } from "$lib/config";
 
 const getInitialValue = () => {
     if (browser) {
@@ -15,7 +16,7 @@ const getInitialValue = () => {
         }
     }
 
-    return Math.floor(Math.random() * 10_000_000_000_000_000);
+    return Math.floor((Math.random() * 10) ^ GUEST_SEED_SIZE);
 };
 
 const initialValue = getInitialValue();

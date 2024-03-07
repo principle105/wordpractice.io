@@ -6,15 +6,13 @@
     import type { User } from "lucia";
 
     import type { Room, MatchUser, Replay, RoomInfo } from "$lib/types";
-    import { getGuestAvatar, getGuestName } from "$lib/utils";
-    import { DEFAULT_FONT_SCALE } from "$lib/config";
     import { match } from "$lib/stores/match";
     import { guestAccountSeed } from "$lib/stores/guestAccountSeed";
 
     import CasualMatch from "./CasualMatch.svelte";
     import RankedMatch from "./RankedMatch.svelte";
 
-    export let user: User | undefined;
+    export let user: User;
     export let sessionId: string | undefined;
 
     let replay: Replay = [];
@@ -127,23 +125,6 @@
         };
     });
 
-    const getUser = (user: User | undefined) => {
-        if (user) return user;
-
-        const name = getGuestName($guestAccountSeed);
-
-        // TODO: eventually fetch this from the local storage
-        return {
-            id: "",
-            userId: "",
-            name,
-            email: "",
-            rating: 0,
-            fontScale: DEFAULT_FONT_SCALE,
-            avatar: getGuestAvatar(name),
-        } satisfies User;
-    };
-
     $: replay, updateUser(replay);
     $: started = !!(countDown !== null && countDown <= 0);
 </script>
@@ -151,7 +132,7 @@
 {#if !roomInfo || $match === null}
     <div>Loading...</div>
 {:else}
-    {#if !started}
+    {#if !started && !finished}
         <div
             class="absolute inset-0 bg-black/30 flex justify-center items-center"
         >
@@ -169,7 +150,7 @@
 
     {#if $match.type === "ranked"}
         <RankedMatch
-            user={getUser(user)}
+            {user}
             {roomInfo}
             {matchUsers}
             {started}
@@ -179,7 +160,7 @@
         />
     {:else if $match.type === "casual"}
         <CasualMatch
-            user={getUser(user)}
+            {user}
             {roomInfo}
             {matchUsers}
             {started}

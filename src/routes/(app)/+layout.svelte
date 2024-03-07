@@ -1,6 +1,5 @@
 <script lang="ts">
     import type { PageData } from "./$types";
-    import { invalidateAll } from "$app/navigation";
     import { match } from "$lib/stores/match";
     import { Toaster } from "svelte-french-toast";
 
@@ -14,8 +13,8 @@
         const res = await fetch("/logout", { method: "POST" });
 
         if (res.ok) {
-            // Invalidating all the PageData
-            await invalidateAll();
+            // Reload the entire page
+            location.reload();
             return;
         }
     };
