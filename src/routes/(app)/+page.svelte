@@ -1,6 +1,7 @@
 <script lang="ts">
     import type { PageData } from "./$types";
-    import { defaultMatch, type MatchType } from "$lib/types";
+    import { defaultMatch } from "$lib/constants";
+    import type { MatchType } from "$lib/types";
     import { match } from "$lib/stores/match";
     import toast from "svelte-french-toast";
 
@@ -9,6 +10,8 @@
     import type { User } from "lucia";
     import { guestAccountSeed } from "$lib/stores/guestAccountSeed";
     import { DEFAULT_FONT_SCALE } from "$lib/config";
+
+    import FaRegKeyboard from "svelte-icons/fa/FaRegKeyboard.svelte";
 
     export let data: PageData;
 
@@ -46,6 +49,10 @@
             return m;
         });
     };
+
+    const createNewPrivateRoom = () => {
+        alert("Not implemented yet");
+    };
 </script>
 
 <svelte:head>
@@ -53,28 +60,57 @@
 </svelte:head>
 
 {#if $match === null}
-    {#if !data.user}
-        <div>Create an account to save your progress.</div>
-    {/if}
-    <section class="flex gap-2">
-        <button
-            class="bg-emerald-500 p-3 rounded-md text-white"
-            on:click={() => changeMatchType("ranked")}
-        >
-            Ranked Mode
-        </button>
-        <button
-            class="bg-red-600 p-3 rounded-md text-white"
-            on:click={() => changeMatchType("casual")}
-        >
-            Casual Mode
-        </button>
-        <button class="bg-blue-600 p-3 rounded-md text-white">
-            Create a Private Room
-        </button>
+    <section class="pt-2">
+        <div class="grid grid-cols-1 gap-6 mx-auto sm:grid-cols-3">
+            <button
+                class="flex flex-col gap-2 items-center justify-center px-16 py-6 border border-gray-200 rounded-lg bg-gray-50"
+                on:click={() => changeMatchType("ranked")}
+            >
+                <div class="text-center">
+                    <h3 class="font-bold text-xl mb-1">Ranked Mode</h3>
+                    <p class="text-sm text-gray-500">
+                        Lorem ipsum dolor sit amet consectetur adipisicing elit.
+                    </p>
+                </div>
+                <div class="w-20 h-20 text-gray-500">
+                    <FaRegKeyboard />
+                </div>
+            </button>
+            <button
+                class="flex flex-col gap-2 items-center justify-center px-16 py-6 border border-gray-200 rounded-lg bg-gray-50"
+                on:click={() => changeMatchType("casual")}
+            >
+                <div class="text-center">
+                    <h3 class="font-bold text-xl mb-1">Casual Mode</h3>
+                    <p class="text-sm text-gray-500">
+                        Lorem ipsum dolor sit amet consectetur adipisicing elit.
+                    </p>
+                </div>
+                <div class="w-20 h-20 text-gray-500">
+                    <FaRegKeyboard />
+                </div>
+            </button>
+            <button
+                class="flex flex-col gap-2 items-center justify-center px-16 py-6 border border-gray-200 rounded-lg bg-gray-50"
+                on:click={createNewPrivateRoom}
+            >
+                <div class="text-center">
+                    <h3 class="font-bold text-xl mb-1">
+                        Create a Private Room
+                    </h3>
+                    <p class="text-sm text-gray-500">
+                        Lorem ipsum dolor sit amet consectetur adipisicing elit.
+                    </p>
+                </div>
+                <div class="w-20 h-20 text-gray-500">
+                    <FaRegKeyboard />
+                </div>
+            </button>
+        </div>
     </section>
-    <section>
-        <div>Latest High Scores</div>
+
+    <section class="mt-10">
+        <h3 class="text-center font-bold text-2xl">Latest High Scores</h3>
     </section>
 {:else}
     <MatchHandler sessionId={data.sessionId} {user} />

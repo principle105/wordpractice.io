@@ -23,7 +23,7 @@
 <Toaster />
 
 <header
-    class="absolute top-0 left-0 right-0 h-[12vh] flex justify-between items-center px-20 bg-purple-400 z-50"
+    class="absolute top-0 left-0 right-0 h-[14vh] flex justify-between items-center px-20 z-50"
 >
     <nav class="flex gap-12 items-center">
         <h3 class="text-3xl">Typing Website</h3>
@@ -48,6 +48,6 @@
     {/if}
 </header>
 
-<main class="mx-auto max-w-screen-xl w-full bg-green-400 mt-[12vh]">
+<main class="mx-auto max-w-screen-xl w-full mt-[14vh]">
     <slot />
 </main>

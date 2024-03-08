@@ -48,8 +48,3 @@ export interface RoomWithSocketInfo extends Room {
 }
 
 export type RoomInfo = Omit<Room, "users">;
-
-export const defaultMatch: Match = {
-    type: "casual",
-    users: [],
-};

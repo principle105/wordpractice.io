@@ -5,6 +5,7 @@
 
     import type { MatchUser, Replay, RoomInfo } from "$lib/types";
     import { convertReplayToText, getCorrect } from "$lib/utils";
+    import { defaultMatch } from "$lib/constants";
     import { match } from "$lib/stores/match";
     import { BASE_FONT_SIZE } from "$lib/config";
 
@@ -33,6 +34,22 @@
         replayText,
         roomInfo.quote
     ));
+
+    const playAgain = () => {
+        match.set(null);
+        socket.disconnect();
+
+        setTimeout(() => {
+            match.update((m) => {
+                if (m === null) {
+                    return { ...defaultMatch, type: "casual" };
+                }
+
+                m.type = "casual";
+                return m;
+            });
+        });
+    };
 </script>
 
 <svelte:head>
@@ -76,7 +93,7 @@
         </button>
         <button
             class="bg-emerald-500 p-3 rounded-md text-white"
-            on:click={() => match.set(null)}
+            on:click={playAgain}
         >
             Play Again
         </button>

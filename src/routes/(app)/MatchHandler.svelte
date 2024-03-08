@@ -22,7 +22,7 @@
     let countDown: number | null = null;
     let interval: ReturnType<typeof setInterval>;
 
-    const socket = io({
+    let socket = io({
         query: {
             token: sessionId ? sessionId : "",
             matchType: $match?.type,
@@ -156,7 +156,7 @@
             {started}
             {finished}
             bind:replay
-            {socket}
+            bind:socket
         />
     {:else if $match.type === "casual"}
         <CasualMatch
@@ -166,7 +166,7 @@
             {started}
             {finished}
             bind:replay
-            {socket}
+            bind:socket
         />
     {:else if $match.type === "private"}
         <section>

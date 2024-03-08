@@ -2,8 +2,8 @@
     export let finished: boolean;
 </script>
 
-<div class="bg-orange-300 h-[88vh] max-w-screen-lg mx-auto flex flex-col">
-    <div class="my-auto bg-red-400">
+<div class="h-[86vh] max-w-screen-lg mx-auto flex flex-col">
+    <div class="my-auto bg-zinc-100 p-8 rounded-lg">
         <slot name="racers" />
 
         {#if finished}
