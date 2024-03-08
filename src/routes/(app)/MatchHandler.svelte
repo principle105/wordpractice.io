@@ -134,7 +134,7 @@
 {:else}
     {#if !started && !finished}
         <div
-            class="absolute inset-0 bg-black/30 flex justify-center items-center"
+            class="fixed inset-0 bg-black/30 flex justify-center items-center z-10"
         >
             <div class="text-5xl text-white">
                 {#if countDown === null}

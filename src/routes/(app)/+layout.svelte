@@ -22,7 +22,9 @@
 
 <Toaster />
 
-<header class="flex justify-between px-20 py-10">
+<header
+    class="absolute top-0 left-0 right-0 h-[12vh] flex justify-between items-center px-20 bg-purple-400 z-50"
+>
     <nav class="flex gap-12 items-center">
         <h3 class="text-3xl">Typing Website</h3>
         <a href="/" on:click={exitActiveMatch}>Play</a>
@@ -46,6 +48,6 @@
     {/if}
 </header>
 
-<main class="w-2/3 mx-auto">
+<main class="mx-auto max-w-screen-xl w-full bg-green-400 mt-[12vh]">
     <slot />
 </main>
