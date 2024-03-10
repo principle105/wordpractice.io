@@ -23,7 +23,7 @@
 </script>
 
 <div
-    class="whitespace-pre-line relative font-mono overflow-hidden"
+    class="whitespace-pre-line relative font-mono overflow-hidden mt-4 mb-2"
     style="font-size: {fontSize}px; height: {fontSize * 0.15 +
         fontSize * DEFAULT_LINES_SHOWN * 1.5}px;"
 >

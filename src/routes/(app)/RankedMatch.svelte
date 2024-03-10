@@ -74,7 +74,7 @@
 </svelte:head>
 
 <MatchContainer {finished}>
-    <div slot="racers" class="flex flex-col">
+    <div slot="racers" class="flex flex-col gap-3">
         <OpponentDisplay
             username={user.name}
             avatar={user.avatar}

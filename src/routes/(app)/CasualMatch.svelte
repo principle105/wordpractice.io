@@ -14,6 +14,7 @@
     import WordDisplay from "./WordDisplay.svelte";
     import TestInput from "./TestInput.svelte";
     import MatchContainer from "./MatchContainer.svelte";
+    import EndScreen from "./EndScreen.svelte";
 
     export let user: User;
     export let roomInfo: RoomInfo;
@@ -57,7 +58,7 @@
 </svelte:head>
 
 <MatchContainer {finished}>
-    <div slot="racers" class="flex flex-col">
+    <div slot="racers" class="flex flex-col gap-3">
         <OpponentDisplay
             username={user.name}
             avatar={user.avatar}
@@ -81,10 +82,9 @@
     <div slot="end-screen">
         <div class="mt-16 flex flex-col justify-center">
             <h2 class="text-3xl">Your Stats</h2>
-            <div>
-                <div>{wpm} wpm</div>
-            </div>
+            <EndScreen {replay} {roomInfo} />
         </div>
+
         <button
             class="bg-zinc-500 p-3 rounded-md text-white"
             on:click={() => (showReplay = true)}

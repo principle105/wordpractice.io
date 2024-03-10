@@ -63,46 +63,46 @@
     <section class="pt-2">
         <div class="grid grid-cols-1 gap-6 mx-auto sm:grid-cols-3">
             <button
-                class="flex flex-col gap-2 items-center justify-center px-16 py-6 border border-gray-200 rounded-lg bg-gray-50"
+                class="flex flex-col gap-2 items-center justify-center px-12 py-6 border border-gray-200 rounded-lg bg-gray-50"
                 on:click={() => changeMatchType("ranked")}
             >
                 <div class="text-center">
-                    <h3 class="font-bold text-xl mb-1">Ranked Mode</h3>
+                    <h3 class="font-bold text-2xl mb-1">Ranked Mode</h3>
                     <p class="text-sm text-gray-500">
                         Lorem ipsum dolor sit amet consectetur adipisicing elit.
                     </p>
                 </div>
-                <div class="w-20 h-20 text-gray-500">
+                <div class="w-16 h-16 text-gray-500">
                     <FaRegKeyboard />
                 </div>
             </button>
             <button
-                class="flex flex-col gap-2 items-center justify-center px-16 py-6 border border-gray-200 rounded-lg bg-gray-50"
+                class="flex flex-col gap-2 items-center justify-center px-12 py-6 border border-gray-200 rounded-lg bg-gray-50"
                 on:click={() => changeMatchType("casual")}
             >
                 <div class="text-center">
-                    <h3 class="font-bold text-xl mb-1">Casual Mode</h3>
+                    <h3 class="font-bold text-2xl mb-1">Casual Mode</h3>
                     <p class="text-sm text-gray-500">
                         Lorem ipsum dolor sit amet consectetur adipisicing elit.
                     </p>
                 </div>
-                <div class="w-20 h-20 text-gray-500">
+                <div class="w-16 h-16 text-gray-500">
                     <FaRegKeyboard />
                 </div>
             </button>
             <button
-                class="flex flex-col gap-2 items-center justify-center px-16 py-6 border border-gray-200 rounded-lg bg-gray-50"
+                class="flex flex-col gap-2 items-center justify-center px-12 py-6 border border-gray-200 rounded-lg bg-gray-50"
                 on:click={createNewPrivateRoom}
             >
                 <div class="text-center">
-                    <h3 class="font-bold text-xl mb-1">
+                    <h3 class="font-bold text-2xl mb-1">
                         Create a Private Room
                     </h3>
                     <p class="text-sm text-gray-500">
                         Lorem ipsum dolor sit amet consectetur adipisicing elit.
                     </p>
                 </div>
-                <div class="w-20 h-20 text-gray-500">
+                <div class="w-16 h-16 text-gray-500">
                     <FaRegKeyboard />
                 </div>
             </button>

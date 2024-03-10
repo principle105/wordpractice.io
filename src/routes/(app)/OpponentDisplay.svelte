@@ -47,7 +47,7 @@
 </script>
 
 <div
-    class="flex items-center justify-between"
+    class="flex items-center justify-between gap-3"
     style="order: {-correctInput.length - (finished ? wpm : 0)}"
 >
     <div class="flex gap-5 items-center">
@@ -61,12 +61,23 @@
                 {username}{rating ? `(${rating})` : ""}
             </div>
         </div>
-        <div class="text-center">
-            <span class="text-xl font-bold">{wpm}</span>
-            <span class="text-gray-500"> WPM</span>
-        </div>
     </div>
-    {#if finished}
-        <div>Finished</div>
-    {/if}
+    <div
+        class="flex-grow h-2 rounded-lg overflow-hidden {connected
+            ? 'bg-gray-200'
+            : 'bg-red-100'}"
+    >
+        <div
+            class="h-full transition-all duration-200 rounded-r-lg {connected
+                ? 'bg-green-500'
+                : 'bg-red-300'}"
+            style="width: {(correctInput.length /
+                roomInfo.quote.join(' ').length) *
+                100}%"
+        />
+    </div>
+    <div class="w-32 text-right">
+        <span class="text-xl font-bold">{wpm}</span>
+        <span class="text-gray-500"> WPM</span>
+    </div>
 </div>

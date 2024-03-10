@@ -1,9 +1,10 @@
-import type { PrismaClient as ImportedPrismaClient } from "@prisma/client";
-import { createRequire } from "module";
+import { PrismaClient } from "@prisma/client";
+import { env } from "$env/dynamic/private";
 
-const require = createRequire(import.meta.url);
+const prisma = global.__prisma || new PrismaClient();
 
-const { PrismaClient: RequiredPismaClient } = require("@prisma/client");
-const _PrismaClient = RequiredPismaClient as typeof ImportedPrismaClient;
+if (env.NODE_ENV === "development") {
+    global.__prisma = prisma;
+}
 
-export class PrismaClient extends _PrismaClient {}
+export default prisma;

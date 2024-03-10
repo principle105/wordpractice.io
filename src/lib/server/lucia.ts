@@ -2,15 +2,11 @@ import { lucia } from "lucia";
 import { sveltekit } from "lucia/middleware";
 import { prisma } from "@lucia-auth/adapter-prisma";
 import { github, discord } from "@lucia-auth/oauth/providers";
-import { PrismaClient } from "./prisma";
-
-const client = global.__prisma || new PrismaClient();
+import client from "./prisma";
 
 if (process.env.NODE_ENV === "development") {
     global.__prisma = client;
 }
-
-export default prisma;
 
 export const auth = lucia({
     env: process.env.NODE_ENV === "development" ? "DEV" : "PROD",

@@ -80,6 +80,15 @@ export const getGuestName = (seed: number) => {
     return `Guest-${name}`;
 };
 
+export const getTotalCorrect = (replay: Replay, quote: string) => {
+    let totalCorrectChars = 0;
+    let totalIncorrectChars = 0;
+
+    // TODO: do a proper calculation here and rename getcorrect and this function so that it's less confusing
+
+    return { totalCorrectChars, totalIncorrectChars };
+};
+
 export const getGuestAvatar = (name: string) => {
     return "https://i.imgur.com/oPyoVMy.jpg";
 };

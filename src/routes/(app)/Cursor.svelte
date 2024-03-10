@@ -121,7 +121,7 @@
 >
     <div class="flex">
         <div
-            class="bg-orange-400 rounded-full"
+            class="bg-indigo-500 rounded-full"
             style="height: {fontSize * 1.25}px; width: {fontSize * 0.1}px;"
             id={replay.length === 0 ||
             replay[replay.length - 1].timestamp +
