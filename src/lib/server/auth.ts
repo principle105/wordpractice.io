@@ -30,12 +30,12 @@ export const github = new GitHub(
     process.env.GITHUB_CLIENT_ID as string,
     process.env.GITHUB_CLIENT_SECRET as string,
     {
-        redirectURI: process.env.GITHUB_REDIRECT_URI as string,
+        redirectURI: process.env.GITHUB_REDIRECT_URL as string,
     }
 );
 
 export const discord = new Discord(
     process.env.DISCORD_CLIENT_ID as string,
     process.env.DISCORD_CLIENT_SECRET as string,
-    process.env.DISCORD_REDIRECT_URI as string
+    process.env.DISCORD_REDIRECT_URL as string
 );
