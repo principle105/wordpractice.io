@@ -1,7 +1,7 @@
 import type { Socket } from "socket.io";
 import type { Replay, MatchUser, RoomWithSocketInfo } from "../src/lib/types";
 
-import { auth } from "../src/lib/server/lucia";
+import { lucia } from "../src/lib/server/auth";
 import {
     getCorrect,
     convertReplayToText,
@@ -102,7 +102,7 @@ export const handleIfRankedMatchOver = async (
     // Update the rating for each match user in the database
     users.forEach(async (user) => {
         try {
-            await auth.updateUserAttributes(user.id, {
+            await lucia.updateUserAttributes(user.id, {
                 rating: user.rating,
             });
         } catch {}

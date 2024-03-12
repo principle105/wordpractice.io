@@ -1,21 +1,24 @@
-import { dev } from "$app/environment";
-import { githubAuth } from "$lib/server/lucia";
+import { github } from "$lib/server/auth";
+import { generateState } from "arctic";
+
 import type { RequestHandler } from "./$types";
+import { serializeCookie } from "oslo/cookie";
 
 export const GET: RequestHandler = async ({ cookies }) => {
-    const [url, state] = await githubAuth.getAuthorizationUrl();
+    const state = generateState();
 
-    cookies.set("github_oauth_state", state, {
-        httpOnly: true,
-        secure: !dev,
-        path: "/",
-        maxAge: 30 * 24 * 60 * 60,
-    });
+    const url = await github.createAuthorizationURL(state);
 
     return new Response(null, {
         status: 302,
         headers: {
-            location: url.toString(),
+            Location: url.toString(),
+            "Set-Cookie": serializeCookie("github_oauth_state", state, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                maxAge: 60 * 10,
+                path: "/",
+            }),
         },
     });
 };

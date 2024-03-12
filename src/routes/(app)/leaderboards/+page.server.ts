@@ -1,5 +1,5 @@
 import type { PageServerLoad } from "./$types";
-import client from "$lib/server/prisma";
+import { client } from "$lib/server/auth";
 
 export const load: PageServerLoad = async ({ parent }) => {
     const { user } = await parent();

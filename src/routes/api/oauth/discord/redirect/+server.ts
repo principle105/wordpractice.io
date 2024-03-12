@@ -1,29 +1,40 @@
-import { auth, discordAuth } from "$lib/server/lucia";
-import { OAuthRequestError } from "@lucia-auth/oauth";
+import { client, discord, lucia } from "$lib/server/auth";
+import { OAuth2RequestError } from "arctic";
 import type { RequestHandler } from "./$types";
 import { DEFAULT_FONT_SCALE } from "$lib/config";
 
-export const GET: RequestHandler = async ({ cookies, url, locals }) => {
-    const storedState = cookies.get("discord_oauth_state");
+export const GET: RequestHandler = async ({ cookies, url }) => {
+    const stateCookie = cookies.get("discord_oauth_state");
     const code = url.searchParams.get("code");
     const state = url.searchParams.get("state");
 
-    if (!storedState || !state || storedState !== state || !code) {
+    if (!state || !stateCookie || !code || stateCookie !== state) {
         return new Response(null, {
             status: 400,
         });
     }
 
     try {
-        const { getExistingUser, discordUser, createUser } =
-            await discordAuth.validateCallback(code);
+        const tokens = await discord.validateAuthorizationCode(code);
+        const response = await fetch("https://discord.com/api/users/@me", {
+            headers: {
+                Authorization: `Bearer ${tokens.accessToken}`,
+            },
+        });
+        const discordUser: DiscordUser = await response.json();
 
         const getUser = async () => {
-            const existingUser = await getExistingUser();
+            const existingUser = await client.user.findUnique({
+                where: {
+                    id: discordUser.id.toString(),
+                },
+            });
+
             if (existingUser) return existingUser;
 
-            return await createUser({
-                attributes: {
+            return await client.user.create({
+                data: {
+                    id: discordUser.id.toString(),
                     name: discordUser.username,
                     email: discordUser.email as string,
                     rating: 1000,
@@ -35,27 +46,23 @@ export const GET: RequestHandler = async ({ cookies, url, locals }) => {
 
         const user = await getUser();
 
-        if (user === null) {
+        if (!user) {
             return new Response(null, {
-                status: 401,
+                status: 400,
             });
         }
 
-        const session = await auth.createSession({
-            userId: user.userId,
-            attributes: {},
-        });
-
-        locals.auth.setSession(session);
-
+        const session = await lucia.createSession(user.id, {});
+        const sessionCookie = lucia.createSessionCookie(session.id);
         return new Response(null, {
             status: 302,
             headers: {
                 Location: "/",
+                "Set-Cookie": sessionCookie.serialize(),
             },
         });
     } catch (e) {
-        if (e instanceof OAuthRequestError) {
+        if (e instanceof OAuth2RequestError) {
             return new Response(null, {
                 status: 400,
             });
@@ -65,3 +72,10 @@ export const GET: RequestHandler = async ({ cookies, url, locals }) => {
         });
     }
 };
+
+interface DiscordUser {
+    id: string;
+    username: string;
+    avatar: string;
+    email: string | null;
+}

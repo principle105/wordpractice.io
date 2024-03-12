@@ -1,46 +1,61 @@
-import { auth, githubAuth } from "$lib/server/lucia";
-import { OAuthRequestError } from "@lucia-auth/oauth";
+import { client, github, lucia } from "$lib/server/auth";
+import { OAuth2RequestError } from "arctic";
 import type { RequestHandler } from "./$types";
 import { DEFAULT_FONT_SCALE } from "$lib/config";
 
 export const GET: RequestHandler = async ({ cookies, url, locals }) => {
-    const storedState = cookies.get("github_oauth_state");
+    const stateCookie = cookies.get("github_oauth_state");
     const code = url.searchParams.get("code");
     const state = url.searchParams.get("state");
 
-    if (!storedState || !state || storedState !== state || !code) {
+    if (!state || !stateCookie || !code || stateCookie !== state) {
         return new Response(null, {
             status: 400,
         });
     }
 
     try {
-        const { getExistingUser, githubUser, createUser, githubTokens } =
-            await githubAuth.validateCallback(code);
-
         const getUser = async () => {
-            const existingUser = await getExistingUser();
+            const tokens = await github.validateAuthorizationCode(code);
+            const githubUserResponse = await fetch(
+                "https://api.github.com/user",
+                {
+                    headers: {
+                        Authorization: `Bearer ${tokens.accessToken}`,
+                    },
+                }
+            );
+            const githubUser: GitHubUserResult =
+                await githubUserResponse.json();
+
+            const existingUser = await client.user.findUnique({
+                where: {
+                    id: githubUser.id.toString(),
+                },
+            });
+
             if (existingUser) return existingUser;
 
             if (!githubUser.email) {
-                const oauthEmailResponse = await fetch(
+                const tokens = await github.validateAuthorizationCode(code);
+                const response = await fetch(
                     "https://api.github.com/user/emails",
                     {
                         headers: {
-                            Authorization: `token ${githubTokens.accessToken}`,
+                            Authorization: `Bearer ${tokens.accessToken}`,
                         },
                     }
                 );
-                const oauthEmails: {
+                const emails: {
                     email: string;
                     verified: boolean;
                     primary: boolean;
-                }[] = await oauthEmailResponse.json();
+                }[] = await response.json();
 
                 githubUser.email =
-                    oauthEmails.find((email) => email.primary && email.verified)
+                    emails.find((email) => email.primary && email.verified)
                         ?.email ??
-                    oauthEmails.find((email) => email.verified)?.email ??
+                    emails.find((email) => email.verified)?.email ??
                     null;
             }
 
@@ -48,8 +63,9 @@ export const GET: RequestHandler = async ({ cookies, url, locals }) => {
                 return null;
             }
 
-            return await createUser({
-                attributes: {
+            return await client.user.create({
+                data: {
+                    id: githubUser.id.toString(),
                     email: githubUser.email,
                     name: githubUser.name ?? githubUser.login,
                     rating: 1000,
@@ -61,27 +77,24 @@ export const GET: RequestHandler = async ({ cookies, url, locals }) => {
 
         const user = await getUser();
 
-        if (user === null) {
+        if (!user) {
             return new Response(null, {
-                status: 401,
+                status: 400,
             });
         }
 
-        const session = await auth.createSession({
-            userId: user.userId,
-            attributes: {},
-        });
-
-        locals.auth.setSession(session);
-
+        const session = await lucia.createSession(user.id, {});
+        const sessionCookie = lucia.createSessionCookie(session.id);
         return new Response(null, {
             status: 302,
             headers: {
                 Location: "/",
+                "Set-Cookie": sessionCookie.serialize(),
             },
         });
     } catch (e) {
-        if (e instanceof OAuthRequestError) {
+        if (e instanceof OAuth2RequestError) {
+            // bad verification code, invalid credentials, etc
             return new Response(null, {
                 status: 400,
             });
@@ -91,3 +104,11 @@ export const GET: RequestHandler = async ({ cookies, url, locals }) => {
         });
     }
 };
+
+interface GitHubUserResult {
+    id: number;
+    login: string;
+    name: string | null;
+    avatar_url: string;
+    email: string | null;
+}

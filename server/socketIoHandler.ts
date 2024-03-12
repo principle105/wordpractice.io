@@ -2,7 +2,7 @@ import { Server, Socket } from "socket.io";
 import type { ViteDevServer } from "vite";
 import type { Session } from "lucia";
 
-import { auth } from "../src/lib/server/lucia";
+import { lucia } from "../src/lib/server/auth";
 import type { MatchUser, MatchType } from "../src/lib/types";
 import {
     getGuestName,
@@ -37,7 +37,7 @@ const getMatchUserFromSession = async (
 
     if (token) {
         try {
-            session = await auth.validateSession(token);
+            session = await lucia.validateSession(token);
         } catch (e) {
             session = null;
         }

@@ -1,24 +1,28 @@
-/// <reference types="lucia" />
+export const lucia = new Lucia();
+
+declare module "lucia" {
+    interface Register {
+        Lucia: typeof lucia;
+        DatabaseSessionAttributes: DatabaseSessionAttributes;
+        DatabaseUserAttributes: DatabaseUserAttributes;
+    }
+}
+
+interface DatabaseSessionAttributes {}
+interface DatabaseUserAttributes {
+    id: string;
+    name: string;
+    email: string;
+    rating: number;
+    avatar: string;
+    fontScale: number;
+}
+
 declare global {
     namespace App {
         interface Locals {
-            auth: import("lucia").AuthRequest;
-            user: import("lucia").User | undefined;
+            user: import("lucia").User | null;
+            session: import("lucia").Session | null;
         }
     }
-    namespace Lucia {
-        type Auth = import("$lib/server/lucia").Auth;
-        type DatabaseUserAttributes = {
-            name: string;
-            email: string;
-            rating: number;
-            avatar: string;
-            fontScale: number;
-        };
-        type DatabaseSessionAttributes = {};
-    }
-
-    var __prisma: import("@prisma/client").PrismaClient;
 }
-
-export {};

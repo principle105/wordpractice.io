@@ -1,5 +1,5 @@
 import type { RequestHandler } from "./$types";
-import { auth } from "$lib/server/lucia";
+import { lucia } from "$lib/server/auth";
 
 export const POST: RequestHandler = async ({ locals }) => {
     const session = await locals.auth.validate();
@@ -9,8 +9,8 @@ export const POST: RequestHandler = async ({ locals }) => {
     }
 
     // Deleting the session from the server
-    await auth.invalidateSession(session.sessionId);
-    await auth.deleteDeadUserSessions(session.userId);
+    await lucia.invalidateSession(session.sessionId);
+    await lucia.deleteDeadUserSessions(session.userId);
 
     // Deleting the session from the client
     locals.auth.setSession(null);
