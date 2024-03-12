@@ -1,19 +1,18 @@
 import type { RequestHandler } from "./$types";
 import { lucia } from "$lib/server/auth";
 
-export const POST: RequestHandler = async ({ locals }) => {
-    const session = await locals.auth.validate();
-
-    if (!session) {
+export const POST: RequestHandler = async ({ cookies, locals }) => {
+    if (!locals.session) {
         return new Response(null, { status: 401 });
     }
 
-    // Deleting the session from the server
-    await lucia.invalidateSession(session.sessionId);
-    await lucia.deleteDeadUserSessions(session.userId);
+    await lucia.invalidateSession(locals.session.id);
 
-    // Deleting the session from the client
-    locals.auth.setSession(null);
+    const sessionCookie = lucia.createBlankSessionCookie();
+    cookies.set(sessionCookie.name, sessionCookie.value, {
+        path: ".",
+        ...sessionCookie.attributes,
+    });
 
     return new Response(null, { status: 200 });
 };

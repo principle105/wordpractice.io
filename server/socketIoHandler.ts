@@ -1,6 +1,6 @@
 import { Server, Socket } from "socket.io";
 import type { ViteDevServer } from "vite";
-import type { Session } from "lucia";
+import type { User } from "@prisma/client";
 
 import { lucia } from "../src/lib/server/auth";
 import type { MatchUser, MatchType } from "../src/lib/types";
@@ -33,17 +33,17 @@ const getMatchUserFromSession = async (
     guestAccountSeed: number,
     socket: Socket
 ): Promise<MatchUser> => {
-    let session: Session | null = null;
+    let user: User | null = null;
 
     if (token) {
         try {
-            session = await lucia.validateSession(token);
+            user = (await lucia.validateSession(token)).user as User | null;
         } catch (e) {
-            session = null;
+            user = null;
         }
     }
 
-    if (!session) {
+    if (!user) {
         const name = getGuestName(guestAccountSeed);
 
         return {
@@ -57,10 +57,10 @@ const getMatchUserFromSession = async (
     }
 
     return {
-        name: session.user.name,
-        id: session.user.id,
-        rating: session.user.rating,
-        avatar: session.user.avatar,
+        name: user.name,
+        id: user.id,
+        rating: user.rating,
+        avatar: user.avatar,
         connected: true,
         replay: [],
     };

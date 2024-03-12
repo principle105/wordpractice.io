@@ -1,6 +1,6 @@
 <script lang="ts">
     // TODO: add max wrong characters and add server-side validation for it
-    import type { User } from "lucia";
+    import type { User } from "@prisma/client";
     import type { Socket } from "socket.io-client";
 
     import type { MatchUser, Replay, RoomInfo } from "$lib/types";

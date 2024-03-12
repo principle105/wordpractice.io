@@ -11,6 +11,7 @@
     export let replay: Replay;
     export let roomInfo: RoomInfo;
 
+    // TODO: fix typing on roomInfo.startTime
     const startTime = Math.min(
         replay[0]?.timestamp,
         roomInfo.startTime + START_TIME_LENIENCY

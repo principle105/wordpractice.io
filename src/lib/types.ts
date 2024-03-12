@@ -1,4 +1,4 @@
-import type { User } from "lucia";
+import type { User } from "@prisma/client";
 import type { Socket } from "socket.io";
 
 export type MatchType = "ranked" | "casual" | "private";

@@ -3,7 +3,7 @@
     import { invalidateAll } from "$app/navigation";
     import { io } from "socket.io-client";
     import toast from "svelte-french-toast";
-    import type { User } from "lucia";
+    import type { User } from "@prisma/client";
 
     import type { Room, MatchUser, Replay, RoomInfo } from "$lib/types";
     import { match } from "$lib/stores/match";

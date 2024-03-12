@@ -7,7 +7,7 @@
 
     import MatchHandler from "./MatchHandler.svelte";
     import { getGuestAvatar, getGuestName } from "$lib/utils";
-    import type { User } from "lucia";
+    import type { User } from "@prisma/client";
     import { guestAccountSeed } from "$lib/stores/guestAccountSeed";
     import { DEFAULT_FONT_SCALE } from "$lib/config";
 
@@ -23,7 +23,6 @@
         // TODO: eventually fetch this from the local storage
         return {
             id: "",
-            userId: "",
             name,
             email: "",
             rating: 0,

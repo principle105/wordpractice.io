@@ -1,4 +1,5 @@
 import { Lucia, TimeSpan } from "lucia";
+import type { User } from "@prisma/client";
 import { PrismaClient } from "./prisma";
 import { PrismaAdapter } from "@lucia-auth/adapter-prisma";
 import { GitHub, Discord } from "arctic";
@@ -14,7 +15,8 @@ export const lucia = new Lucia(adapter, {
         },
     },
     sessionExpiresIn: new TimeSpan(30, "d"),
-    getUserAttributes: (databaseUser) => {
+    // TODO: fix typing for getUserAttributes
+    getUserAttributes: (databaseUser: any): User => {
         return {
             id: databaseUser.id,
             name: databaseUser.name,

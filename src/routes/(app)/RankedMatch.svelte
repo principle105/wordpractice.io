@@ -1,6 +1,6 @@
 <script lang="ts">
     // TODO: add max wrong characters and add server-side validation for it
-    import type { User } from "lucia";
+    import type { User } from "@prisma/client";
     import type { Socket } from "socket.io-client";
     import { defaultMatch } from "$lib/constants";
 
@@ -58,13 +58,15 @@
         match.set(null);
         socket.disconnect();
 
-        match.update((m) => {
-            if (m === null) {
-                return { ...defaultMatch, type: "ranked" };
-            }
+        setTimeout(() => {
+            match.update((m) => {
+                if (m === null) {
+                    return { ...defaultMatch, type: "ranked" };
+                }
 
-            m.type = "ranked";
-            return m;
+                m.type = "ranked";
+                return m;
+            });
         });
     };
 </script>
