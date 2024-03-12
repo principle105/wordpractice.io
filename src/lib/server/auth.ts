@@ -1,5 +1,5 @@
 import { Lucia, TimeSpan } from "lucia";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "./prisma";
 import { PrismaAdapter } from "@lucia-auth/adapter-prisma";
 import { GitHub, Discord } from "arctic";
 
