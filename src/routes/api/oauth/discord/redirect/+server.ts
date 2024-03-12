@@ -62,6 +62,7 @@ export const GET: RequestHandler = async ({ cookies, url }) => {
             },
         });
     } catch (e) {
+        console.log(e);
         if (e instanceof OAuth2RequestError) {
             return new Response(null, {
                 status: 400,

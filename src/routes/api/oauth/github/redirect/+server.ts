@@ -93,6 +93,7 @@ export const GET: RequestHandler = async ({ cookies, url, locals }) => {
             },
         });
     } catch (e) {
+        console.log(e);
         if (e instanceof OAuth2RequestError) {
             // bad verification code, invalid credentials, etc
             return new Response(null, {
