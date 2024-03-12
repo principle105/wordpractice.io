@@ -17,7 +17,7 @@ export const GET: RequestHandler = async () => {
             Location: url.toString(),
             "Set-Cookie": serializeCookie("discord_oauth_state", state, {
                 httpOnly: true,
-                secure: process.env.NODE_ENV === "production",
+                secure: process.env.NODE_ENV !== "development",
                 maxAge: 60 * 10,
                 path: "/",
             }),
