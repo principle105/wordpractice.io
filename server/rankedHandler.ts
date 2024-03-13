@@ -77,26 +77,26 @@ export const handleIfRankedMatchOver = async (
         return bWpm - aWpm;
     });
 
-    users.forEach((winner, ranking) => {
-        if (ranking === users.length - 1) return;
+    users.forEach((user1, ranking1) => {
+        for (let ranking2 = ranking1 + 1; ranking2 < users.length; ranking2++) {
+            const user2 = users[ranking2];
 
-        const loser = users[ranking + 1];
+            const user1Chance =
+                1.0 / (1.0 + Math.pow(10, (user2.rating - user1.rating) / 400));
 
-        const winnerChance =
-            1.0 / (1.0 + Math.pow(10, (loser.rating - winner.rating) / 400));
+            const user2Chance =
+                1.0 / (1.0 + Math.pow(10, (user1.rating - user2.rating) / 400));
 
-        const loserChance =
-            1.0 / (1.0 + Math.pow(10, (winner.rating - loser.rating) / 400));
+            const user1NewRating = Math.round(
+                user1.rating + K_FACTOR * (1 - user1Chance)
+            );
+            const user2NewRating = Math.round(
+                user2.rating + K_FACTOR * (0 - user2Chance)
+            );
 
-        const winnerNewRating = Math.round(
-            winner.rating + K_FACTOR * (1 - winnerChance)
-        );
-        const loserNewRating = Math.round(
-            loser.rating + K_FACTOR * (0 - loserChance)
-        );
-
-        users[ranking].rating = winnerNewRating;
-        users[ranking + 1].rating = loserNewRating;
+            users[ranking1].rating = user1NewRating;
+            users[ranking2].rating = user2NewRating;
+        }
     });
 
     // Update the rating for each match user in the database
