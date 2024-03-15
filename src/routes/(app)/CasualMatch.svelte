@@ -9,12 +9,12 @@
     import { match } from "$lib/stores/match";
     import { BASE_FONT_SIZE } from "$lib/config";
 
-    import OpponentDisplay from "./OpponentDisplay.svelte";
-    import ReplayText from "./ReplayText.svelte";
-    import WordDisplay from "./WordDisplay.svelte";
-    import TestInput from "./TestInput.svelte";
-    import MatchContainer from "./MatchContainer.svelte";
-    import EndScreen from "./EndScreen.svelte";
+    import OpponentDisplay from "$lib/components/match/OpponentDisplay.svelte";
+    import ReplayText from "$lib/components/match/ReplayText.svelte";
+    import WordDisplay from "$lib/components/match/WordDisplay.svelte";
+    import TestInput from "$lib/components/match/TestInput.svelte";
+    import MatchContainer from "$lib/components/layout/MatchContainer.svelte";
+    import EndScreen from "$lib/components/match/EndScreen.svelte";
 
     export let user: User;
     export let roomInfo: RoomInfo;
@@ -51,6 +51,15 @@
             });
         });
     };
+
+    $: clientMatchUser = {
+        id: user.id,
+        name: user.name,
+        avatar: user.avatar,
+        rating: user.rating,
+        connected: true,
+        replay,
+    } satisfies MatchUser;
 </script>
 
 <svelte:head>
@@ -60,22 +69,13 @@
 <MatchContainer {finished}>
     <div slot="racers" class="flex flex-col gap-3">
         <OpponentDisplay
-            username={user.name}
-            avatar={user.avatar}
-            {replay}
-            connected={true}
+            matchUser={clientMatchUser}
             {roomInfo}
             bind:wpm
             bind:finished
         />
-        {#each matchUsers as [_, matchUser]}
-            <OpponentDisplay
-                username={matchUser.name}
-                replay={matchUser.replay}
-                connected={matchUser.connected}
-                avatar={matchUser.avatar}
-                {roomInfo}
-            />
+        {#each matchUsers.values() as matchUser}
+            <OpponentDisplay {matchUser} {roomInfo} />
         {/each}
     </div>
 

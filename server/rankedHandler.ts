@@ -120,7 +120,7 @@ export const handleIfRankedMatchOver = async (
     socket.emit("update-rating", userRatings);
 
     // Disconnect all the users and delete the room
-    for (const [_, socket] of room.sockets) {
+    for (const socket of room.sockets.values()) {
         socket.disconnect();
     }
 };

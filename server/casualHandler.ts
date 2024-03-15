@@ -32,7 +32,7 @@ export const handleIfCasualMatchOver = async (
     casualRooms.delete(room.roomId);
 
     // Disconnect all the users and delete the room
-    for (const [_, socket] of room.sockets) {
+    for (const socket of room.sockets.values()) {
         socket.disconnect();
     }
 };

@@ -1,15 +1,16 @@
 <script lang="ts">
-    import type { PageData } from "./$types";
-    import { defaultMatch } from "$lib/constants";
-    import type { MatchType } from "$lib/types";
-    import { match } from "$lib/stores/match";
     import toast from "svelte-french-toast";
-
-    import MatchHandler from "./MatchHandler.svelte";
-    import { getGuestAvatar, getGuestName } from "$lib/utils";
+    import type { PageData } from "./$types";
     import type { User } from "@prisma/client";
+
     import { guestAccountSeed } from "$lib/stores/guestAccountSeed";
     import { DEFAULT_FONT_SCALE } from "$lib/config";
+    import { defaultMatch } from "$lib/constants";
+    import { getGuestAvatar, getGuestName } from "$lib/utils";
+    import type { MatchType } from "$lib/types";
+    import { match } from "$lib/stores/match";
+
+    import MatchHandler from "./MatchHandler.svelte";
 
     import FaRegKeyboard from "svelte-icons/fa/FaRegKeyboard.svelte";
 
@@ -20,7 +21,6 @@
 
         const name = getGuestName($guestAccountSeed);
 
-        // TODO: eventually fetch this from the local storage
         return {
             id: "",
             name,

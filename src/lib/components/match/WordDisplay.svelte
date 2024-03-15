@@ -2,6 +2,7 @@
     import { DEFAULT_LINES_SHOWN } from "$lib/config";
     import type { MatchUser, Replay, RoomInfo } from "$lib/types";
     import { convertReplayToText, getCorrect } from "$lib/utils";
+
     import Cursor from "./Cursor.svelte";
 
     export let roomInfo: RoomInfo;

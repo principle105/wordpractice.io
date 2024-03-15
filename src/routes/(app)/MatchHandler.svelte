@@ -5,9 +5,9 @@
     import toast from "svelte-french-toast";
     import type { User } from "@prisma/client";
 
-    import type { Room, MatchUser, Replay, RoomInfo } from "$lib/types";
-    import { match } from "$lib/stores/match";
     import { guestAccountSeed } from "$lib/stores/guestAccountSeed";
+    import { match } from "$lib/stores/match";
+    import type { Room, MatchUser, Replay, RoomInfo } from "$lib/types";
 
     import CasualMatch from "./CasualMatch.svelte";
     import RankedMatch from "./RankedMatch.svelte";

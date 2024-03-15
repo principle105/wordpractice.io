@@ -1,4 +1,5 @@
 <script lang="ts">
+    import type { EventHandler } from "svelte/elements";
     import type {
         CaretMovement,
         Character,
@@ -6,7 +7,6 @@
         Replay,
         RoomInfo,
     } from "$lib/types";
-    import type { EventHandler } from "svelte/elements";
 
     export let replayText: string[];
     export let roomInfo: RoomInfo;

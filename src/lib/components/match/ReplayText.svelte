@@ -1,9 +1,11 @@
 <script lang="ts">
+    import { onDestroy } from "svelte";
+
     import { START_TIME_LENIENCY } from "$lib/config";
     import type { Replay, RoomInfo } from "$lib/types";
     import { calculateWpm, getCorrect } from "$lib/utils";
+
     import WordDisplay from "./WordDisplay.svelte";
-    import { onDestroy } from "svelte";
 
     export let replay: Replay;
     export let fontSize: number;

@@ -1,8 +1,9 @@
 <script lang="ts">
+    import { onMount } from "svelte";
+
     import { CARET_BLINKING_INTERVAL } from "$lib/config";
     import type { Replay } from "$lib/types";
     import { getCaretData } from "$lib/utils";
-    import { onMount } from "svelte";
 
     export let fontSize: number;
     export let timingOffset: number;

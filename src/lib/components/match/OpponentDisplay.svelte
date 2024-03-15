@@ -1,16 +1,12 @@
 <script lang="ts">
-    import { START_TIME_LENIENCY } from "$lib/config";
-    import type { Replay, RoomInfo } from "$lib/types";
-    import { calculateWpm, convertReplayToText, getCorrect } from "$lib/utils";
     import { onMount } from "svelte";
 
-    export let username: string;
-    export let avatar: string;
-    export let replay: Replay;
-    export let connected: boolean;
-    export let rating: number | null = null;
-    export let roomInfo: RoomInfo;
+    import { START_TIME_LENIENCY } from "$lib/config";
+    import type { MatchUser, RoomInfo } from "$lib/types";
+    import { calculateWpm, convertReplayToText, getCorrect } from "$lib/utils";
 
+    export let roomInfo: RoomInfo;
+    export let matchUser: MatchUser;
     export let wpm = 0;
     export let finished = false;
 
@@ -19,19 +15,21 @@
             if (roomInfo.startTime === null) return;
 
             const startTime = Math.min(
-                replay[0]?.timestamp,
+                matchUser.replay[0]?.timestamp,
                 roomInfo.startTime + START_TIME_LENIENCY
             );
 
+            const quoteLength = roomInfo.quote.join(" ").length;
+
             if (
                 finished ||
-                correctInput.length === roomInfo.quote.join(" ").length ||
-                !connected
+                correctInput.length === quoteLength ||
+                !matchUser.connected
             ) {
                 clearInterval(interval);
                 finished = true;
                 wpm = calculateWpm(
-                    replay[replay.length - 1]?.timestamp,
+                    matchUser.replay[matchUser.replay.length - 1]?.timestamp,
                     startTime,
                     correctInput.length
                 );
@@ -42,7 +40,7 @@
         return () => clearInterval(interval);
     });
 
-    $: userReplay = convertReplayToText(replay);
+    $: userReplay = convertReplayToText(matchUser.replay);
     $: ({ correct: correctInput } = getCorrect(userReplay, roomInfo.quote));
 </script>
 
@@ -53,22 +51,24 @@
     <div class="flex gap-5 items-center">
         <div class="flex items-center gap-3">
             <img
-                src={avatar}
-                alt="{username}'s Avatar"
+                src={matchUser.avatar}
+                alt="{matchUser.name}'s Avatar"
                 class="h-12 w-12 object-cover rounded-full"
             />
-            <div class={connected ? "text-black" : "text-red-500"}>
-                {username}{rating ? `(${rating})` : ""}
+            <div class={matchUser.connected ? "text-black" : "text-red-500"}>
+                {matchUser.name}{matchUser.rating
+                    ? `(${matchUser.rating})`
+                    : ""}
             </div>
         </div>
     </div>
     <div
-        class="flex-grow h-2 rounded-lg overflow-hidden {connected
+        class="flex-grow h-2 rounded-lg overflow-hidden {matchUser.connected
             ? 'bg-gray-200'
             : 'bg-red-100'}"
     >
         <div
-            class="h-full transition-all duration-200 rounded-r-lg {connected
+            class="h-full transition-all duration-200 rounded-r-lg {matchUser.connected
                 ? 'bg-green-500'
                 : 'bg-red-300'}"
             style="width: {(correctInput.length /
