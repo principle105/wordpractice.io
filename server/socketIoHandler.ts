@@ -203,7 +203,7 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
             const room = casualRooms.get(roomId);
 
             // Disconnecting a user if they are not in the room
-            if (!room || !(user.id in room.users)) {
+            if (!room || !(newActionPayload.userId in room.users)) {
                 socket.emit(
                     "error",
                     "Something unexpected happened, please refresh"
