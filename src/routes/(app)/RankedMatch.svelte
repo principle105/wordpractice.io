@@ -91,10 +91,11 @@
             {roomInfo}
             bind:wpm
             bind:finished
+            showRating={true}
         />
 
         {#each matchUsers.values() as matchUser}
-            <OpponentDisplay {matchUser} {roomInfo} />
+            <OpponentDisplay {matchUser} {roomInfo} showRating={true} />
         {/each}
     </div>
 

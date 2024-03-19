@@ -9,6 +9,7 @@
     export let matchUser: MatchUser;
     export let wpm = 0;
     export let finished = false;
+    export let showRating: boolean = false;
 
     onMount(() => {
         const interval = setInterval(() => {
@@ -56,9 +57,7 @@
                 class="h-12 w-12 object-cover rounded-full"
             />
             <div class={matchUser.connected ? "text-black" : "text-red-500"}>
-                {matchUser.name}{matchUser.rating
-                    ? `(${matchUser.rating})`
-                    : ""}
+                {matchUser.name}{showRating ? `(${matchUser.rating})` : ""}
             </div>
         </div>
     </div>
