@@ -7,7 +7,13 @@
 
     import { guestAccountSeed } from "$lib/stores/guestAccountSeed";
     import { match } from "$lib/stores/match";
-    import type { Room, MatchUser, Replay, RoomInfo } from "$lib/types";
+    import type {
+        Room,
+        MatchUser,
+        Replay,
+        RoomInfo,
+        NewActionPayload,
+    } from "$lib/types";
 
     import CasualMatch from "./CasualMatch.svelte";
     import RankedMatch from "./RankedMatch.svelte";
@@ -62,8 +68,22 @@
         roomInfo = { ...roomInfo, startTime };
     });
 
-    socket.on("update-user", (matchUser: MatchUser) => {
+    socket.on("new-action", (newActionPayload: NewActionPayload) => {
+        let matchUser = matchUsers.get(newActionPayload.userId);
+
+        if (!matchUser) return;
+
+        // Adding the new actions to the user's replay
+        matchUser.replay = matchUser.replay.concat(newActionPayload.actions);
+
         matchUsers.set(matchUser.id, matchUser);
+        matchUsers = matchUsers;
+    });
+
+    socket.on("new-user", (newUser: MatchUser) => {
+        if (matchUsers.has(newUser.id)) return;
+
+        matchUsers.set(newUser.id, newUser);
         matchUsers = matchUsers;
     });
 
@@ -93,10 +113,32 @@
         invalidateAll();
     });
 
-    const updateUser = (replay: Replay) => {
+    socket.on("connect", () => {
+        // Quick way of checking if the user is a guest or not
+        if (user.email === "") {
+            user.id = socket.id;
+        }
+    });
+
+    const sendNewReplayAction = (replay: Replay) => {
         if (replay.length === 0) return;
 
-        socket.emit("update-user", replay);
+        const totalNewActions = replay.length - previousReplayLength;
+
+        if (totalNewActions === 0) return;
+
+        if (totalNewActions < 0) {
+            throw new Error("Something went wrong with the replay.");
+        }
+
+        const newActions = replay.slice(-totalNewActions);
+
+        socket.emit("new-action", {
+            userId: user.id,
+            actions: newActions,
+        } satisfies NewActionPayload);
+
+        previousReplayLength = replay.length;
     };
 
     onMount(() => {
@@ -125,7 +167,9 @@
         };
     });
 
-    $: replay, updateUser(replay);
+    let previousReplayLength = 0;
+
+    $: replay, sendNewReplayAction(replay);
     $: started = !!(countDown !== null && countDown <= 0);
 </script>
 

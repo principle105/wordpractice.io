@@ -3,12 +3,13 @@ import type { ViteDevServer } from "vite";
 import type { User } from "@prisma/client";
 
 import { lucia } from "../src/lib/server/auth";
-import type { MatchUser, MatchType } from "../src/lib/types";
+import type { MatchUser, MatchType, NewActionPayload } from "../src/lib/types";
 import {
     getGuestName,
     convertStringToInteger,
     getGuestAvatar,
 } from "../src/lib/utils";
+import { GUEST_SEED_SIZE } from "../src/lib/config";
 
 import registerRankedHandler, {
     handleIfRankedMatchOver,
@@ -16,10 +17,10 @@ import registerRankedHandler, {
 import registerCasualHandler, {
     handleIfCasualMatchOver,
 } from "./casualHandler";
-import { checkIfUserIsInRoom, rankedRooms, casualRooms } from "./state";
-import { GUEST_SEED_SIZE } from "../src/lib/config";
 
-const MAX_MATCH_LENGTH = 20 * 1000;
+import { checkIfUserIsInRoom, rankedRooms, casualRooms } from "./state";
+
+const MAX_MATCH_LENGTH = 60 * 1000;
 
 const MAX_CONNECTION_ATTEMPTS = 5;
 const COOLDOWN_DURATION = 10000;
@@ -185,6 +186,57 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
             return;
         }
 
+        // New typing action from the user
+        socket.on("new-action", async (newActionPayload: NewActionPayload) => {
+            // Disconnecting users who send actions on behalf of others
+            if (newActionPayload.userId !== user.id) {
+                socket.emit(
+                    "error",
+                    "You cannot send actions on behalf of others"
+                );
+                socket.disconnect();
+                return;
+            }
+
+            const roomId = Array.from(socket.rooms.values())[1];
+
+            const room = casualRooms.get(roomId);
+
+            // Disconnecting a user if they are not in the room
+            if (!room || !(user.id in room.users)) {
+                socket.emit(
+                    "error",
+                    "Something unexpected happened, please refresh"
+                );
+                socket.disconnect();
+                return;
+            }
+
+            // Disconnecting a user if they start before the countdown
+            if (
+                user.replay.length === 0 &&
+                room.startTime &&
+                room.startTime > newActionPayload.actions[0].timestamp
+            ) {
+                socket.emit("error", "You started before the countdown!");
+                socket.disconnect();
+                return;
+            }
+
+            // Adding the new action to the user's replay
+            user.replay = user.replay.concat(newActionPayload.actions);
+
+            room.users[user.id] = user;
+
+            socket.broadcast.to(roomId).emit("new-action", newActionPayload);
+
+            if (matchType === "ranked") {
+                await handleIfRankedMatchOver(room, socket);
+            } else if (matchType === "casual") {
+                await handleIfCasualMatchOver(room);
+            }
+        });
+
         // When the client disconnects
         socket.on("disconnect", async () => {
             let rooms =
@@ -203,6 +255,7 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
 
                 socket.broadcast.to(roomId).emit("user-disconnect", user.id);
 
+                // TODO: create a utility function for this
                 if (matchType === "ranked") {
                     await handleIfRankedMatchOver(room, socket);
                 } else if (matchType === "casual") {

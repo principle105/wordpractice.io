@@ -1,11 +1,11 @@
 import type { Socket } from "socket.io";
-import type { Replay, MatchUser, RoomWithSocketInfo } from "../src/lib/types";
+import type { MatchUser, RoomWithSocketInfo } from "../src/lib/types";
 import { getCorrect, convertReplayToText } from "../src/lib/utils";
 import { casualRooms } from "./state";
 import { removeSocketInformationFromRoom } from "./utils";
 
 const MAX_ROOM_SIZE = 5;
-const COUNTDOWN_TIME = 8 * 1000;
+const COUNTDOWN_TIME = 7 * 1000;
 const MIN_JOIN_COUNTDOWN_TIME = 3 * 1000;
 
 export const handleIfCasualMatchOver = async (
@@ -55,7 +55,7 @@ const registerCasualHandler = (socket: Socket, user: MatchUser) => {
             socket.join(roomId);
             joinedRoom = true;
 
-            socket.broadcast.to(roomId).emit("update-user", user);
+            socket.broadcast.to(roomId).emit("new-user", user);
             socket.emit(
                 "existing-room-info",
                 removeSocketInformationFromRoom(room, user.id)
@@ -88,36 +88,6 @@ const registerCasualHandler = (socket: Socket, user: MatchUser) => {
         casualRooms.set(roomId, room);
         socket.join(roomId);
     }
-
-    socket.on("update-user", async (replay: Replay) => {
-        const roomId = Array.from(socket.rooms.values())[1];
-
-        const room = casualRooms.get(roomId);
-
-        // Disconnecting a user if they are not in the room
-        if (!room || !(user.id in room.users)) {
-            socket.emit(
-                "error",
-                "Something unexpected happened, please refresh"
-            );
-            socket.disconnect();
-            return;
-        }
-
-        // Disconnecting a user if they start before the countdown
-        if (room.startTime && room.startTime > replay[0].timestamp) {
-            socket.emit("error", "You started before the countdown!");
-            socket.disconnect();
-            return;
-        }
-
-        user.replay = replay;
-        room.users[user.id] = user;
-
-        socket.broadcast.to(roomId).emit("update-user", user);
-
-        await handleIfCasualMatchOver(room);
-    });
 };
 
 export default registerCasualHandler;

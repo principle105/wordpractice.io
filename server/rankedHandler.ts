@@ -154,7 +154,7 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
             socket.broadcast
                 .to(roomId)
                 .emit("update-start-time", newRoomInfo.startTime);
-            socket.broadcast.to(roomId).emit("update-user", user);
+            socket.broadcast.to(roomId).emit("new-user", user);
 
             break;
         }
@@ -186,40 +186,6 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
         rankedRooms.set(roomId, room);
         socket.join(roomId);
     }
-
-    socket.on("update-user", async (replay: Replay) => {
-        const roomId = Array.from(socket.rooms.values())[1];
-
-        const room = rankedRooms.get(roomId);
-
-        if (!room) {
-            return;
-        }
-
-        // Disconnecting a user if they are not in the room
-        if (!(user.id in room.users)) {
-            socket.emit(
-                "error",
-                "Something unexpected happened, please refresh!"
-            );
-            socket.disconnect();
-            return;
-        }
-
-        // Disconnecting a user if they start before the countdown
-        if (room.startTime && room.startTime > replay[0].timestamp) {
-            socket.emit("error", "You started before the countdown!");
-            socket.disconnect();
-            return;
-        }
-
-        user.replay = replay;
-        room.users[user.id] = user;
-
-        socket.broadcast.to(roomId).emit("update-user", user);
-
-        await handleIfRankedMatchOver(room, socket);
-    });
 };
 
 export default registerRankedHandler;

@@ -43,6 +43,11 @@ export interface Room {
     users: { [key: string]: MatchUser }; // not using a Map because cannot be serialized by socket.io
 }
 
+export interface NewActionPayload {
+    userId: string;
+    actions: Replay;
+}
+
 export interface RoomWithSocketInfo extends Room {
     sockets: Map<string, Socket>;
 }
