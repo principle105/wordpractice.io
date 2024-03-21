@@ -1,13 +1,16 @@
 <script lang="ts">
     import { DEFAULT_LINES_SHOWN } from "$lib/config";
     import type { MatchUser, Replay, RoomInfo } from "$lib/types";
-    import { convertReplayToText, getCorrect } from "$lib/utils";
+    import {
+        convertReplayToText,
+        getCompletedAndIncorrectWords,
+    } from "$lib/utils";
 
     import Cursor from "./Cursor.svelte";
 
     export let roomInfo: RoomInfo;
     export let fontSize: number;
-    export let correctInput: string;
+    export let completedWords: string;
     export let incorrectChars: number;
     export let timingOffset = 0;
 
@@ -30,30 +33,32 @@
 >
     <div
         bind:this={wrapperElement}
-        class="absolute left-0 ease-in duration-300"
+        class="absolute left-0 ease-in duration-300 bg-green-400"
         style="top: -{Math.min(topPos, maxHeight)}px; transition: top 0.08s;"
     >
-        <span class="text-black">{correctInput}</span><span class="bg-red-400"
+        <span class="text-black">{completedWords}</span><span class="bg-red-400"
             >{roomInfo.quote
                 .join(" ")
                 .slice(
-                    correctInput.length,
-                    correctInput.length + incorrectChars
+                    completedWords.length,
+                    completedWords.length + incorrectChars
                 )}</span
         ><span class="text-zinc-500"
             >{roomInfo.quote
                 .join(" ")
-                .slice(correctInput.length + incorrectChars)}</span
+                .slice(completedWords.length + incorrectChars)}</span
         >
         {#each matchUsers as matchUser}
+            {@const { completedWords } = getCompletedAndIncorrectWords(
+                convertReplayToText(matchUser.replay),
+                roomInfo.quote
+            )}
+
             <Cursor
                 {fontSize}
                 {timingOffset}
                 replay={matchUser.replay}
-                correctInput={getCorrect(
-                    convertReplayToText(matchUser.replay),
-                    roomInfo.quote
-                ).correct}
+                {completedWords}
                 {wrapperElement}
                 name={matchUser.name}
                 quote={roomInfo.quote}
@@ -64,7 +69,7 @@
         {fontSize}
         {timingOffset}
         {replay}
-        {correctInput}
+        {completedWords}
         {wrapperElement}
         bind:topPos
         quote={roomInfo.quote}

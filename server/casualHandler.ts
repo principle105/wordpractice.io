@@ -4,7 +4,10 @@ import type {
     NewActionPayload,
     RoomWithSocketInfo,
 } from "../src/lib/types";
-import { getCorrect, convertReplayToText } from "../src/lib/utils";
+import {
+    getCompletedAndIncorrectWords,
+    convertReplayToText,
+} from "../src/lib/utils";
 import { casualRooms } from "./state";
 import { removeSocketInformationFromRoom } from "./utils";
 
@@ -20,12 +23,12 @@ export const handleIfCasualMatchOver = async (
         const allUsersFinished = Object.values(room.users).every((user) => {
             if (user.connected === false) return true;
 
-            const correctInput = getCorrect(
+            const { completedWords } = getCompletedAndIncorrectWords(
                 convertReplayToText(user.replay),
                 room.quote
-            ).correct;
+            );
 
-            return correctInput.length === room.quote.join(" ").length;
+            return completedWords.length === room.quote.join(" ").length;
         });
 
         if (!allUsersFinished) {
@@ -73,7 +76,10 @@ const registerCasualHandler = (socket: Socket, user: MatchUser) => {
     if (!joinedRoom) {
         const roomId = Math.random().toString(36).substring(2, 8);
 
-        const quote = "This is a casual match".split(" ");
+        const quote =
+            "power power power power power power power power power power power power power power power power power power power power power power power power power power power power power power".split(
+                " "
+            );
 
         const room: RoomWithSocketInfo = {
             roomId,

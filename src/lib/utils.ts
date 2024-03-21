@@ -24,8 +24,11 @@ export const getCaretData = (replay: Replay) => {
     return latestAction;
 };
 
-export const getCorrect = (wordsTyped: string[], quote: string[]) => {
-    const correctWords: string[] = [];
+export const getCompletedAndIncorrectWords = (
+    wordsTyped: string[],
+    quote: string[]
+) => {
+    const completedWords: string[] = [];
 
     let i = 0;
 
@@ -35,7 +38,7 @@ export const getCorrect = (wordsTyped: string[], quote: string[]) => {
         }
 
         if (word === wordsTyped[i] && wordsTyped.length - 1 > i) {
-            correctWords.push(word);
+            completedWords.push(word);
             i++;
             continue;
         }
@@ -51,15 +54,16 @@ export const getCorrect = (wordsTyped: string[], quote: string[]) => {
             n++;
         }
 
-        correctWords.push(correctChars);
+        completedWords.push(correctChars);
         break;
     }
 
-    const correct = correctWords.join(" ");
+    const completeWordsCount = completedWords.join(" ");
 
-    const incorrectChars = wordsTyped.join(" ").length - correct.length;
+    const incorrectChars =
+        wordsTyped.join(" ").length - completeWordsCount.length;
 
-    return { correct, incorrectChars };
+    return { completedWords: completeWordsCount, incorrectChars };
 };
 
 export const calculateWpm = (
@@ -80,13 +84,38 @@ export const getGuestName = (seed: number) => {
     return `Guest-${name}`;
 };
 
-export const getTotalCorrect = (replay: Replay, quote: string) => {
-    let totalCorrectChars = 0;
-    let totalIncorrectChars = 0;
+export const getTotalCorrectAndIncorrectChars = (
+    replay: Replay,
+    quote: string
+) => {
+    const totalTypedChars = replay.filter(
+        (action) => action.type === "character"
+    ).length;
 
-    // TODO: do a proper calculation here and rename getcorrect and this function so that it's less confusing
+    const wordsTyped = convertReplayToText(replay);
+
+    const { completedWords } = getCompletedAndIncorrectWords(
+        wordsTyped,
+        quote.split(" ")
+    );
+
+    const totalCorrectChars = completedWords.length;
+    const totalIncorrectChars = totalTypedChars - totalCorrectChars;
 
     return { totalCorrectChars, totalIncorrectChars };
+};
+
+export const calculateAccuracy = (
+    totalCorrectChars: number,
+    totalIncorrectChars: number
+) => {
+    const totalChars = totalCorrectChars + totalIncorrectChars;
+
+    if (totalChars === 0) {
+        return 0;
+    }
+
+    return Math.round((totalCorrectChars / totalChars) * 100);
 };
 
 export const getGuestAvatar = (name: string) => {

@@ -2,49 +2,52 @@
     import { START_TIME_LENIENCY } from "$lib/config";
     import type { Replay, RoomInfo } from "$lib/types";
     import {
+        calculateAccuracy,
         calculateWpm,
         convertReplayToText,
-        getCorrect,
-        getTotalCorrect,
+        getCompletedAndIncorrectWords,
+        getTotalCorrectAndIncorrectChars,
     } from "$lib/utils";
 
     export let replay: Replay;
     export let roomInfo: RoomInfo;
 
-    // TODO: fix typing on roomInfo.startTime
-    const startTime = Math.min(
-        replay[0]?.timestamp,
-        roomInfo.startTime + START_TIME_LENIENCY
-    );
+    const getWpm = (): number => {
+        if (roomInfo.startTime === null) return 0;
 
-    const userReplay = convertReplayToText(replay);
-    const { correct: correctInput } = getCorrect(userReplay, roomInfo.quote);
+        const startTime = Math.min(
+            replay[0]?.timestamp,
+            roomInfo.startTime + START_TIME_LENIENCY
+        );
 
-    const { totalCorrectChars, totalIncorrectChars } = getTotalCorrect(
-        replay,
-        roomInfo.quote.join(" ")
-    );
-
-    const getWpm = () => {
-        if (roomInfo.startTime === null) return;
+        const wordsTyped = convertReplayToText(replay);
+        const { completedWords } = getCompletedAndIncorrectWords(
+            wordsTyped,
+            roomInfo.quote
+        );
 
         return calculateWpm(
             replay[replay.length - 1]?.timestamp,
             startTime,
-            correctInput.length
+            completedWords.length
         );
     };
 
-    const getAccuracy = () => {
-        if (totalCorrectChars + totalIncorrectChars === 0) return 0;
+    const getAccuracy = (): number => {
+        const { totalCorrectChars, totalIncorrectChars } =
+            getTotalCorrectAndIncorrectChars(replay, roomInfo.quote.join(" "));
 
-        return (
-            (totalCorrectChars / (totalCorrectChars + totalIncorrectChars)) *
-            100
-        );
+        return calculateAccuracy(totalCorrectChars, totalIncorrectChars);
     };
 </script>
 
-<div>{getWpm()}</div>
-<div>{totalCorrectChars} {totalIncorrectChars}</div>
-<div>{getAccuracy()}</div>
+<section class="flex flex-col">
+    <div>
+        <div>Words Per Minute</div>
+        <div>{getWpm()}</div>
+    </div>
+    <div>
+        <div>Accuracy</div>
+        <div>{getAccuracy()}%</div>
+    </div>
+</section>

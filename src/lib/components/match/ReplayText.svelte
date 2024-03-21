@@ -3,7 +3,7 @@
 
     import { START_TIME_LENIENCY } from "$lib/config";
     import type { Replay, RoomInfo } from "$lib/types";
-    import { calculateWpm, getCorrect } from "$lib/utils";
+    import { calculateWpm, getCompletedAndIncorrectWords } from "$lib/utils";
 
     import WordDisplay from "./WordDisplay.svelte";
 
@@ -34,7 +34,7 @@
 
     let replaySpeed = 1;
 
-    $: ({ correct: correctInput, incorrectChars } = getCorrect(
+    $: ({ completedWords, incorrectChars } = getCompletedAndIncorrectWords(
         replayText.split(" "),
         roomInfo.quote
     ));
@@ -61,7 +61,7 @@
 
         timeElapsed = Date.now() - actualStartTime;
 
-        wpm = calculateWpm(Date.now(), actualStartTime, correctInput.length);
+        wpm = calculateWpm(Date.now(), actualStartTime, completedWords.length);
 
         const replayTimeElapsedUntilAction = action.timestamp - startTime;
 
@@ -81,7 +81,7 @@
                 wpm = calculateWpm(
                     replay[replay.length - 1].timestamp,
                     startTime,
-                    correctInput.length + 1 // TODO: Quick fix for the last character not being counted
+                    completedWords.length + 1 // TODO: Quick fix for the last character not being counted
                 );
                 return;
             }
@@ -144,7 +144,7 @@
 {#if startTime !== null}
     {#key resetWordDisplay}
         <WordDisplay
-            {correctInput}
+            {completedWords}
             {incorrectChars}
             {fontSize}
             {roomInfo}

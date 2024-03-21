@@ -3,7 +3,11 @@
 
     import { START_TIME_LENIENCY } from "$lib/config";
     import type { MatchUser, RoomInfo } from "$lib/types";
-    import { calculateWpm, convertReplayToText, getCorrect } from "$lib/utils";
+    import {
+        calculateWpm,
+        convertReplayToText,
+        getCompletedAndIncorrectWords,
+    } from "$lib/utils";
 
     export let roomInfo: RoomInfo;
     export let matchUser: MatchUser;
@@ -24,7 +28,7 @@
 
             if (
                 finished ||
-                correctInput.length === quoteLength ||
+                completedWords.length === quoteLength ||
                 !matchUser.connected
             ) {
                 clearInterval(interval);
@@ -32,22 +36,29 @@
                 wpm = calculateWpm(
                     matchUser.replay[matchUser.replay.length - 1]?.timestamp,
                     startTime,
-                    correctInput.length
+                    completedWords.length
                 );
             } else {
-                wpm = calculateWpm(Date.now(), startTime, correctInput.length);
+                wpm = calculateWpm(
+                    Date.now(),
+                    startTime,
+                    completedWords.length
+                );
             }
         }, 250);
         return () => clearInterval(interval);
     });
 
-    $: userReplay = convertReplayToText(matchUser.replay);
-    $: ({ correct: correctInput } = getCorrect(userReplay, roomInfo.quote));
+    $: wordsTyped = convertReplayToText(matchUser.replay);
+    $: ({ completedWords } = getCompletedAndIncorrectWords(
+        wordsTyped,
+        roomInfo.quote
+    ));
 </script>
 
 <div
     class="flex items-center justify-between gap-3"
-    style="order: {-correctInput.length - (finished ? wpm : 0)}"
+    style="order: {-completedWords.length - (finished ? wpm : 0)}"
 >
     <div class="flex gap-5 items-center">
         <div class="flex items-center gap-3">
@@ -70,7 +81,7 @@
             class="h-full transition-all duration-200 rounded-r-lg {matchUser.connected
                 ? 'bg-green-500'
                 : 'bg-red-300'}"
-            style="width: {(correctInput.length /
+            style="width: {(completedWords.length /
                 roomInfo.quote.join(' ').length) *
                 100}%"
         />

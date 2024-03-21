@@ -8,7 +8,7 @@ import type {
 
 import { client } from "../src/lib/server/auth";
 import {
-    getCorrect,
+    getCompletedAndIncorrectWords,
     convertReplayToText,
     calculateWpm,
 } from "../src/lib/utils";
@@ -36,12 +36,12 @@ export const handleIfRankedMatchOver = async (
             (count, user) => {
                 if (user.connected === false) return count + 1;
 
-                const correctInput = getCorrect(
+                const { completedWords } = getCompletedAndIncorrectWords(
                     convertReplayToText(user.replay),
                     room.quote
-                ).correct;
+                );
 
-                if (correctInput.length === room.quote.join(" ").length) {
+                if (completedWords.length === room.quote.join(" ").length) {
                     return count + 1;
                 }
 
@@ -70,9 +70,12 @@ export const handleIfRankedMatchOver = async (
             (room.startTime as number) + START_TIME_LENIENCY
         );
 
-        const { correct } = getCorrect(convertReplayToText(replay), room.quote);
+        const { completedWords } = getCompletedAndIncorrectWords(
+            convertReplayToText(replay),
+            room.quote
+        );
 
-        return calculateWpm(endTime, startTime, correct.length);
+        return calculateWpm(endTime, startTime, completedWords.length);
     };
 
     users.sort((a, b) => {

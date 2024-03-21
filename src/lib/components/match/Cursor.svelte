@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
 
-    import { CARET_BLINKING_INTERVAL } from "$lib/config";
+    import { CARET_BLINKING_INTERVAL, DEFAULT_LINES_SHOWN } from "$lib/config";
     import type { Replay } from "$lib/types";
     import { getCaretData } from "$lib/utils";
 
@@ -9,7 +9,7 @@
     export let timingOffset: number;
     export let replay: Replay;
     export let quote: string[];
-    export let correctInput: string;
+    export let completedWords: string;
     export let wrapperElement: HTMLElement | null;
     export let name: string | null = null;
     export let topPos = 0;
@@ -37,7 +37,7 @@
         const charWidthIncrease = fontSize * 0.6;
         const charHeightIncrease = fontSize * 1.5;
 
-        const words = correctInput.split(" ");
+        const words = completedWords.split(" ");
 
         let word: string;
         const currentIndex = words.length - 1;
@@ -83,8 +83,16 @@
         if (words[currentIndex] === "" && currentIndex !== 0) {
             const nextWordWidth =
                 quote[currentIndex].length * charWidthIncrease;
+            const cursorSize = fontSize * 0.1;
 
-            if (newLeftPos + wordWidth + nextWordWidth >= maxWidth) {
+            if (
+                newLeftPos +
+                    wordWidth +
+                    charWidthIncrease +
+                    nextWordWidth +
+                    cursorSize >=
+                maxWidth
+            ) {
                 newLine = true;
             }
             // Checking if a new word is being added instead of a delete
@@ -111,18 +119,35 @@
     };
 
     $: replay, updatePositioning();
+
+    const getTopPos = (topPos: number) => {
+        if (name !== null) {
+            return topPos;
+        }
+
+        if (wrapperElement === null) return topPos;
+
+        const wrappedThreshold =
+            wrapperElement.offsetHeight - DEFAULT_LINES_SHOWN * fontSize * 1.5;
+
+        if (wrapperElement !== null && wrappedThreshold < topPos) {
+            return topPos - wrappedThreshold;
+        }
+
+        return 0;
+    };
 </script>
 
 <svelte:window on:resize={updatePositioning} />
 
 <div
     class="absolute"
-    style="top: {topPos +
+    style="top: {getTopPos(topPos) +
         fontSize * 0.1}px; left: {leftPos}px; transition: left 0.06s linear"
 >
     <div class="flex">
         <div
-            class="bg-indigo-500 rounded-full"
+            class="bg-zinc-500 rounded-full"
             style="height: {fontSize * 1.25}px; width: {fontSize * 0.1}px;"
             id={replay.length === 0 ||
             replay[replay.length - 1].timestamp +
