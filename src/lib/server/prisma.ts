@@ -7,3 +7,5 @@ const { PrismaClient: RequiredPismaClient } = require("@prisma/client");
 const _PrismaClient = RequiredPismaClient as typeof ImportedPrismaClient;
 
 export class PrismaClient extends _PrismaClient {}
+
+// A bit of a hack, but it works

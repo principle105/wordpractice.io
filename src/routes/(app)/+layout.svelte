@@ -88,6 +88,13 @@
                     transition:fly={{ y: 8, duration: 200 }}
                 >
                     <a
+                        href="/profile/{data.user.id}"
+                        class="block px-4 py-3 hover:bg-zinc-700 hover:text-white rounded-lg transition-colors"
+                        on:click|stopPropagation={toggleDropdown}
+                    >
+                        Settings
+                    </a>
+                    <a
                         href="/settings"
                         class="block px-4 py-3 hover:bg-zinc-700 hover:text-white rounded-lg transition-colors"
                         on:click|stopPropagation={toggleDropdown}

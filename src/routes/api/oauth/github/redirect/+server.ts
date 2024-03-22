@@ -67,7 +67,7 @@ export const GET: RequestHandler = async ({ cookies, url }) => {
                 data: {
                     id: githubUser.id.toString(),
                     email: githubUser.email,
-                    name: githubUser.name ?? githubUser.login,
+                    name: githubUser.login,
                     rating: 1000,
                     fontScale: DEFAULT_FONT_SCALE,
                     avatar: githubUser.avatar_url,
