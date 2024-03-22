@@ -92,7 +92,7 @@
                         class="block px-4 py-3 hover:bg-zinc-700 hover:text-white rounded-lg transition-colors"
                         on:click|stopPropagation={toggleDropdown}
                     >
-                        Settings
+                        Profile
                     </a>
                     <a
                         href="/settings"
