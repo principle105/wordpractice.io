@@ -38,9 +38,6 @@
 
 <svelte:window on:resize={updateWrapperSize} />
 
-<div class="font-mono">
-    {wordsTyped}
-</div>
 <div
     class="whitespace-pre-line font-mono overflow-hidden my-4 relative"
     style="font-size: {fontSize}px; max-height: {fontSize * 0.15 +
