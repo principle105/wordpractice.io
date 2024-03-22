@@ -10,7 +10,7 @@ import { client } from "../src/lib/server/auth";
 import { calculateWpm } from "../src/lib/utils/stats";
 import {
     getCompletedAndIncorrectWords,
-    convertReplayToText,
+    convertReplayToWords,
 } from "../src/lib/utils/textProcessing";
 import { rankedRooms } from "./state";
 import { START_TIME_LENIENCY } from "../src/lib/config";
@@ -37,7 +37,7 @@ export const handleIfRankedMatchOver = async (
                 if (user.connected === false) return count + 1;
 
                 const { completedWords } = getCompletedAndIncorrectWords(
-                    convertReplayToText(user.replay),
+                    convertReplayToWords(user.replay, room.quote),
                     room.quote
                 );
 
@@ -71,7 +71,7 @@ export const handleIfRankedMatchOver = async (
         );
 
         const { completedWords } = getCompletedAndIncorrectWords(
-            convertReplayToText(replay),
+            convertReplayToWords(replay, room.quote),
             room.quote
         );
 

@@ -3,7 +3,7 @@
     import type { Replay, RoomInfo } from "$lib/types";
 
     import {
-        convertReplayToText,
+        convertReplayToWords,
         getCompletedAndIncorrectWords,
     } from "$lib/utils/textProcessing";
     import {
@@ -23,7 +23,7 @@
             roomInfo.startTime + START_TIME_LENIENCY
         );
 
-        const wordsTyped = convertReplayToText(replay);
+        const wordsTyped = convertReplayToWords(replay, roomInfo.quote);
         const { completedWords } = getCompletedAndIncorrectWords(
             wordsTyped,
             roomInfo.quote
@@ -38,7 +38,7 @@
 
     const getAccuracy = (): number => {
         const { totalCorrectChars, totalIncorrectChars } =
-            getTotalCorrectAndIncorrectChars(replay, roomInfo.quote.join(" "));
+            getTotalCorrectAndIncorrectChars(replay, roomInfo.quote);
 
         return calculateAccuracy(totalCorrectChars, totalIncorrectChars);
     };

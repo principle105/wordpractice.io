@@ -24,7 +24,6 @@
     export let finished: boolean;
 
     let showReplay = false;
-    let wpm = 0;
 
     const fontSize: number = user.fontScale * BASE_FONT_SIZE;
 
@@ -60,12 +59,7 @@
 
 <MatchContainer {finished}>
     <div slot="racers" class="flex flex-col gap-3">
-        <OpponentDisplay
-            matchUser={clientMatchUser}
-            {roomInfo}
-            bind:wpm
-            bind:finished
-        />
+        <OpponentDisplay matchUser={clientMatchUser} {roomInfo} bind:finished />
         {#each matchUsers.values() as matchUser}
             <OpponentDisplay {matchUser} {roomInfo} />
         {/each}

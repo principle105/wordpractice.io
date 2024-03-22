@@ -1,26 +1,42 @@
 import type { Replay } from "../types";
 import {
-    convertReplayToText,
+    convertReplayToWords,
     getCompletedAndIncorrectWords,
 } from "./textProcessing";
 
 export const getTotalCorrectAndIncorrectChars = (
     replay: Replay,
-    quote: string
+    quote: string[]
 ) => {
-    const totalTypedChars = replay.filter(
-        (action) => action.type === "character"
-    ).length;
-
-    const wordsTyped = convertReplayToText(replay);
-
-    const { completedWords } = getCompletedAndIncorrectWords(
-        wordsTyped,
-        quote.split(" ")
-    );
+    const wordsTyped = convertReplayToWords(replay, quote);
+    const { completedWords } = getCompletedAndIncorrectWords(wordsTyped, quote);
 
     const totalCorrectChars = completedWords.length;
-    const totalIncorrectChars = totalTypedChars - totalCorrectChars;
+
+    let totalIncorrectChars = 0;
+    let prevIncorrectChars = 0;
+
+    replay.forEach((action, i) => {
+        if (action.type === "character") {
+            const wordsTyped = convertReplayToWords(
+                replay.slice(0, i + 1),
+                quote
+            );
+
+            const { incorrectChars } = getCompletedAndIncorrectWords(
+                wordsTyped,
+                quote
+            );
+
+            const newIncorrectChars = incorrectChars - prevIncorrectChars;
+
+            if (newIncorrectChars > 0) {
+                totalIncorrectChars += newIncorrectChars;
+            }
+
+            prevIncorrectChars = incorrectChars;
+        }
+    });
 
     return { totalCorrectChars, totalIncorrectChars };
 };

@@ -2,7 +2,7 @@
     import { DEFAULT_MAX_LINES_SHOWN } from "$lib/config";
     import type { MatchUser, Replay, RoomInfo } from "$lib/types";
     import {
-        convertReplayToText,
+        convertReplayToWords,
         getCompletedAndIncorrectWords,
     } from "$lib/utils/textProcessing";
 
@@ -24,7 +24,7 @@
               DEFAULT_MAX_LINES_SHOWN * fontSize * 1.5
             : 0;
 
-    $: wordsTyped = convertReplayToText(replay);
+    $: wordsTyped = convertReplayToWords(replay, roomInfo.quote);
     $: ({ completedWords, incorrectChars } = getCompletedAndIncorrectWords(
         wordsTyped,
         roomInfo.quote
@@ -38,6 +38,9 @@
 
 <svelte:window on:resize={updateWrapperSize} />
 
+<div class="font-mono">
+    {wordsTyped}
+</div>
 <div
     class="whitespace-pre-line font-mono overflow-hidden my-4 relative"
     style="font-size: {fontSize}px; max-height: {fontSize * 0.15 +

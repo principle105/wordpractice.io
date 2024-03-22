@@ -13,6 +13,7 @@
     import WordDisplay from "$lib/components/match/WordDisplay.svelte";
     import TestInput from "$lib/components/match/TestInput.svelte";
     import MatchContainer from "$lib/components/layout/MatchContainer.svelte";
+    import EndScreen from "$lib/components/match/EndScreen.svelte";
 
     export let user: User;
     export let roomInfo: RoomInfo;
@@ -23,8 +24,6 @@
     export let finished: boolean;
 
     let showReplay = false;
-
-    let wpm = 0;
 
     const fontSize: number = user.fontScale * BASE_FONT_SIZE;
 
@@ -82,7 +81,6 @@
         <OpponentDisplay
             matchUser={clientMatchUser}
             {roomInfo}
-            bind:wpm
             bind:finished
             showRating={true}
         />
@@ -95,9 +93,7 @@
     <div slot="end-screen">
         <div class="mt-16 flex flex-col justify-center">
             <h2 class="text-3xl">Your Stats</h2>
-            <div>
-                <div>{wpm} wpm</div>
-            </div>
+            <EndScreen {replay} {roomInfo} />
         </div>
         <button
             class="bg-zinc-500 p-3 rounded-md text-white"

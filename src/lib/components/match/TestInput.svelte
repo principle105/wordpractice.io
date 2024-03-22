@@ -7,13 +7,13 @@
         Replay,
         RoomInfo,
     } from "$lib/types";
-    import { convertReplayToText } from "$lib/utils/textProcessing";
+    import { convertReplayToWords } from "$lib/utils/textProcessing";
 
     export let roomInfo: RoomInfo;
     export let replay: Replay;
     export let started: boolean;
 
-    $: wordsTyped = convertReplayToText(replay);
+    $: wordsTyped = convertReplayToWords(replay, roomInfo.quote);
 
     let currentWordIndex = 0;
     let wordInput = "";
@@ -29,38 +29,27 @@
     };
 
     const findRemovedSlice = (
-        totalText: string,
-        beforeDelete: string,
-        afterDelete: string
-    ) => {
-        if (afterDelete.length >= beforeDelete.length) {
+        wordBefore: string,
+        wordAfter: string,
+        newChar: string | null
+    ): [number, number] | null => {
+        if (newChar !== null) {
+            wordAfter = wordAfter.slice(0, -1);
+        }
+
+        let i = 0;
+        while (i < wordBefore.length && i < wordAfter.length) {
+            if (wordBefore[i] !== wordAfter[i]) {
+                break;
+            }
+            i++;
+        }
+
+        if (i === wordBefore.length) {
             return null;
         }
 
-        let startIndex = 0;
-        while (
-            startIndex < afterDelete.length &&
-            beforeDelete[startIndex] === afterDelete[startIndex]
-        ) {
-            startIndex++;
-        }
-
-        let endIndex = 0;
-        while (
-            endIndex < afterDelete.length &&
-            beforeDelete[beforeDelete.length - 1 - endIndex] ===
-                afterDelete[afterDelete.length - 1 - endIndex]
-        ) {
-            endIndex++;
-        }
-
-        return [
-            totalText.length + startIndex + (totalText.length !== 0 ? 1 : 0),
-            totalText.length +
-                beforeDelete.length -
-                endIndex +
-                (totalText.length !== 0 ? 1 : 0),
-        ] as [number, number];
+        return [i, wordBefore.length];
     };
 
     const handleInput: EventHandler<Event, HTMLInputElement> = (e) => {
@@ -71,9 +60,9 @@
         const newChar = (e as any as InputEvent).data;
 
         let removedSlice = findRemovedSlice(
-            roomInfo.quote.slice(0, currentWordIndex).join(" "),
-            wordsTyped.slice(currentWordIndex).join(" "),
-            wordInput
+            wordsTyped[wordsTyped.length - 1],
+            wordInput,
+            newChar
         );
 
         if (removedSlice !== null) {

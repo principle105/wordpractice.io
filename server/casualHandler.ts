@@ -6,7 +6,7 @@ import type {
 } from "../src/lib/types";
 import {
     getCompletedAndIncorrectWords,
-    convertReplayToText,
+    convertReplayToWords,
 } from "../src/lib/utils/textProcessing";
 import { casualRooms } from "./state";
 import { removeSocketInformationFromRoom } from "./utils";
@@ -24,7 +24,7 @@ export const handleIfCasualMatchOver = async (
             if (user.connected === false) return true;
 
             const { completedWords } = getCompletedAndIncorrectWords(
-                convertReplayToText(user.replay),
+                convertReplayToWords(user.replay, room.quote),
                 room.quote
             );
 
@@ -76,10 +76,11 @@ const registerCasualHandler = (socket: Socket, user: MatchUser) => {
     if (!joinedRoom) {
         const roomId = Math.random().toString(36).substring(2, 8);
 
-        const quote =
-            "The thing about a story is that you dream it as you tell it, hoping that others might then dream along with you, and in this way memory and imagination and language combine to make spirits in the head. There is the illusion of aliveness.".split(
-                " "
-            );
+        // const quote =
+        //     "The thing about a story is that you dream it as you tell it, hoping that others might then dream along with you, and in this way memory and imagination and language combine to make spirits in the head. There is the illusion of aliveness.".split(
+        //         " "
+        //     );
+        const quote = "power power power power power".split(" ");
 
         const room: RoomWithSocketInfo = {
             roomId,

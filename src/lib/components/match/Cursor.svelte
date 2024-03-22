@@ -7,7 +7,7 @@
     } from "$lib/config";
     import type { Replay } from "$lib/types";
     import {
-        convertReplayToText,
+        convertReplayToWords,
         getCaretData,
         getCompletedAndIncorrectWords,
     } from "$lib/utils/textProcessing";
@@ -43,7 +43,7 @@
         const charWidthIncrease = fontSize * 0.6;
         const charHeightIncrease = fontSize * 1.5;
 
-        const wordsTyped = convertReplayToText(replay);
+        const wordsTyped = convertReplayToWords(replay, quote);
         const { completedWords } = getCompletedAndIncorrectWords(
             wordsTyped,
             quote

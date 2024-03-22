@@ -4,16 +4,17 @@
     import { START_TIME_LENIENCY } from "$lib/config";
     import type { MatchUser, RoomInfo } from "$lib/types";
     import {
-        convertReplayToText,
+        convertReplayToWords,
         getCompletedAndIncorrectWords,
     } from "$lib/utils/textProcessing";
     import { calculateWpm } from "$lib/utils/stats";
 
     export let roomInfo: RoomInfo;
     export let matchUser: MatchUser;
-    export let wpm = 0;
     export let finished = false;
     export let showRating = false;
+
+    let wpm = 0;
 
     onMount(() => {
         const interval = setInterval(() => {
@@ -49,7 +50,7 @@
         return () => clearInterval(interval);
     });
 
-    $: wordsTyped = convertReplayToText(matchUser.replay);
+    $: wordsTyped = convertReplayToWords(matchUser.replay, roomInfo.quote);
     $: ({ completedWords } = getCompletedAndIncorrectWords(
         wordsTyped,
         roomInfo.quote

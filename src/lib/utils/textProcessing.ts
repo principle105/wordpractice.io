@@ -1,15 +1,41 @@
 import type { Replay } from "../types";
 
-export const convertReplayToText = (replay: Replay) => {
-    let text = "";
-    for (const item of replay) {
-        if (item.type === "character") {
-            text += item.letter;
-        } else if (item.type === "delete") {
-            text = text.slice(0, item.slice[0]) + text.slice(item.slice[1]);
+export const convertReplayToWords = (
+    replay: Replay,
+    quote: string[]
+): string[] => {
+    let correctWords: string[] = [];
+
+    let quoteWordIndex = 0;
+    let currentWord = "";
+
+    for (const action of replay) {
+        if (action.type === "caret") {
+            continue;
         }
+
+        if (action.type === "delete") {
+            currentWord =
+                currentWord.slice(0, action.slice[0]) +
+                currentWord.slice(action.slice[1]);
+            continue;
+        }
+
+        const word = quote[quoteWordIndex];
+
+        if (action.letter === " " && currentWord === word) {
+            quoteWordIndex++;
+            correctWords.push(currentWord);
+            currentWord = "";
+            continue;
+        }
+
+        currentWord += action.letter;
     }
-    return text.split(" ");
+
+    correctWords.push(currentWord);
+
+    return correctWords;
 };
 
 export const getCompletedAndIncorrectWords = (
