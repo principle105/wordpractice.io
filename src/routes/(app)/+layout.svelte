@@ -4,8 +4,8 @@
     import { Toaster } from "svelte-french-toast";
     import { fly } from "svelte/transition";
 
-    import IoIosArrowUp from "svelte-icons/io/IoIosArrowUp.svelte";
-    import IoIosArrowDown from "svelte-icons/io/IoIosArrowDown.svelte";
+    import MaterialSymbolsKeyboardArrowDownRounded from "~icons/material-symbols/keyboard-arrow-down-rounded";
+    import MaterialSymbolsKeyboardArrowUpRounded from "~icons/material-symbols/keyboard-arrow-up-rounded";
 
     export let data: PageData;
 
@@ -65,15 +65,19 @@
                 <div class="relative text-zinc-300 mt-0.5">
                     <div
                         class="duration-200 transition-opacity {showDropdown &&
-                            'opacity-0'} w-5 h-5"
+                            'opacity-0'}"
                     >
-                        <IoIosArrowDown />
+                        <MaterialSymbolsKeyboardArrowDownRounded
+                            class="w-8 h-8"
+                        />
                     </div>
                     <div
                         class="absolute inset-0 duration-200 transition-opacity {!showDropdown &&
-                            'opacity-0'} w-5 h-5"
+                            'opacity-0'}"
                     >
-                        <IoIosArrowUp />
+                        <MaterialSymbolsKeyboardArrowUpRounded
+                            class="w-8 h-8"
+                        />
                     </div>
                 </div>
             </button>

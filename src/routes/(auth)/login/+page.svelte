@@ -1,6 +1,6 @@
 <script lang="ts">
-    import FaGithub from "svelte-icons/fa/FaGithub.svelte";
-    import FaDiscord from "svelte-icons/fa/FaDiscord.svelte";
+    import IcBaselineDiscord from "~icons/ic/baseline-discord";
+    import BiGithub from "~icons/bi/github";
 </script>
 
 <svelte:head>
@@ -17,18 +17,14 @@
             href="/api/oauth/github"
             class="py-3 w-full bg-zinc-800 text-white rounded-md text-lg flex gap-2 justify-center items-center"
         >
-            <div class="w-6 h-6">
-                <FaGithub />
-            </div>
+            <BiGithub class="w-6 h-6" />
             <span>Github</span>
         </a>
         <a
             href="/api/oauth/discord"
             class="py-3 w-full bg-indigo-500 text-white rounded-md text-lg flex gap-2 justify-center items-center"
         >
-            <div class="w-6 h-6">
-                <FaDiscord />
-            </div>
+            <IcBaselineDiscord class="w-6 h-6" />
             <span>Discord</span>
         </a>
     </div>

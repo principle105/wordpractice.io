@@ -12,7 +12,7 @@
 
     import MatchHandler from "./MatchHandler.svelte";
 
-    import FaRegKeyboard from "svelte-icons/fa/FaRegKeyboard.svelte";
+    import Fa6RegularKeyboard from "~icons/fa6-regular/keyboard";
 
     export let data: PageData;
 
@@ -71,9 +71,7 @@
                         Lorem ipsum dolor sit amet consectetur adipisicing elit.
                     </p>
                 </div>
-                <div class="w-16 h-16 text-gray-500">
-                    <FaRegKeyboard />
-                </div>
+                <Fa6RegularKeyboard class="w-16 h-16 text-gray-500" />
             </button>
             <button
                 class="flex flex-col gap-2 items-center justify-center px-12 py-6 border border-gray-200 rounded-lg bg-gray-50"
@@ -85,9 +83,8 @@
                         Lorem ipsum dolor sit amet consectetur adipisicing elit.
                     </p>
                 </div>
-                <div class="w-16 h-16 text-gray-500">
-                    <FaRegKeyboard />
-                </div>
+
+                <Fa6RegularKeyboard class="w-16 h-16 text-gray-500" />
             </button>
             <button
                 class="flex flex-col gap-2 items-center justify-center px-12 py-6 border border-gray-200 rounded-lg bg-gray-50"
@@ -101,9 +98,7 @@
                         Lorem ipsum dolor sit amet consectetur adipisicing elit.
                     </p>
                 </div>
-                <div class="w-16 h-16 text-gray-500">
-                    <FaRegKeyboard />
-                </div>
+                <Fa6RegularKeyboard class="w-16 h-16 text-gray-500" />
             </button>
         </div>
     </section>
