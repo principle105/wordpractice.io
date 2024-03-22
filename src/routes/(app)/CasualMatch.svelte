@@ -4,10 +4,6 @@
     import type { Socket } from "socket.io-client";
 
     import type { MatchUser, Replay, RoomInfo } from "$lib/types";
-    import {
-        convertReplayToText,
-        getCompletedAndIncorrectWords,
-    } from "$lib/utils";
     import { defaultMatch } from "$lib/constants";
     import { match } from "$lib/stores/match";
     import { BASE_FONT_SIZE } from "$lib/config";
@@ -28,16 +24,9 @@
     export let finished: boolean;
 
     let showReplay = false;
-
     let wpm = 0;
 
     const fontSize: number = user.fontScale * BASE_FONT_SIZE;
-
-    $: wordsTyped = convertReplayToText(replay);
-    $: ({ completedWords, incorrectChars } = getCompletedAndIncorrectWords(
-        wordsTyped,
-        roomInfo.quote
-    ));
 
     const playAgain = () => {
         match.set(null);
@@ -107,8 +96,6 @@
 
     <svelte:fragment slot="word-display">
         <WordDisplay
-            {completedWords}
-            {incorrectChars}
             {fontSize}
             matchUsers={Array.from(matchUsers.values())}
             {replay}
@@ -117,11 +104,6 @@
     </svelte:fragment>
 
     <svelte:fragment slot="input">
-        <TestInput
-            bind:replayText={wordsTyped}
-            bind:replay
-            {started}
-            {roomInfo}
-        />
+        <TestInput bind:replay {started} {roomInfo} />
     </svelte:fragment>
 </MatchContainer>

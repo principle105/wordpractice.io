@@ -4,7 +4,7 @@
     import {
         convertReplayToText,
         getCompletedAndIncorrectWords,
-    } from "$lib/utils";
+    } from "$lib/utils/textProcessing";
 
     import Cursor from "./Cursor.svelte";
 

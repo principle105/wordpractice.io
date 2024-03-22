@@ -7,11 +7,11 @@ import type {
 } from "../src/lib/types";
 
 import { client } from "../src/lib/server/auth";
+import { calculateWpm } from "../src/lib/utils/stats";
 import {
     getCompletedAndIncorrectWords,
     convertReplayToText,
-    calculateWpm,
-} from "../src/lib/utils";
+} from "../src/lib/utils/textProcessing";
 import { rankedRooms } from "./state";
 import { START_TIME_LENIENCY } from "../src/lib/config";
 import { removeSocketInformationFromRoom } from "./utils";
@@ -25,7 +25,7 @@ const K_FACTOR = 32;
 export const handleIfRankedMatchOver = async (
     room: RoomWithSocketInfo,
     socket: Socket,
-    force: boolean = false
+    force = false
 ) => {
     if (!room) {
         return;
@@ -109,6 +109,7 @@ export const handleIfRankedMatchOver = async (
 
     // Update the rating for each match user in the database
     users.forEach(async (user) => {
+        // TODO: add property error handling
         try {
             await client.user.update({
                 where: { id: user.id },
@@ -143,7 +144,7 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
             (!room.startTime ||
                 room.startTime > Date.now() + MIN_JOIN_COUNTDOWN_TIME)
         ) {
-            let newRoomInfo = {
+            const newRoomInfo = {
                 ...room,
                 users: { ...room.users, [user.id]: user },
                 sockets: new Map([...room.sockets, [user.id, socket]]),

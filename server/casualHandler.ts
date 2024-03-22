@@ -7,7 +7,7 @@ import type {
 import {
     getCompletedAndIncorrectWords,
     convertReplayToText,
-} from "../src/lib/utils";
+} from "../src/lib/utils/textProcessing";
 import { casualRooms } from "./state";
 import { removeSocketInformationFromRoom } from "./utils";
 
@@ -17,7 +17,7 @@ const MIN_JOIN_COUNTDOWN_TIME = 3 * 1000;
 
 export const handleIfCasualMatchOver = async (
     room: RoomWithSocketInfo,
-    force: boolean = false
+    force = false
 ) => {
     if (!force) {
         const allUsersFinished = Object.values(room.users).every((user) => {

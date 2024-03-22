@@ -1,6 +1,6 @@
 import { writable } from "svelte/store";
 import { browser } from "$app/environment";
-import { convertStringToInteger } from "$lib/utils";
+import { convertStringToInteger } from "$lib/utils/conversions";
 import { GUEST_SEED_SIZE } from "$lib/config";
 
 const getInitialValue = () => {

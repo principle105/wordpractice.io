@@ -5,10 +5,6 @@
     import { defaultMatch } from "$lib/constants";
 
     import type { MatchUser, Replay, RoomInfo } from "$lib/types";
-    import {
-        convertReplayToText,
-        getCompletedAndIncorrectWords,
-    } from "$lib/utils";
     import { match } from "$lib/stores/match";
     import { BASE_FONT_SIZE } from "$lib/config";
 

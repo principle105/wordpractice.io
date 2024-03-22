@@ -3,7 +3,7 @@ import { OAuth2RequestError } from "arctic";
 import type { RequestHandler } from "./$types";
 import { DEFAULT_FONT_SCALE } from "$lib/config";
 
-export const GET: RequestHandler = async ({ cookies, url, locals }) => {
+export const GET: RequestHandler = async ({ cookies, url }) => {
     const stateCookie = cookies.get("github_oauth_state");
     const code = url.searchParams.get("code");
     const state = url.searchParams.get("state");

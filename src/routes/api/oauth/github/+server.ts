@@ -4,7 +4,7 @@ import { generateState } from "arctic";
 import type { RequestHandler } from "./$types";
 import { serializeCookie } from "oslo/cookie";
 
-export const GET: RequestHandler = async ({ cookies }) => {
+export const GET: RequestHandler = async () => {
     const state = generateState();
 
     const url = await github.createAuthorizationURL(state);

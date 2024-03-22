@@ -6,7 +6,7 @@
     import { guestAccountSeed } from "$lib/stores/guestAccountSeed";
     import { DEFAULT_FONT_SCALE } from "$lib/config";
     import { defaultMatch } from "$lib/constants";
-    import { getGuestAvatar, getGuestName } from "$lib/utils";
+    import { getGuestAvatar, getGuestName } from "$lib/utils/random";
     import type { MatchType } from "$lib/types";
     import { match } from "$lib/stores/match";
 

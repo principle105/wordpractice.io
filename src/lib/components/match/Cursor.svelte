@@ -10,7 +10,7 @@
         convertReplayToText,
         getCaretData,
         getCompletedAndIncorrectWords,
-    } from "$lib/utils";
+    } from "$lib/utils/textProcessing";
 
     export let fontSize: number;
     export let timingOffset: number;

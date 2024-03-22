@@ -3,7 +3,8 @@
 
     import { START_TIME_LENIENCY } from "$lib/config";
     import type { Replay, RoomInfo } from "$lib/types";
-    import { calculateWpm, getCompletedAndIncorrectWords } from "$lib/utils";
+    import { calculateWpm } from "$lib/utils/stats";
+    import { getCompletedAndIncorrectWords } from "$lib/utils/textProcessing";
 
     import WordDisplay from "./WordDisplay.svelte";
 
@@ -34,7 +35,7 @@
 
     let replaySpeed = 1;
 
-    $: ({ completedWords, incorrectChars } = getCompletedAndIncorrectWords(
+    $: ({ completedWords } = getCompletedAndIncorrectWords(
         replayText.split(" "),
         roomInfo.quote
     ));
@@ -144,8 +145,6 @@
 {#if startTime !== null}
     {#key resetWordDisplay}
         <WordDisplay
-            {completedWords}
-            {incorrectChars}
             {fontSize}
             {roomInfo}
             replay={slicedReplay}

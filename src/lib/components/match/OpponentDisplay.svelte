@@ -4,16 +4,16 @@
     import { START_TIME_LENIENCY } from "$lib/config";
     import type { MatchUser, RoomInfo } from "$lib/types";
     import {
-        calculateWpm,
         convertReplayToText,
         getCompletedAndIncorrectWords,
-    } from "$lib/utils";
+    } from "$lib/utils/textProcessing";
+    import { calculateWpm } from "$lib/utils/stats";
 
     export let roomInfo: RoomInfo;
     export let matchUser: MatchUser;
     export let wpm = 0;
     export let finished = false;
-    export let showRating: boolean = false;
+    export let showRating = false;
 
     onMount(() => {
         const interval = setInterval(() => {

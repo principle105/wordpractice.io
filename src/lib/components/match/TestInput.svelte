@@ -7,7 +7,7 @@
         Replay,
         RoomInfo,
     } from "$lib/types";
-    import { convertReplayToText } from "$lib/utils";
+    import { convertReplayToText } from "$lib/utils/textProcessing";
 
     export let roomInfo: RoomInfo;
     export let replay: Replay;

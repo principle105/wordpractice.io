@@ -4,11 +4,8 @@ import type { User } from "@prisma/client";
 
 import { lucia } from "../src/lib/server/auth";
 import type { MatchUser, MatchType } from "../src/lib/types";
-import {
-    getGuestName,
-    convertStringToInteger,
-    getGuestAvatar,
-} from "../src/lib/utils";
+import { getGuestName, getGuestAvatar } from "../src/lib/utils/random";
+import { convertStringToInteger } from "../src/lib/utils/conversions";
 import { GUEST_SEED_SIZE } from "../src/lib/config";
 
 import registerRankedHandler, {
@@ -153,7 +150,7 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
             return;
         }
 
-        let user = await getMatchUserFromSession(
+        const user = await getMatchUserFromSession(
             token,
             guestAccountSeedNumber,
             socket
@@ -188,7 +185,7 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
 
         // When the client disconnects
         socket.on("disconnect", async () => {
-            let rooms =
+            const rooms =
                 matchType === "ranked"
                     ? rankedRooms
                     : matchType === "casual"

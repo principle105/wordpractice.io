@@ -1,13 +1,16 @@
 <script lang="ts">
     import { START_TIME_LENIENCY } from "$lib/config";
     import type { Replay, RoomInfo } from "$lib/types";
+
     import {
-        calculateAccuracy,
-        calculateWpm,
         convertReplayToText,
         getCompletedAndIncorrectWords,
+    } from "$lib/utils/textProcessing";
+    import {
+        calculateWpm,
+        calculateAccuracy,
         getTotalCorrectAndIncorrectChars,
-    } from "$lib/utils";
+    } from "$lib/utils/stats";
 
     export let replay: Replay;
     export let roomInfo: RoomInfo;
