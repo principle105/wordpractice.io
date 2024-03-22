@@ -44,7 +44,7 @@
         fontSize * DEFAULT_MAX_LINES_SHOWN * 1.5}px;"
 >
     <div
-        class="ease-in transition-[margin-top] duration-200"
+        class="ease-in transition-[margin-top] relative duration-150"
         style="margin-top: -{Math.min(topPos, maxHeight)}px;"
         bind:this={wrapperElement}
     >
@@ -61,11 +61,6 @@
                 .slice(completedWords.length + incorrectChars)}</span
         >
         {#each matchUsers as matchUser}
-            {@const { completedWords } = getCompletedAndIncorrectWords(
-                convertReplayToText(matchUser.replay),
-                roomInfo.quote
-            )}
-
             <Cursor
                 {fontSize}
                 {timingOffset}
