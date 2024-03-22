@@ -32,12 +32,6 @@
 
     const fontSize: number = user.fontScale * BASE_FONT_SIZE;
 
-    $: wordsTyped = convertReplayToText(replay);
-    $: ({ completedWords, incorrectChars } = getCompletedAndIncorrectWords(
-        wordsTyped,
-        roomInfo.quote
-    ));
-
     socket.on("update-rating", (ratings: { id: string; rating: number }[]) => {
         ratings.forEach((u) => {
             if (u.id === user.id) {
@@ -128,8 +122,6 @@
 
     <svelte:fragment slot="word-display">
         <WordDisplay
-            {completedWords}
-            {incorrectChars}
             {fontSize}
             matchUsers={Array.from(matchUsers.values())}
             {replay}
@@ -138,11 +130,6 @@
     </svelte:fragment>
 
     <svelte:fragment slot="input">
-        <TestInput
-            bind:replayText={wordsTyped}
-            bind:replay
-            {started}
-            {roomInfo}
-        />
+        <TestInput bind:replay {started} {roomInfo} />
     </svelte:fragment>
 </MatchContainer>

@@ -1,15 +1,21 @@
 <script lang="ts">
     import { onMount } from "svelte";
 
-    import { CARET_BLINKING_INTERVAL, DEFAULT_LINES_SHOWN } from "$lib/config";
+    import {
+        CARET_BLINKING_INTERVAL,
+        DEFAULT_MAX_LINES_SHOWN,
+    } from "$lib/config";
     import type { Replay } from "$lib/types";
-    import { getCaretData } from "$lib/utils";
+    import {
+        convertReplayToText,
+        getCaretData,
+        getCompletedAndIncorrectWords,
+    } from "$lib/utils";
 
     export let fontSize: number;
     export let timingOffset: number;
     export let replay: Replay;
     export let quote: string[];
-    export let completedWords: string;
     export let wrapperElement: HTMLElement | null;
     export let name: string | null = null;
     export let topPos = 0;
@@ -30,12 +36,18 @@
     });
 
     // TODO: Fix correcting a word in the middle
-    const updatePositioning = () => {
+    const updatePositioning = (replay: Replay) => {
         if (wrapperElement === null) return;
 
         const maxWidth = wrapperElement.offsetWidth;
         const charWidthIncrease = fontSize * 0.6;
         const charHeightIncrease = fontSize * 1.5;
+
+        const wordsTyped = convertReplayToText(replay);
+        const { completedWords } = getCompletedAndIncorrectWords(
+            wordsTyped,
+            quote
+        );
 
         const words = completedWords.split(" ");
 
@@ -118,7 +130,7 @@
         topPos = newTopPos;
     };
 
-    $: replay, updatePositioning();
+    $: replay, updatePositioning(replay);
 
     const getTopPos = (topPos: number) => {
         if (name !== null) {
@@ -128,17 +140,29 @@
         if (wrapperElement === null) return topPos;
 
         const wrappedThreshold =
-            wrapperElement.offsetHeight - DEFAULT_LINES_SHOWN * fontSize * 1.5;
+            wrapperElement.offsetHeight -
+            DEFAULT_MAX_LINES_SHOWN * fontSize * 1.5;
 
-        if (wrapperElement !== null && wrappedThreshold < topPos) {
+        if (wrappedThreshold < topPos) {
             return topPos - wrappedThreshold;
         }
 
         return 0;
     };
+
+    const handleResize = () => {
+        lastWordPositions = [0, 0];
+        lastWordIndex = 0;
+        leftPos = 0;
+        topPos = 0;
+
+        for (let i = 0; i < replay.length; i++) {
+            updatePositioning(replay.slice(0, i + 1));
+        }
+    };
 </script>
 
-<svelte:window on:resize={updatePositioning} />
+<svelte:window on:resize={handleResize} />
 
 <div
     class="absolute"

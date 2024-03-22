@@ -7,11 +7,13 @@
         Replay,
         RoomInfo,
     } from "$lib/types";
+    import { convertReplayToText } from "$lib/utils";
 
-    export let replayText: string[];
     export let roomInfo: RoomInfo;
     export let replay: Replay;
     export let started: boolean;
+
+    $: wordsTyped = convertReplayToText(replay);
 
     let currentWordIndex = 0;
     let wordInput = "";
@@ -70,7 +72,7 @@
 
         let removedSlice = findRemovedSlice(
             roomInfo.quote.slice(0, currentWordIndex).join(" "),
-            replayText.slice(currentWordIndex).join(" "),
+            wordsTyped.slice(currentWordIndex).join(" "),
             wordInput
         );
 
@@ -105,7 +107,7 @@
         if (
             newChar === " " &&
             roomInfo.quote[currentWordIndex] ===
-                replayText.slice(currentWordIndex).join(" ")
+                wordsTyped.slice(currentWordIndex).join(" ")
         ) {
             wordInput = "";
             currentWordIndex++;
@@ -161,7 +163,7 @@
     autocapitalize="off"
     spellcheck="false"
     maxlength={50}
-    placeholder={replayText.join(" ") === "" ? "Type here" : ""}
+    placeholder={wordsTyped.join(" ") === "" ? "Type here" : ""}
     class="w-full p-3 outline-none border-zinc-500 border rounded-md"
     on:keydown={checkForCursorEvent}
     bind:value={wordInput}

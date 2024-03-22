@@ -77,7 +77,7 @@ const registerCasualHandler = (socket: Socket, user: MatchUser) => {
         const roomId = Math.random().toString(36).substring(2, 8);
 
         const quote =
-            "power power power power power power power power power power power power power power power power power power power power power power power power power power power power power power".split(
+            "The thing about a story is that you dream it as you tell it, hoping that others might then dream along with you, and in this way memory and imagination and language combine to make spirits in the head. There is the illusion of aliveness.".split(
                 " "
             );
 
