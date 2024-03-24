@@ -2,6 +2,7 @@ import { client, github, lucia } from "$lib/server/auth";
 import { OAuth2RequestError } from "arctic";
 import type { RequestHandler } from "./$types";
 import { DEFAULT_FONT_SCALE } from "$lib/config";
+import { getRedirectUrlFromState } from "$lib/utils/random";
 
 export const GET: RequestHandler = async ({ cookies, url }) => {
     const stateCookie = cookies.get("github_oauth_state");
@@ -15,6 +16,8 @@ export const GET: RequestHandler = async ({ cookies, url }) => {
     }
 
     try {
+        const redirectUrl = getRedirectUrlFromState(state);
+
         const getUser = async () => {
             const tokens = await github.validateAuthorizationCode(code);
             const githubUserResponse = await fetch(
@@ -88,7 +91,7 @@ export const GET: RequestHandler = async ({ cookies, url }) => {
         return new Response(null, {
             status: 302,
             headers: {
-                Location: "/",
+                Location: `/${redirectUrl.slice(1)}`, // prevents open redirect attack
                 "Set-Cookie": sessionCookie.serialize(),
             },
         });

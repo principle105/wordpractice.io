@@ -1,7 +1,6 @@
 <script lang="ts">
     import type { PageData } from "./$types";
     import { match } from "$lib/stores/match";
-    import { Toaster } from "svelte-french-toast";
     import { fly } from "svelte/transition";
 
     import MaterialSymbolsKeyboardArrowDownRounded from "~icons/material-symbols/keyboard-arrow-down-rounded";
@@ -33,8 +32,6 @@
         showDropdown = false;
     };
 </script>
-
-<Toaster />
 
 <svelte:window on:click={closeDropdown} />
 

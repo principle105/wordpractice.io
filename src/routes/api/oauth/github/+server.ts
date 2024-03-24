@@ -1,18 +1,22 @@
 import { github } from "$lib/server/auth";
-import { generateState } from "arctic";
+import { generateState } from "$lib/utils/random";
 
 import type { RequestHandler } from "./$types";
 import { serializeCookie } from "oslo/cookie";
 
-export const GET: RequestHandler = async () => {
-    const state = generateState();
+export const GET: RequestHandler = async ({ url }) => {
+    const redirectTo = url.searchParams.get("redirectTo");
 
-    const url = await github.createAuthorizationURL(state);
+    const state = generateState(redirectTo);
+
+    const githubAuthorizationURL = (
+        await github.createAuthorizationURL(state)
+    ).toString();
 
     return new Response(null, {
         status: 302,
         headers: {
-            Location: url.toString(),
+            Location: githubAuthorizationURL,
             "Set-Cookie": serializeCookie("github_oauth_state", state, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV !== "development",

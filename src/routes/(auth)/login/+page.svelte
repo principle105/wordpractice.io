@@ -1,6 +1,12 @@
 <script lang="ts">
+    import { page } from "$app/stores";
+
     import IcBaselineDiscord from "~icons/ic/baseline-discord";
     import BiGithub from "~icons/bi/github";
+
+    const redirectTo = $page.url.searchParams.get("redirectTo");
+
+    $: params = redirectTo ? `?redirectTo=${redirectTo}` : "";
 </script>
 
 <svelte:head>
@@ -14,14 +20,14 @@
 
     <div class="flex flex-col gap-2">
         <a
-            href="/api/oauth/github"
+            href="/api/oauth/github{params}"
             class="py-3 w-full bg-zinc-800 text-white rounded-md text-lg flex gap-2 justify-center items-center"
         >
             <BiGithub class="w-6 h-6" />
             <span>Github</span>
         </a>
         <a
-            href="/api/oauth/discord"
+            href="/api/oauth/discord{params}"
             class="py-3 w-full bg-indigo-500 text-white rounded-md text-lg flex gap-2 justify-center items-center"
         >
             <IcBaselineDiscord class="w-6 h-6" />

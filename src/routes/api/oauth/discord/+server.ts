@@ -1,20 +1,24 @@
 import { discord } from "$lib/server/auth";
-import { generateState } from "arctic";
+import { generateState } from "$lib/utils/random";
 
 import type { RequestHandler } from "./$types";
 import { serializeCookie } from "oslo/cookie";
 
-export const GET: RequestHandler = async () => {
-    const state = generateState();
+export const GET: RequestHandler = async ({ url }) => {
+    const redirectTo = url.searchParams.get("redirectTo");
 
-    const url = await discord.createAuthorizationURL(state, {
-        scopes: ["identify", "email"],
-    });
+    const state = generateState(redirectTo);
+
+    const discordAuthorizationURL = (
+        await discord.createAuthorizationURL(state, {
+            scopes: ["identify", "email"],
+        })
+    ).toString();
 
     return new Response(null, {
         status: 302,
         headers: {
-            Location: url.toString(),
+            Location: discordAuthorizationURL,
             "Set-Cookie": serializeCookie("discord_oauth_state", state, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV !== "development",
