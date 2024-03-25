@@ -4,7 +4,7 @@ export const convertReplayToWords = (
     replay: Replay,
     quote: string[]
 ): string[] => {
-    let correctWords: string[] = [];
+    const correctWords: string[] = [];
 
     let quoteWordIndex = 0;
     let currentWord = "";

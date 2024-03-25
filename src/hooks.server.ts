@@ -1,6 +1,8 @@
 import { lucia } from "$lib/server/auth";
 
 import type { Handle } from "@sveltejs/kit";
+import type { Session } from "lucia";
+import type { User } from "@prisma/client";
 
 export const handle: Handle = async ({ event, resolve }) => {
     const sessionId = event.cookies.get(lucia.sessionCookieName);
@@ -10,7 +12,11 @@ export const handle: Handle = async ({ event, resolve }) => {
         return resolve(event);
     }
 
-    const { session, user } = await lucia.validateSession(sessionId);
+    const { session, user } = (await lucia.validateSession(sessionId)) as {
+        session: Session | null;
+        user: User | null;
+    };
+
     if (session && session.fresh) {
         const sessionCookie = lucia.createSessionCookie(session.id);
         event.cookies.set(sessionCookie.name, sessionCookie.value, {
@@ -25,7 +31,9 @@ export const handle: Handle = async ({ event, resolve }) => {
             ...sessionCookie.attributes,
         });
     }
+
     event.locals.user = user;
     event.locals.session = session;
+
     return resolve(event);
 };
