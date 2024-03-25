@@ -174,7 +174,7 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
         const roomId = Math.random().toString(36).substring(2, 8);
 
         const quote =
-            "power power power power power power power power power power".split(
+            "You're finally granted a chance to get even! And if you don't take it... then you're no better than a puppy who cowers when someone takes the leash off."
                 " "
             );
 
