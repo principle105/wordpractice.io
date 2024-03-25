@@ -1,4 +1,7 @@
+// User
 export const DEFAULT_FONT_SCALE = 1;
+export const DEFAULT_RATING = 600;
+
 export const BASE_FONT_SIZE = 30;
 export const CARET_BLINKING_INTERVAL = 1 * 1000;
 export const START_TIME_LENIENCY = 2 * 1000;

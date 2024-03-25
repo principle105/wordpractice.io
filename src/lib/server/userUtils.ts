@@ -1,4 +1,4 @@
-import { DEFAULT_FONT_SCALE } from "$lib/config";
+import { DEFAULT_FONT_SCALE, DEFAULT_RATING } from "$lib/config";
 import type { Provider } from "$lib/types";
 import { client } from "./auth";
 
@@ -64,7 +64,7 @@ export const getUser = async (
             id: username,
             name: username,
             email: email,
-            rating: 1000,
+            rating: DEFAULT_RATING,
             fontScale: DEFAULT_FONT_SCALE,
             avatar: avatar,
             provider,
