@@ -28,6 +28,7 @@
             rating: 0,
             fontScale: DEFAULT_FONT_SCALE,
             avatar: getGuestAvatar(name),
+            provider: "",
         } satisfies User;
     };
 

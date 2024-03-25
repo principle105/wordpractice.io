@@ -1,9 +1,9 @@
 <script lang="ts">
-    import { getFlash } from "sveltekit-flash-message";
     import { page } from "$app/stores";
+    import { getFlash } from "sveltekit-flash-message";
+    import toast, { Toaster } from "svelte-french-toast";
 
     import "./global.css";
-    import toast, { Toaster } from "svelte-french-toast";
 
     const flash = getFlash(page);
 

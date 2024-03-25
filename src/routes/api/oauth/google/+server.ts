@@ -1,9 +1,10 @@
+import { generateCodeVerifier } from "arctic";
+import { serializeCookie } from "oslo/cookie";
+
 import { google } from "$lib/server/auth";
 import { generateState } from "$lib/utils/random";
-import { generateCodeVerifier } from "arctic";
 
 import type { RequestHandler } from "./$types";
-import { serializeCookie } from "oslo/cookie";
 
 export const GET: RequestHandler = async ({ url }) => {
     const redirectTo = url.searchParams.get("redirectTo");

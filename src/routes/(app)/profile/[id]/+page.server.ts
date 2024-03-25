@@ -1,8 +1,8 @@
+import type { User } from "@prisma/client";
 import { client } from "$lib/server/auth";
 
 import type { PageServerLoad } from "./$types";
 import type { UserProfile } from "$lib/types";
-import type { User } from "@prisma/client";
 
 export const load: PageServerLoad = async ({ params, parent }) => {
     const { user } = await parent();
