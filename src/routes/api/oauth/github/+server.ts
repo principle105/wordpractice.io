@@ -9,14 +9,12 @@ export const GET: RequestHandler = async ({ url }) => {
 
     const state = generateState(redirectTo);
 
-    const githubAuthorizationURL = (
-        await github.createAuthorizationURL(state)
-    ).toString();
+    const githubAuthorizationURL = await github.createAuthorizationURL(state);
 
     return new Response(null, {
         status: 302,
         headers: {
-            Location: githubAuthorizationURL,
+            Location: githubAuthorizationURL.toString(),
             "Set-Cookie": serializeCookie("github_oauth_state", state, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV !== "development",

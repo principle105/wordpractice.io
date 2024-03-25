@@ -2,7 +2,7 @@ import { Lucia, TimeSpan } from "lucia";
 import type { User } from "@prisma/client";
 import { PrismaClient } from "./prisma";
 import { PrismaAdapter } from "@lucia-auth/adapter-prisma";
-import { GitHub, Discord } from "arctic";
+import { GitHub, Discord, Google } from "arctic";
 
 export const client = new PrismaClient();
 
@@ -24,6 +24,7 @@ export const lucia = new Lucia(adapter, {
             rating: databaseUser.rating,
             fontScale: databaseUser.fontScale,
             avatar: databaseUser.avatar,
+            provider: databaseUser.provider,
         };
     },
 });
@@ -40,4 +41,10 @@ export const discord = new Discord(
     process.env.DISCORD_CLIENT_ID as string,
     process.env.DISCORD_CLIENT_SECRET as string,
     process.env.DISCORD_REDIRECT_URL as string
+);
+
+export const google = new Google(
+    process.env.GOOGLE_CLIENT_ID as string,
+    process.env.GOOGLE_CLIENT_SECRET as string,
+    process.env.GOOGLE_REDIRECT_URL as string
 );

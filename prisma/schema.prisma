@@ -6,12 +6,15 @@ datasource db {
 model User {
   id          String    @id @map("_id")
   name        String
-  email       String
+  email       String    @unique
+  provider    String
   avatar      String
   rating      Int
   fontScale   Int
   authSession Session[]
   key         Key[]
+
+  @@index([id, email, provider])
 }
 
 model Session {

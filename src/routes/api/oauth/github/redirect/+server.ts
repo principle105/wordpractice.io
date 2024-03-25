@@ -1,8 +1,8 @@
-import { client, github, lucia } from "$lib/server/auth";
+import { github, lucia } from "$lib/server/auth";
 import { OAuth2RequestError } from "arctic";
 import type { RequestHandler } from "./$types";
-import { DEFAULT_FONT_SCALE } from "$lib/config";
 import { getRedirectUrlFromState } from "$lib/utils/random";
+import { getUser } from "$lib/server/userUtils";
 
 export const GET: RequestHandler = async ({ cookies, url }) => {
     const stateCookie = cookies.get("github_oauth_state");
@@ -18,67 +18,46 @@ export const GET: RequestHandler = async ({ cookies, url }) => {
     try {
         const redirectUrl = getRedirectUrlFromState(state);
 
-        const getUser = async () => {
+        const tokens = await github.validateAuthorizationCode(code);
+        const githubUserResponse = await fetch("https://api.github.com/user", {
+            headers: {
+                Authorization: `Bearer ${tokens.accessToken}`,
+            },
+        });
+        const githubUser: GitHubUserResult = await githubUserResponse.json();
+
+        if (!githubUser.email) {
             const tokens = await github.validateAuthorizationCode(code);
-            const githubUserResponse = await fetch(
-                "https://api.github.com/user",
-                {
-                    headers: {
-                        Authorization: `Bearer ${tokens.accessToken}`,
-                    },
-                }
-            );
-            const githubUser: GitHubUserResult =
-                await githubUserResponse.json();
-
-            const existingUser = await client.user.findUnique({
-                where: {
-                    id: githubUser.id.toString(),
+            const response = await fetch("https://api.github.com/user/emails", {
+                headers: {
+                    Authorization: `Bearer ${tokens.accessToken}`,
                 },
             });
+            const emails: {
+                email: string;
+                verified: boolean;
+                primary: boolean;
+            }[] = await response.json();
 
-            if (existingUser) return existingUser;
+            githubUser.email =
+                emails.find((email) => email.primary && email.verified)
+                    ?.email ??
+                emails.find((email) => email.verified)?.email ??
+                null;
+        }
 
-            if (!githubUser.email) {
-                const tokens = await github.validateAuthorizationCode(code);
-                const response = await fetch(
-                    "https://api.github.com/user/emails",
-                    {
-                        headers: {
-                            Authorization: `Bearer ${tokens.accessToken}`,
-                        },
-                    }
-                );
-                const emails: {
-                    email: string;
-                    verified: boolean;
-                    primary: boolean;
-                }[] = await response.json();
-
-                githubUser.email =
-                    emails.find((email) => email.primary && email.verified)
-                        ?.email ??
-                    emails.find((email) => email.verified)?.email ??
-                    null;
-            }
-
-            if (!githubUser.email) {
-                return null;
-            }
-
-            return await client.user.create({
-                data: {
-                    id: githubUser.id.toString(),
-                    email: githubUser.email,
-                    name: githubUser.login,
-                    rating: 1000,
-                    fontScale: DEFAULT_FONT_SCALE,
-                    avatar: githubUser.avatar_url,
-                },
+        if (!githubUser.email) {
+            return new Response(null, {
+                status: 400,
             });
-        };
+        }
 
-        const user = await getUser();
+        const user = await getUser(
+            "github",
+            githubUser.email,
+            githubUser.login,
+            githubUser.avatar_url
+        );
 
         if (!user) {
             return new Response(null, {
@@ -98,7 +77,6 @@ export const GET: RequestHandler = async ({ cookies, url }) => {
     } catch (e) {
         console.log(e);
         if (e instanceof OAuth2RequestError) {
-            // bad verification code, invalid credentials, etc
             return new Response(null, {
                 status: 400,
             });

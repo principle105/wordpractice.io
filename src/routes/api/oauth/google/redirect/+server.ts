@@ -1,15 +1,23 @@
-import { discord, lucia } from "$lib/server/auth";
+import { google, lucia } from "$lib/server/auth";
 import { OAuth2RequestError } from "arctic";
 import type { RequestHandler } from "./$types";
 import { getRedirectUrlFromState } from "$lib/utils/random";
 import { getUser } from "$lib/server/userUtils";
 
 export const GET: RequestHandler = async ({ cookies, url }) => {
-    const stateCookie = cookies.get("discord_oauth_state");
+    const stateCookie = cookies.get("google_oauth_state");
+    const codeVerifierCookie = cookies.get("google_oauth_code_verifier");
+
     const code = url.searchParams.get("code");
     const state = url.searchParams.get("state");
 
-    if (!state || !stateCookie || !code || stateCookie !== state) {
+    if (
+        !state ||
+        !stateCookie ||
+        !code ||
+        !codeVerifierCookie ||
+        stateCookie !== state
+    ) {
         return new Response(null, {
             status: 400,
         });
@@ -18,28 +26,27 @@ export const GET: RequestHandler = async ({ cookies, url }) => {
     try {
         const redirectUrl = getRedirectUrlFromState(state);
 
-        const tokens = await discord.validateAuthorizationCode(code);
-        const discordUserResponse = await fetch(
-            "https://discord.com/api/users/@me",
+        const tokens = await google.validateAuthorizationCode(
+            code,
+            codeVerifierCookie
+        );
+
+        const googleUserResponse = await fetch(
+            "https://openidconnect.googleapis.com/v1/userinfo",
             {
                 headers: {
                     Authorization: `Bearer ${tokens.accessToken}`,
                 },
             }
         );
-        const discordUser: DiscordUser = await discordUserResponse.json();
 
-        if (!discordUser.email) {
-            return new Response(null, {
-                status: 400,
-            });
-        }
+        const googleUser: GoogleUser = await googleUserResponse.json();
 
         const user = await getUser(
-            "discord",
-            discordUser.email,
-            discordUser.username,
-            `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`
+            "google",
+            googleUser.email,
+            googleUser.name,
+            googleUser.picture
         );
 
         if (!user) {
@@ -70,9 +77,12 @@ export const GET: RequestHandler = async ({ cookies, url }) => {
     }
 };
 
-interface DiscordUser {
-    id: string;
-    username: string;
-    avatar: string;
-    email: string | null;
+interface GoogleUser {
+    sub: string;
+    name: string;
+    given_name: string;
+    picture: string;
+    email: string;
+    email_verified: boolean;
+    locale: string;
 }

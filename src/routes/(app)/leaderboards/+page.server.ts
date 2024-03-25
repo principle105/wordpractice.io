@@ -19,9 +19,8 @@ export const load: PageServerLoad = async ({ parent }) => {
     let userPosition: number | null = null;
 
     if (user) {
-        userPosition = leaderboard.findIndex(
-            (entry) => entry.name === user.name
-        );
+        userPosition =
+            leaderboard.findIndex((entry) => entry.name === user.name) + 1;
 
         if (userPosition === -1) {
             const userRank = await client.user.count({
