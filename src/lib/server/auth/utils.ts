@@ -1,6 +1,7 @@
 import { DEFAULT_FONT_SCALE, DEFAULT_RATING } from "$lib/config";
 import type { Provider } from "$lib/types";
-import { client } from "./auth";
+
+import { client } from "./clients";
 
 export const generateUsername = async (oAuthName: string) => {
     let username = oAuthName.toLowerCase();

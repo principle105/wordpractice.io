@@ -14,8 +14,8 @@
         match.set(null);
     };
 
-    const logout = async () => {
-        const res = await fetch("/logout", { method: "POST" });
+    const signOut = async () => {
+        const res = await fetch("/signout", { method: "POST" });
 
         if (res.ok) {
             // Reload the entire page
@@ -45,7 +45,7 @@
     </nav>
 
     {#if !data.user}
-        <a href="/login">Login</a>
+        <a href="/signin">Sign In</a>
     {:else}
         <div class="relative lg:ml-5 mr-2 lg:mr-0 z-50">
             <button
@@ -100,9 +100,9 @@
                     </a>
                     <button
                         class="w-full text-left px-4 py-3 hover:bg-zinc-700 hover:text-white rounded-lg transition-colors"
-                        on:click|stopPropagation={logout}
+                        on:click|stopPropagation={signOut}
                     >
-                        Logout
+                        Log Out
                     </button>
                 </div>
             {/if}

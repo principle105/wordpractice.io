@@ -1,4 +1,4 @@
-import { lucia } from "$lib/server/auth";
+import { lucia } from "$lib/server/auth/clients";
 
 import type { Handle } from "@sveltejs/kit";
 import type { Session } from "lucia";

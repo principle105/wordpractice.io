@@ -11,13 +11,13 @@
 </script>
 
 <svelte:head>
-    <title>Login - WordPractice</title>
+    <title>Sign In - WordPractice</title>
 </svelte:head>
 
 <main
     class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-sm text-center"
 >
-    <h1 class="text-3xl font-bold mb-6">Log in</h1>
+    <h1 class="text-3xl font-bold mb-6">Sign In</h1>
 
     <div class="flex flex-col gap-2">
         <a

@@ -6,7 +6,7 @@ import type {
     NewActionPayload,
 } from "../src/lib/types";
 
-import { client } from "../src/lib/server/auth";
+import { client } from "../src/lib/server/auth/clients";
 import { calculateWpm } from "../src/lib/utils/stats";
 import {
     getCompletedAndIncorrectWords,

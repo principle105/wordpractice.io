@@ -6,10 +6,10 @@ export const load: LayoutServerLoad = async (event) => {
         const fromUrl = event.url.pathname + event.url.search;
 
         throw redirect(
-            `/login?redirectTo=${fromUrl}`,
+            `/signin?redirectTo=${fromUrl}`,
             {
                 type: "error",
-                message: "You need to be logged in to view this page.",
+                message: "You need to be signed in to view this page.",
             },
             event
         );

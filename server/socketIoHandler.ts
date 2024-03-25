@@ -2,7 +2,7 @@ import { Server, Socket } from "socket.io";
 import type { ViteDevServer } from "vite";
 import type { User } from "@prisma/client";
 
-import { lucia } from "../src/lib/server/auth";
+import { lucia } from "../src/lib/server/auth/clients";
 import type { MatchUser, MatchType } from "../src/lib/types";
 import { getGuestName, getGuestAvatar } from "../src/lib/utils/random";
 import { convertStringToInteger } from "../src/lib/utils/conversions";
@@ -169,7 +169,7 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
             if (!token) {
                 socket.emit(
                     "error",
-                    "You need to be logged in to play ranked mode."
+                    "You need to be signed in to play ranked mode."
                 );
                 socket.disconnect();
                 return;

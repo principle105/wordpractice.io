@@ -1,5 +1,5 @@
 import type { RequestHandler } from "./$types";
-import { lucia } from "$lib/server/auth";
+import { lucia } from "$lib/server/auth/clients";
 
 export const POST: RequestHandler = async ({ cookies, locals }) => {
     if (!locals.session) {

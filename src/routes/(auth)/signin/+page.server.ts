@@ -7,7 +7,7 @@ export const load: PageServerLoad = async (event) => {
             "/",
             {
                 type: "error",
-                message: "You are already logged in.",
+                message: "You are already signed in.",
             },
             event
         );

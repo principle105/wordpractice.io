@@ -1,8 +1,9 @@
 import { Lucia, TimeSpan } from "lucia";
 import type { User } from "@prisma/client";
-import { PrismaClient } from "./prisma";
 import { PrismaAdapter } from "@lucia-auth/adapter-prisma";
 import { GitHub, Discord, Google } from "arctic";
+
+import { PrismaClient } from "../prisma";
 
 export const client = new PrismaClient();
 

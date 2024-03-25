@@ -1,8 +1,8 @@
-import { discord, lucia } from "$lib/server/auth";
+import { discord, lucia } from "$lib/server/auth/clients";
 import { OAuth2RequestError } from "arctic";
 import type { RequestHandler } from "./$types";
 import { getRedirectUrlFromState } from "$lib/utils/random";
-import { getUser } from "$lib/server/userUtils";
+import { getUser } from "$lib/server/auth/utils";
 
 export const GET: RequestHandler = async ({ cookies, url }) => {
     const stateCookie = cookies.get("discord_oauth_state");

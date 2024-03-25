@@ -36,7 +36,7 @@
 
     const changeMatchType = (newMatchType: MatchType) => {
         if (newMatchType === "ranked" && !data.user) {
-            toast.error("You need to be logged in to play ranked mode.");
+            toast.error("You need to be signed in to play ranked mode.");
             return;
         }
 

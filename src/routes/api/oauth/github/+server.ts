@@ -1,6 +1,6 @@
 import { serializeCookie } from "oslo/cookie";
 
-import { github } from "$lib/server/auth";
+import { github } from "$lib/server/auth/clients";
 import { generateState } from "$lib/utils/random";
 
 import type { RequestHandler } from "./$types";

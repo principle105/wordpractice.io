@@ -1,7 +1,7 @@
 import { generateCodeVerifier } from "arctic";
 import { serializeCookie } from "oslo/cookie";
 
-import { google } from "$lib/server/auth";
+import { google } from "$lib/server/auth/clients";
 import { generateState } from "$lib/utils/random";
 
 import type { RequestHandler } from "./$types";

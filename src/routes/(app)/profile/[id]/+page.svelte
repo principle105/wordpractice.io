@@ -6,6 +6,14 @@
     const userProfile = data.userProfile;
 </script>
 
+<svelte:head>
+    {#if userProfile}
+        <title>{userProfile.name}'s Profile - WordPractice</title>
+    {:else}
+        <title>User Not Found - WordPractice</title>
+    {/if}
+</svelte:head>
+
 {#if userProfile}
     <section>
         <div>Username: {userProfile.id}</div>
