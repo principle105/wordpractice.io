@@ -93,7 +93,7 @@
     socket.on("match-ended", () => {
         if (finished === false) {
             finished = true;
-            toast.error("Sorry the match has ended.");
+            toast.error("The match reached the maximum time limit.");
         }
 
         matchUsers = new Map(

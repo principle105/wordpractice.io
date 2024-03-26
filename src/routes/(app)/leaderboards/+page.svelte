@@ -16,8 +16,8 @@
             <div>{player.rating}</div>
         </a>
     {/each}
-    <div>-------------------</div>
     {#if data.userPosition !== null && data.user !== null}
+        <div>-------------------</div>
         <a class="flex gap-3" href="/profile/{data.user.id}">
             <div>
                 {data.userPosition}.

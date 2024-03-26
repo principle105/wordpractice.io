@@ -5,6 +5,7 @@ import type { UserProfile } from "$lib/types";
 export const load: PageServerLoad = async ({ parent }) => {
     const { user } = await parent();
 
+    // Fetching the top 100 users ordered by rating
     const leaderboard: UserProfile[] = await client.user.findMany({
         select: {
             id: true,
