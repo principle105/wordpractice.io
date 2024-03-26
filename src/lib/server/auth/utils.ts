@@ -1,10 +1,12 @@
 import { DEFAULT_FONT_SCALE, DEFAULT_RATING } from "$lib/config";
 import type { Provider } from "$lib/types";
+import { Prisma } from "@prisma/client";
 
 import { client } from "./clients";
 
 export const generateUsername = async (oAuthName: string) => {
-    let username = oAuthName.toLowerCase();
+    // Setting username to lowercase and removing spaces
+    let username = oAuthName.toLowerCase().replace(/\s/g, "");
 
     if (username.length > 12) {
         username = username.slice(0, 12);
@@ -75,4 +77,14 @@ export const getExistingOrCreateNewUser = async (
             provider,
         },
     });
+};
+
+export const getSignInErrorMessage = (e: unknown): string => {
+    if (e instanceof Prisma.PrismaClientKnownRequestError) {
+        if (e.code === "P2002") {
+            return "That email address is already used by another account.";
+        }
+    }
+
+    return "Something went wrong while signing in. Please try again.";
 };

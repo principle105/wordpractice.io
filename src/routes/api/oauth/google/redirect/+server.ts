@@ -1,17 +1,18 @@
-import { OAuth2RequestError } from "arctic";
+import { redirect } from "sveltekit-flash-message/server";
 
 import { google, lucia } from "$lib/server/auth/clients";
 import { getRedirectURLFromState } from "$lib/utils/random";
 import { getExistingOrCreateNewUser } from "$lib/server/auth/utils";
 
 import type { RequestHandler } from "./$types";
+import { getSignInErrorMessage } from "$lib/server/auth/utils";
 
-export const GET: RequestHandler = async ({ cookies, url }) => {
-    const stateCookie = cookies.get("google_oauth_state");
-    const codeVerifierCookie = cookies.get("google_oauth_code_verifier");
+export const GET: RequestHandler = async (event) => {
+    const stateCookie = event.cookies.get("google_oauth_state");
+    const codeVerifierCookie = event.cookies.get("google_oauth_code_verifier");
 
-    const code = url.searchParams.get("code");
-    const state = url.searchParams.get("state");
+    const code = event.url.searchParams.get("code");
+    const state = event.url.searchParams.get("state");
 
     if (
         !state ||
@@ -20,9 +21,15 @@ export const GET: RequestHandler = async ({ cookies, url }) => {
         !codeVerifierCookie ||
         stateCookie !== state
     ) {
-        return new Response(null, {
-            status: 400,
-        });
+        throw redirect(
+            "/signin",
+            {
+                type: "error",
+                message:
+                    "Something went wrong while signing in. Please try again.",
+            },
+            event
+        );
     }
 
     try {
@@ -61,15 +68,14 @@ export const GET: RequestHandler = async ({ cookies, url }) => {
             },
         });
     } catch (e) {
-        console.log(e);
-        if (e instanceof OAuth2RequestError) {
-            return new Response(null, {
-                status: 400,
-            });
-        }
-        return new Response(null, {
-            status: 500,
-        });
+        throw redirect(
+            "/signin",
+            {
+                type: "error",
+                message: getSignInErrorMessage(e),
+            },
+            event
+        );
     }
 };
 

@@ -9,12 +9,23 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 
     const userId = params.id;
 
-    let profileUser: User | null = null;
+    let userProfile: UserProfile | null = null;
 
     if (user && user.id === userId) {
-        profileUser = user;
+        userProfile = {
+            id: user.id,
+            name: user.name,
+            rating: user.rating,
+            avatar: user.avatar,
+        };
     } else {
         const fetchedProfileUser = await client.user.findUnique({
+            select: {
+                id: true,
+                name: true,
+                rating: true,
+                avatar: true,
+            },
             where: {
                 id: userId,
             },
@@ -26,22 +37,14 @@ export const load: PageServerLoad = async ({ params, parent }) => {
             };
         }
 
-        profileUser = fetchedProfileUser;
+        userProfile = fetchedProfileUser;
     }
 
-    if (!profileUser) {
+    if (!userProfile) {
         return {
             userProfile: null,
         };
     }
-
-    // Converting the user into a UserProfile to prevent leaking sensitive information
-    const userProfile: UserProfile = {
-        id: profileUser.id,
-        name: profileUser.name,
-        rating: profileUser.rating,
-        avatar: profileUser.avatar,
-    };
 
     return {
         userProfile,

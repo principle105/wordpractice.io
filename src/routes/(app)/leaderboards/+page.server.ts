@@ -1,14 +1,16 @@
 import type { PageServerLoad } from "./$types";
 import { client } from "$lib/server/auth/clients";
+import type { UserProfile } from "$lib/types";
 
 export const load: PageServerLoad = async ({ parent }) => {
     const { user } = await parent();
 
-    // prisma get top 100 users by .rating, return leaderboard with usernames and ratings
-    const leaderboard = await client.user.findMany({
+    const leaderboard: UserProfile[] = await client.user.findMany({
         select: {
+            id: true,
             name: true,
             rating: true,
+            avatar: true,
         },
         orderBy: {
             rating: "desc",
@@ -34,5 +36,5 @@ export const load: PageServerLoad = async ({ parent }) => {
         }
     }
 
-    return { user, userPosition, leaderboard };
+    return { userPosition, leaderboard };
 };

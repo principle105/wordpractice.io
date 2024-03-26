@@ -1,21 +1,28 @@
-import { OAuth2RequestError } from "arctic";
+import { redirect } from "sveltekit-flash-message/server";
 
 import { github, lucia } from "$lib/server/auth/clients";
 import { getRedirectURLFromState } from "$lib/utils/random";
 import { getExistingOrCreateNewUser } from "$lib/server/auth/utils";
 
 import type { RequestHandler } from "./$types";
+import { getSignInErrorMessage } from "$lib/server/auth/utils";
 
-export const GET: RequestHandler = async ({ cookies, url }) => {
-    const stateCookie = cookies.get("github_oauth_state");
+export const GET: RequestHandler = async (event) => {
+    const stateCookie = event.cookies.get("github_oauth_state");
 
-    const code = url.searchParams.get("code");
-    const state = url.searchParams.get("state");
+    const code = event.url.searchParams.get("code");
+    const state = event.url.searchParams.get("state");
 
     if (!state || !stateCookie || !code || stateCookie !== state) {
-        return new Response(null, {
-            status: 400,
-        });
+        throw redirect(
+            "/signin",
+            {
+                type: "error",
+                message:
+                    "Something went wrong while signing in. Please try again.",
+            },
+            event
+        );
     }
 
     try {
@@ -57,9 +64,15 @@ export const GET: RequestHandler = async ({ cookies, url }) => {
         }
 
         if (!githubUser.email) {
-            return new Response(null, {
-                status: 500,
-            });
+            throw redirect(
+                "/signin",
+                {
+                    type: "error",
+                    message:
+                        "You need to have an email address associated with your GitHub account to sign in.",
+                },
+                event
+            );
         }
 
         const user = await getExistingOrCreateNewUser("github", {
@@ -79,15 +92,14 @@ export const GET: RequestHandler = async ({ cookies, url }) => {
             },
         });
     } catch (e) {
-        console.log(e);
-        if (e instanceof OAuth2RequestError) {
-            return new Response(null, {
-                status: 400,
-            });
-        }
-        return new Response(null, {
-            status: 500,
-        });
+        throw redirect(
+            "/signin",
+            {
+                type: "error",
+                message: getSignInErrorMessage(e),
+            },
+            event
+        );
     }
 };
 
