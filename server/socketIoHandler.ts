@@ -65,10 +65,10 @@ const getMatchUserFromSession = async (
 };
 
 const getCurrentRateLimit = (userId: string): number => {
-    let { lastAttempt, attempts } = connectionAttempts.get(userId) ?? {
-        lastAttempt: 0,
-        attempts: 0,
-    };
+    const connectionData = connectionAttempts.get(userId);
+
+    const lastAttempt = connectionData?.lastAttempt ?? 0;
+    let attempts = connectionData?.attempts ?? 0;
 
     if (Date.now() - lastAttempt > COOLDOWN_DURATION) {
         connectionAttempts.delete(userId);

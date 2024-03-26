@@ -1,6 +1,7 @@
 import type { User } from "@prisma/client";
 import type { Socket } from "socket.io";
 
+export type Provider = "github" | "google" | "discord";
 export type MatchType = "ranked" | "casual" | "private";
 
 export interface Match {
@@ -36,23 +37,22 @@ export interface MatchUser extends UserProfile {
     connected: boolean;
 }
 
-export interface Room {
+export interface RoomInfo {
     matchType: MatchType;
     roomId: string;
     startTime: number | null;
     quote: string[];
-    users: { [key: string]: MatchUser }; // not using a Map because cannot be serialized by socket.io
 }
 
-export interface NewActionPayload {
-    userId: string;
-    actions: Replay;
+export interface Room extends RoomInfo {
+    users: { [key: string]: MatchUser }; // not using a Map because cannot be serialized by socket.io
 }
 
 export interface RoomWithSocketInfo extends Room {
     sockets: Map<string, Socket>;
 }
 
-export type RoomInfo = Omit<Room, "users">;
-
-export type Provider = "github" | "google" | "discord";
+export interface NewActionPayload {
+    userId: string;
+    actions: Replay;
+}

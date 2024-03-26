@@ -117,7 +117,9 @@ export const handleIfRankedMatchOver = async (
                     rating: user.rating,
                 },
             });
-        } catch {}
+        } catch (e) {
+            console.log(e);
+        }
     });
 
     const userRatings = users.map((user) => ({

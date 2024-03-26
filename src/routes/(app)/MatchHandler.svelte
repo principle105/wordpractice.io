@@ -24,9 +24,12 @@
     let replay: Replay = [];
     let roomInfo: RoomInfo | null = null;
     let matchUsers = new Map<string, MatchUser>();
+
     let finished = false;
     let countDown: number | null = null;
     let interval: ReturnType<typeof setInterval>;
+
+    let previousReplayLength = 0;
 
     let socket = io({
         query: {
@@ -166,8 +169,6 @@
             clearInterval(interval);
         };
     });
-
-    let previousReplayLength = 0;
 
     $: replay, sendNewReplayAction(replay);
     $: started = !!(countDown !== null && countDown <= 0);

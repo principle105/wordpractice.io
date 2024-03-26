@@ -12,7 +12,7 @@ export const GET: RequestHandler = async ({ url }) => {
     const state = generateState(redirectTo);
     const codeVerifier = generateCodeVerifier();
 
-    const googleAuthorizationURL = await google.createAuthorizationURL(
+    const googleAuthURL = await google.createAuthorizationURL(
         state,
         codeVerifier,
         {
@@ -23,7 +23,7 @@ export const GET: RequestHandler = async ({ url }) => {
     return new Response(null, {
         status: 302,
         headers: {
-            Location: googleAuthorizationURL.toString(),
+            Location: googleAuthURL.toString(),
             "Set-Cookie": [
                 serializeCookie("google_oauth_state", state, {
                     httpOnly: true,

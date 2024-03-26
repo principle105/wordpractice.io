@@ -1,8 +1,10 @@
-import { google, lucia } from "$lib/server/auth/clients";
 import { OAuth2RequestError } from "arctic";
+
+import { google, lucia } from "$lib/server/auth/clients";
+import { getRedirectURLFromState } from "$lib/utils/random";
+import { getExistingOrCreateNewUser } from "$lib/server/auth/utils";
+
 import type { RequestHandler } from "./$types";
-import { getRedirectUrlFromState } from "$lib/utils/random";
-import { getUser } from "$lib/server/auth/utils";
 
 export const GET: RequestHandler = async ({ cookies, url }) => {
     const stateCookie = cookies.get("google_oauth_state");
@@ -24,7 +26,7 @@ export const GET: RequestHandler = async ({ cookies, url }) => {
     }
 
     try {
-        const redirectUrl = getRedirectUrlFromState(state);
+        const redirectURL = getRedirectURLFromState(state);
 
         const tokens = await google.validateAuthorizationCode(
             code,
@@ -42,25 +44,19 @@ export const GET: RequestHandler = async ({ cookies, url }) => {
 
         const googleUser: GoogleUser = await googleUserResponse.json();
 
-        const user = await getUser(
-            "google",
-            googleUser.email,
-            googleUser.name,
-            googleUser.picture
-        );
-
-        if (!user) {
-            return new Response(null, {
-                status: 400,
-            });
-        }
+        const user = await getExistingOrCreateNewUser("google", {
+            name: googleUser.name,
+            email: googleUser.email,
+            avatar: googleUser.picture,
+        });
 
         const session = await lucia.createSession(user.id, {});
         const sessionCookie = lucia.createSessionCookie(session.id);
+
         return new Response(null, {
             status: 302,
             headers: {
-                Location: `/${redirectUrl.slice(1)}`, // prevents open redirect attack
+                Location: `/${redirectURL.slice(1)}`, // prevents open redirect attack
                 "Set-Cookie": sessionCookie.serialize(),
             },
         });

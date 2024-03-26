@@ -10,17 +10,14 @@ export const GET: RequestHandler = async ({ url }) => {
 
     const state = generateState(redirectTo);
 
-    const discordAuthorizationURL = await discord.createAuthorizationURL(
-        state,
-        {
-            scopes: ["identify", "email"],
-        }
-    );
+    const discordAuthURL = await discord.createAuthorizationURL(state, {
+        scopes: ["identify", "email"],
+    });
 
     return new Response(null, {
         status: 302,
         headers: {
-            Location: discordAuthorizationURL.toString(),
+            Location: discordAuthURL.toString(),
             "Set-Cookie": serializeCookie("discord_oauth_state", state, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV !== "development",

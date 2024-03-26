@@ -1,11 +1,14 @@
-import { github, lucia } from "$lib/server/auth/clients";
 import { OAuth2RequestError } from "arctic";
+
+import { github, lucia } from "$lib/server/auth/clients";
+import { getRedirectURLFromState } from "$lib/utils/random";
+import { getExistingOrCreateNewUser } from "$lib/server/auth/utils";
+
 import type { RequestHandler } from "./$types";
-import { getRedirectUrlFromState } from "$lib/utils/random";
-import { getUser } from "$lib/server/auth/utils";
 
 export const GET: RequestHandler = async ({ cookies, url }) => {
     const stateCookie = cookies.get("github_oauth_state");
+
     const code = url.searchParams.get("code");
     const state = url.searchParams.get("state");
 
@@ -16,7 +19,7 @@ export const GET: RequestHandler = async ({ cookies, url }) => {
     }
 
     try {
-        const redirectUrl = getRedirectUrlFromState(state);
+        const redirectURL = getRedirectURLFromState(state);
 
         const tokens = await github.validateAuthorizationCode(code);
         const githubUserResponse = await fetch("https://api.github.com/user", {
@@ -26,6 +29,7 @@ export const GET: RequestHandler = async ({ cookies, url }) => {
         });
         const githubUser: GitHubUserResult = await githubUserResponse.json();
 
+        // Fetching the email separately if the user has their email privated
         if (!githubUser.email) {
             const tokens = await github.validateAuthorizationCode(code);
             const response = await fetch("https://api.github.com/user/emails", {
@@ -33,44 +37,44 @@ export const GET: RequestHandler = async ({ cookies, url }) => {
                     Authorization: `Bearer ${tokens.accessToken}`,
                 },
             });
-            const emails: {
-                email: string;
-                verified: boolean;
-                primary: boolean;
-            }[] = await response.json();
+            const emails: EmailResult[] = await response.json();
 
-            githubUser.email =
-                emails.find((email) => email.primary && email.verified)
-                    ?.email ??
-                emails.find((email) => email.verified)?.email ??
-                null;
+            const primaryEmail = emails.find(
+                (email) => email.primary && email.verified
+            )?.email;
+
+            if (primaryEmail) {
+                githubUser.email = primaryEmail;
+            } else {
+                const verifiedEmail = emails.find(
+                    (email) => email.verified
+                )?.email;
+
+                if (verifiedEmail) {
+                    githubUser.email = verifiedEmail;
+                }
+            }
         }
 
         if (!githubUser.email) {
             return new Response(null, {
-                status: 400,
+                status: 500,
             });
         }
 
-        const user = await getUser(
-            "github",
-            githubUser.email,
-            githubUser.login,
-            githubUser.avatar_url
-        );
-
-        if (!user) {
-            return new Response(null, {
-                status: 400,
-            });
-        }
+        const user = await getExistingOrCreateNewUser("github", {
+            name: githubUser.login,
+            email: githubUser.email,
+            avatar: githubUser.avatar_url,
+        });
 
         const session = await lucia.createSession(user.id, {});
         const sessionCookie = lucia.createSessionCookie(session.id);
+
         return new Response(null, {
             status: 302,
             headers: {
-                Location: `/${redirectUrl.slice(1)}`, // prevents open redirect attack
+                Location: `/${redirectURL.slice(1)}`, // prevents open redirect attack
                 "Set-Cookie": sessionCookie.serialize(),
             },
         });
@@ -93,4 +97,10 @@ interface GitHubUserResult {
     name: string | null;
     avatar_url: string;
     email: string | null;
+}
+
+interface EmailResult {
+    email: string;
+    verified: boolean;
+    primary: boolean;
 }

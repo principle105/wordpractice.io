@@ -30,22 +30,24 @@ export const lucia = new Lucia(adapter, {
     },
 });
 
+const BASE_URL = process.env.BASE_URL as string;
+
 export const github = new GitHub(
     process.env.GITHUB_CLIENT_ID as string,
     process.env.GITHUB_CLIENT_SECRET as string,
     {
-        redirectURI: process.env.GITHUB_REDIRECT_URL as string,
+        redirectURI: `${BASE_URL}/api/oauth/github/redirect`,
     }
 );
 
 export const discord = new Discord(
     process.env.DISCORD_CLIENT_ID as string,
     process.env.DISCORD_CLIENT_SECRET as string,
-    process.env.DISCORD_REDIRECT_URL as string
+    `${BASE_URL}/api/oauth/discord/redirect`
 );
 
 export const google = new Google(
     process.env.GOOGLE_CLIENT_ID as string,
     process.env.GOOGLE_CLIENT_SECRET as string,
-    process.env.GOOGLE_REDIRECT_URL as string
+    `${BASE_URL}/api/oauth/google/redirect`
 );

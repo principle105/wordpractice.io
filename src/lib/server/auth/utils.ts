@@ -43,31 +43,35 @@ export const generateUsername = async (oAuthName: string) => {
     return uniqueUsername;
 };
 
-export const getUser = async (
+interface UserAttributes {
+    email: string;
+    name: string;
+    avatar: string;
+}
+
+export const getExistingOrCreateNewUser = async (
     provider: Provider,
-    email: string,
-    name: string,
-    avatar: string
+    userAttributes: UserAttributes
 ) => {
     const existingUser = await client.user.findUnique({
         where: {
-            email: email,
+            email: userAttributes.email,
             provider,
         },
     });
 
     if (existingUser) return existingUser;
 
-    const username = await generateUsername(name);
+    const username = await generateUsername(userAttributes.name);
 
     return await client.user.create({
         data: {
             id: username,
             name: username,
-            email: email,
+            email: userAttributes.email,
             rating: DEFAULT_RATING,
             fontScale: DEFAULT_FONT_SCALE,
-            avatar: avatar,
+            avatar: userAttributes.avatar,
             provider,
         },
     });

@@ -14,10 +14,10 @@ export const webSocketServer = {
 export default defineConfig({
     plugins: [
         sveltekit(),
-        webSocketServer,
         Icons({
             compiler: "svelte",
             autoInstall: true, // experimental
         }),
+        webSocketServer,
     ],
 });

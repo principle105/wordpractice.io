@@ -6,6 +6,7 @@ import type { User } from "@prisma/client";
 
 export const handle: Handle = async ({ event, resolve }) => {
     const sessionId = event.cookies.get(lucia.sessionCookieName);
+
     if (!sessionId) {
         event.locals.user = null;
         event.locals.session = null;
@@ -24,6 +25,7 @@ export const handle: Handle = async ({ event, resolve }) => {
             ...sessionCookie.attributes,
         });
     }
+
     if (!session) {
         const sessionCookie = lucia.createBlankSessionCookie();
         event.cookies.set(sessionCookie.name, sessionCookie.value, {
