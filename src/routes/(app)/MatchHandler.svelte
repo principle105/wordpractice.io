@@ -118,7 +118,7 @@
 
     socket.on("connect", () => {
         // Quick way of checking if the user is a guest or not
-        if (user.email === "") {
+        if (user.email === "" && socket.id) {
             user.id = socket.id;
         }
     });
