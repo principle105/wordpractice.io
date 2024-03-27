@@ -15,7 +15,7 @@ import registerCasualHandler, {
     handleIfCasualMatchOver,
 } from "./casualHandler";
 
-import { checkIfUserIsInRoom, rankedRooms, casualRooms } from "./state";
+import { rankedRooms, casualRooms } from "./state";
 
 const MAX_MATCH_LENGTH = 60 * 1000;
 
@@ -156,12 +156,11 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
             socket
         );
 
-        const isUserInRoom = checkIfUserIsInRoom(user.id);
-
-        if (isUserInRoom) {
-            socket.emit("error", "You are already in a match.");
-            socket.disconnect();
-            return;
+        // Disconnecting the user from all the rooms they are currently in
+        for (const room of [...rankedRooms.values(), ...casualRooms.values()]) {
+            if (room.sockets.has(user.id) && room.users[user.id].connected) {
+                room.sockets.get(user.id)?.disconnect(true);
+            }
         }
 
         if (matchType === "ranked") {
@@ -185,6 +184,8 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
 
         // When the client disconnects
         socket.on("disconnect", async () => {
+            console.log("USER DISCONNECTED");
+
             const rooms =
                 matchType === "ranked"
                     ? rankedRooms
