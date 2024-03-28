@@ -14,7 +14,7 @@ export const generateUsername = async (oAuthName: string) => {
 
     const isUsernameAvailable = await client.user.findUnique({
         where: {
-            id: username,
+            username,
         },
     });
 
@@ -33,7 +33,7 @@ export const generateUsername = async (oAuthName: string) => {
 
         const existingUser = await client.user.findUnique({
             where: {
-                id: uniqueUsername,
+                username: uniqueUsername,
             },
         });
 
@@ -68,12 +68,12 @@ export const getExistingOrCreateNewUser = async (
 
     return await client.user.create({
         data: {
-            id: username,
-            name: username,
+            username,
             email: userAttributes.email,
             rating: DEFAULT_RATING,
             fontScale: DEFAULT_FONT_SCALE,
             avatar: userAttributes.avatar,
+            pickedInitalUsername: false,
             provider,
         },
     });

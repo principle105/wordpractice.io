@@ -6,7 +6,7 @@
     import { guestAccountSeed } from "$lib/stores/guestAccountSeed";
     import { DEFAULT_FONT_SCALE } from "$lib/config";
     import { defaultMatch } from "$lib/constants";
-    import { getGuestAvatar, getGuestName } from "$lib/utils/random";
+    import { getGuestAvatar, getGuestUsername } from "$lib/utils/random";
     import type { MatchType } from "$lib/types";
     import { match } from "$lib/stores/match";
 
@@ -20,16 +20,17 @@
     const getUser = () => {
         if (data.user) return data.user;
 
-        const name = getGuestName($guestAccountSeed);
+        const username = getGuestUsername($guestAccountSeed);
 
         return {
             id: "",
-            name,
+            username,
             email: "",
             rating: 0,
             fontScale: DEFAULT_FONT_SCALE,
-            avatar: getGuestAvatar(name),
+            avatar: getGuestAvatar(username),
             provider: "",
+            pickedInitalUsername: true,
         } satisfies User;
     };
 

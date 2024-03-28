@@ -9,7 +9,7 @@ export const load: PageServerLoad = async ({ parent }) => {
     const leaderboard: UserProfile[] = await client.user.findMany({
         select: {
             id: true,
-            name: true,
+            username: true,
             rating: true,
             avatar: true,
         },
@@ -23,7 +23,8 @@ export const load: PageServerLoad = async ({ parent }) => {
 
     if (user) {
         userPosition =
-            leaderboard.findIndex((entry) => entry.name === user.name) + 1;
+            leaderboard.findIndex((entry) => entry.username === user.username) +
+            1;
 
         if (userPosition === -1) {
             const userRank = await client.user.count({

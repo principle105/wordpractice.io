@@ -6,6 +6,8 @@
     import MaterialSymbolsKeyboardArrowDownRounded from "~icons/material-symbols/keyboard-arrow-down-rounded";
     import MaterialSymbolsKeyboardArrowUpRounded from "~icons/material-symbols/keyboard-arrow-up-rounded";
 
+    import NewUsernameModal from "./NewUsernameModal.svelte";
+
     export let data: PageData;
 
     let showDropdown = false;
@@ -35,6 +37,10 @@
 
 <svelte:window on:click={closeDropdown} />
 
+{#if data.user}
+    <NewUsernameModal bind:user={data.user} />
+{/if}
+
 <header
     class="absolute top-0 left-0 right-0 h-[14vh] flex justify-between items-center px-20 z-50"
 >
@@ -55,9 +61,12 @@
                 <div class="flex items-center gap-3">
                     <img
                         src={data.user.avatar}
-                        alt="{data.user.name}'s Avatar"
+                        alt="{data.user.username}'s Avatar"
                         class="w-10 h-10 sm:w-11 sm:h-11 rounded-full"
                     />
+                </div>
+                <div>
+                    {data.user.username}
                 </div>
                 <div class="relative text-zinc-300 mt-0.5">
                     <div

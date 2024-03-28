@@ -4,7 +4,7 @@ import type { User } from "@prisma/client";
 
 import { lucia } from "../src/lib/server/auth/clients";
 import type { MatchUser, MatchType } from "../src/lib/types";
-import { getGuestName, getGuestAvatar } from "../src/lib/utils/random";
+import { getGuestUsername, getGuestAvatar } from "../src/lib/utils/random";
 import { convertStringToInteger } from "../src/lib/utils/conversions";
 import { GUEST_SEED_SIZE } from "../src/lib/config";
 
@@ -42,21 +42,21 @@ const getMatchUserFromSession = async (
     }
 
     if (!user) {
-        const name = getGuestName(guestAccountSeed);
+        const username = getGuestUsername(guestAccountSeed);
 
         return {
-            name,
             id: socket.id,
+            username,
             rating: 0,
-            avatar: getGuestAvatar(name),
+            avatar: getGuestAvatar(username),
             connected: true,
             replay: [],
         };
     }
 
     return {
-        name: user.name,
         id: user.id,
+        username: user.username,
         rating: user.rating,
         avatar: user.avatar,
         connected: true,
@@ -184,8 +184,6 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
 
         // When the client disconnects
         socket.on("disconnect", async () => {
-            console.log("USER DISCONNECTED");
-
             const rooms =
                 matchType === "ranked"
                     ? rankedRooms

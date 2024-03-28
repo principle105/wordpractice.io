@@ -45,7 +45,7 @@
 
     $: clientMatchUser = {
         id: user.id,
-        name: user.name,
+        username: user.username,
         avatar: user.avatar,
         rating: user.rating,
         connected: true,

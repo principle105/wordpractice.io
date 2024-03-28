@@ -1,8 +1,8 @@
-export const getGuestAvatar = (name: string) => {
+export const getGuestAvatar = (username: string) => {
     return "https://i.imgur.com/oPyoVMy.jpg";
 };
 
-export const getGuestName = (seed: number) => {
+export const getGuestUsername = (seed: number) => {
     // TODO Create a better way to generate guest names
     const random = Math.floor(Math.abs(Math.sin(seed) * 10000));
     const name = random.toString().padStart(4, "0").slice(0, 4);

@@ -65,11 +65,11 @@
         <div class="flex items-center gap-3">
             <img
                 src={matchUser.avatar}
-                alt="{matchUser.name}'s Avatar"
+                alt="{matchUser.username}'s Avatar"
                 class="h-12 w-12 object-cover rounded-full"
             />
             <div class={matchUser.connected ? "text-black" : "text-red-500"}>
-                {matchUser.name}{showRating ? `(${matchUser.rating})` : ""}
+                {matchUser.username}{showRating ? `(${matchUser.rating})` : ""}
             </div>
         </div>
     </div>

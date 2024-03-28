@@ -92,6 +92,7 @@ export const GET: RequestHandler = async (event) => {
             },
         });
     } catch (e) {
+        console.log(e);
         throw redirect(
             "/signin",
             {

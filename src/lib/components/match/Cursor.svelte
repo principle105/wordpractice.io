@@ -17,7 +17,7 @@
     export let replay: Replay;
     export let quote: string[];
     export let wrapperElement: HTMLElement | null;
-    export let name: string | null = null;
+    export let username: string | null = null;
     export let topPos = 0;
 
     let leftPos = 0;
@@ -133,7 +133,7 @@
     $: replay, updatePositioning(replay);
 
     const getTopPos = (topPos: number) => {
-        if (name !== null) {
+        if (username !== null) {
             return topPos;
         }
 
@@ -186,13 +186,13 @@
             style="height: {fontSize * 1.25}px; width: {highlightWidth}px;"
         />
     </div>
-    {#if name !== null}
+    {#if username !== null}
         <div
             class="bg-zinc-300 px-1"
             style="font-size: {fontSize * 0.35}px; padding: {fontSize *
                 0.025}px {fontSize * 0.15}px;"
         >
-            {name}
+            {username}
         </div>
     {/if}
 </div>
