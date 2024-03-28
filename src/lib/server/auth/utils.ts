@@ -5,8 +5,8 @@ import { Prisma } from "@prisma/client";
 import { client } from "./clients";
 
 export const generateUsername = async (oAuthName: string) => {
-    // Setting username to lowercase and removing spaces
-    let username = oAuthName.toLowerCase().replace(/\s/g, "");
+    // Setting the username to lowercase and removing all characters that are not letters, numbers and/or underscores
+    let username = oAuthName.toLowerCase().replace(/[^a-z0-9_]/g, "");
 
     if (username.length > 12) {
         username = username.slice(0, 12);

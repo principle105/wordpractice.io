@@ -16,8 +16,7 @@
 
 {#if userProfile}
     <section>
-        <div>Username: {userProfile.id}</div>
-        <div>Name: {userProfile.username}</div>
+        <div>Username: {userProfile.username}</div>
         <div>Rating: {userProfile.rating}</div>
     </section>
 {:else}

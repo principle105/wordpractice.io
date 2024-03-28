@@ -10,20 +10,20 @@
 
 <section>
     {#each data.leaderboard as player, i}
-        <a class="flex gap-3" href="/profile/{player.id}">
+        <a class="flex gap-3" href="/profile/{player.username}">
             <div>{i + 1}.</div>
-            <div>{player.id}</div>
+            <div>{player.username}</div>
             <div>{player.rating}</div>
         </a>
     {/each}
     {#if data.userPosition !== null && data.user !== null}
         <div>-------------------</div>
-        <a class="flex gap-3" href="/profile/{data.user.id}">
+        <a class="flex gap-3" href="/profile/{data.user.username}">
             <div>
                 {data.userPosition}.
             </div>
             <div>
-                {data.user.id}
+                {data.user.username}
             </div>
             <div>
                 {data.user.rating}
