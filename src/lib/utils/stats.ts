@@ -59,7 +59,7 @@ export const calculateWpm = (
     startTime: number,
     correctChars: number
 ) => {
-    const minutesElapsed = (endTime - startTime) / 1000 / 60;
+    const minutesElapsed = (endTime - startTime) / 100 / 60;
 
     return Math.round(correctChars / minutesElapsed / 5);
 };

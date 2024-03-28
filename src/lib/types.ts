@@ -30,7 +30,7 @@ export interface Delete {
 
 export type Replay = (Character | Delete | CaretMovement)[];
 
-export type UserProfile = Pick<User, "id" | "name" | "rating" | "avatar">;
+export type UserProfile = Pick<User, "id" | "username" | "rating" | "avatar">;
 
 export interface MatchUser extends UserProfile {
     replay: Replay;

@@ -8,7 +8,7 @@
 
 <svelte:head>
     {#if userProfile}
-        <title>{userProfile.name}'s Profile - WordPractice</title>
+        <title>{userProfile.username}'s Profile - WordPractice</title>
     {:else}
         <title>User Not Found - WordPractice</title>
     {/if}
@@ -17,7 +17,7 @@
 {#if userProfile}
     <section>
         <div>Username: {userProfile.id}</div>
-        <div>Name: {userProfile.name}</div>
+        <div>Name: {userProfile.username}</div>
         <div>Rating: {userProfile.rating}</div>
     </section>
 {:else}

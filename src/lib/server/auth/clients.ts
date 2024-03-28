@@ -20,12 +20,13 @@ export const lucia = new Lucia(adapter, {
     getUserAttributes: (databaseUser: any): User => {
         return {
             id: databaseUser.id,
-            name: databaseUser.name,
+            username: databaseUser.username,
             email: databaseUser.email,
             rating: databaseUser.rating,
             fontScale: databaseUser.fontScale,
             avatar: databaseUser.avatar,
             provider: databaseUser.provider,
+            pickedInitalUsername: databaseUser.pickedInitalUsername,
         };
     },
 });

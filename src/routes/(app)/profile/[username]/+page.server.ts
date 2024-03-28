@@ -1,4 +1,3 @@
-import type { User } from "@prisma/client";
 import { client } from "$lib/server/auth/clients";
 
 import type { PageServerLoad } from "./$types";
@@ -7,14 +6,14 @@ import type { UserProfile } from "$lib/types";
 export const load: PageServerLoad = async ({ params, parent }) => {
     const { user } = await parent();
 
-    const userId = params.id;
+    const username = params.username;
 
     let userProfile: UserProfile | null = null;
 
-    if (user && user.id === userId) {
+    if (user && user.username === username) {
         userProfile = {
             id: user.id,
-            name: user.name,
+            username: user.username,
             rating: user.rating,
             avatar: user.avatar,
         };
@@ -22,12 +21,12 @@ export const load: PageServerLoad = async ({ params, parent }) => {
         const fetchedProfileUser = await client.user.findUnique({
             select: {
                 id: true,
-                name: true,
+                username: true,
                 rating: true,
                 avatar: true,
             },
             where: {
-                id: userId,
+                username,
             },
         });
 

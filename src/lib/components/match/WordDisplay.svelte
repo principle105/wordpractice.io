@@ -66,7 +66,7 @@
                 {timingOffset}
                 replay={matchUser.replay}
                 {wrapperElement}
-                name={matchUser.name}
+                username={matchUser.username}
                 quote={roomInfo.quote}
             />
         {/each}
