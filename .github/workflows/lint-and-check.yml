@@ -1,49 +1,34 @@
-name: CI
+name: Lint and check
 
 on:
-    push:
     pull_request:
-        types: [opened, edited, reopened]
+        branches: [main]
 
 jobs:
-    test:
-        name: Test
+    lint:
         runs-on: ubuntu-latest
-        services:
-            mongodb:
-                image: mongo:4.4.6
-                env:
-                    MONGO_INITDB_ROOT_USERNAME: admin
-                    MONGO_INITDB_ROOT_PASSWORD: admin
-                    MONGO_INITDB_DATABASE: APP-DATABASE
-                ports:
-                    - 27017:27017
-                options: >-
-                    --health-cmd mongo
-                    --health-interval 10s
-                    --health-timeout 5s
-                    --health-retries 5
-        env:
-            MONGODB_CONNECTION_URI: mongodb://admin:admin@localhost:27017/APP-DATABASE
-
         steps:
             - name: Checkout
               uses: actions/checkout@v3
+
             - name: Install Node.js
               uses: actions/setup-node@v3
               with:
                   node-version: 20.x
+
             - name: Install pnpm
               uses: pnpm/action-setup@v2
               id: pnpm-install
               with:
                   version: 8
                   run_install: false
+
             - name: Get pnpm store directory
               id: pnpm-cache
               shell: bash
               run: |
                   echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
             - uses: actions/cache@v3
               name: Setup pnpm cache
               with:
@@ -51,11 +36,15 @@ jobs:
                   key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
                   restore-keys: |
                       ${{ runner.os }}-pnpm-store-
+
             - name: Install dependencies
               run: pnpm install
+
             - name: Export environment variables to file
               run: echo "${{ secrets.ENV }}" > .env
+
             - name: Check
               run: pnpm run check
+
             - name: Lint
               run: pnpm run lint
