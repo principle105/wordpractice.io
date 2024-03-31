@@ -17,7 +17,7 @@ jobs:
                     - 27017:27017
 
         env:
-            DATABASE_URL: mongodb://root:prisma@localhost:27017/prisma-mongo?authSource=admin&retryWrites=true&w=majority
+            MONGODB_CONNECTION_URI: mongodb://root:prisma@localhost:27017/prisma-mongo?authSource=admin&retryWrites=true&w=majority
 
         steps:
             - name: Checkout
@@ -51,9 +51,6 @@ jobs:
 
             - name: Install dependencies
               run: pnpm install
-
-            - name: Export environment variables to file
-              run: echo "${{ secrets.ENV }}" > .env
 
             - name: Check
               run: pnpm run check
