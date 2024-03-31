@@ -13,8 +13,8 @@ jobs:
                 image: mongo:4.4.6
                 env:
                     MONGO_INITDB_ROOT_USERNAME: admin
-                    MONGO_INITDB_ROOT_PASSWORD: admin
-                    MONGO_INITDB_DATABASE: APP-DATABASE
+                    MONGO_INITDB_ROOT_PASSWORD: password
+                    MONGO_INITDB_DATABASE: APP-wordpractice
                 ports:
                     - 27017:27017
                 options: >-
@@ -23,7 +23,7 @@ jobs:
                     --health-timeout 5s
                     --health-retries 5
         env:
-            MONGODB_CONNECTION_URI: mongodb://admin:admin@localhost:27017/APP-DATABASE
+            MONGODB_CONNECTION_URI: mongodb://admin:password@localhost:27017/wordpractice?authMechanism=DEFAULT&authSource=admin
 
         steps:
             - name: Checkout
