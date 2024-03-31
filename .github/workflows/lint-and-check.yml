@@ -1,44 +1,48 @@
-name: Lint and check
+name: CI
 
 on:
+    push:
     pull_request:
-        branches: [main]
+        types: [opened, edited, reopened]
 
 jobs:
-    lint:
+    test:
+        name: Test
         runs-on: ubuntu-latest
+        services:
+            mongodb:
+                image: mongo:4.4.6
+                env:
+                    MONGO_INITDB_ROOT_USERNAME: admin
+                    MONGO_INITDB_ROOT_PASSWORD: admin
+                    MONGO_INITDB_DATABASE: APP-DATABASE
+                ports:
+                    - 27017:27017
+                options: >-
+                    --health-cmd mongo
+                    --health-interval 10s
+                    --health-timeout 5s
+                    --health-retries 5
+        env:
+            MONGODB_CONNECTION_URI: mongodb://admin:admin@localhost:27017/APP-DATABASE
+
         steps:
-            - name: Checkout
-              uses: actions/checkout@v3
+            - uses: actions/checkout@v2
+            - uses: pnpm/action-setup@v2.2.2
               with:
-                  submodules: "true"
-            - name: Install Node.js
-              uses: actions/setup-node@v3
-              with:
-                  node-version: 20.x
-            - name: Install pnpm
-              uses: pnpm/action-setup@v2
-              id: pnpm-install
-              with:
-                  version: 8
-                  run_install: false
-            - name: Get pnpm store directory
-              id: pnpm-cache
-              shell: bash
-              run: |
-                  echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-            - uses: actions/cache@v3
-              name: Setup pnpm cache
-              with:
-                  path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-                  key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-                  restore-keys: |
-                      ${{ runner.os }}-pnpm-store-
+                  version: 7
+
             - name: Install dependencies
               run: pnpm install
-            - name: Export environment variables to file
-              run: echo "${{ secrets.ENV }}" > .env
+
+            - name: Setup database
+              run: pnpm prisma db push
+
+            - name: Run tests
+              run: pnpm test run
+
             - name: Check
               run: pnpm run check
+
             - name: Lint
-              run: pnpm run lint
+              run: pnpm lint
