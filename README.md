@@ -9,6 +9,8 @@
 
 ## Local Development
 
+hi
+
 ### Setup
 
 1. Install [Node.js 20.x.x](https://nodejs.org/en) and [PNPM](https://pnpm.io/installation)
