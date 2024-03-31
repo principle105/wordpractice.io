@@ -52,6 +52,9 @@ jobs:
             - name: Install dependencies
               run: pnpm install
 
+            - name: Generating prisma client
+              run: pnpm prisma generate
+
             - name: Check
               run: pnpm run check
 
