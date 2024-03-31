@@ -5,7 +5,11 @@ import { GitHub, Discord, Google } from "arctic";
 
 import { PrismaClient } from "../prisma";
 
-export const client = new PrismaClient();
+export const client = global.__prisma || new PrismaClient();
+
+if (process.env.NODE_ENV === "development") {
+    global.__prisma = client;
+}
 
 const adapter = new PrismaAdapter(client.session, client.user);
 
