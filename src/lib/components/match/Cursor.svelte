@@ -161,6 +161,13 @@
             updatePositioning(replay.slice(0, i + 1));
         }
     };
+
+    $: isCaretBlinking =
+        replay.length === 0 ||
+        replay[replay.length - 1].timestamp +
+            timingOffset +
+            CARET_BLINKING_INTERVAL <=
+            currentTime;
 </script>
 
 <svelte:window on:resize={handleResize} />
@@ -174,13 +181,7 @@
         <div
             class="bg-zinc-500 rounded-full"
             style="height: {fontSize * 1.25}px; width: {fontSize * 0.1}px;"
-            id={replay.length === 0 ||
-            replay[replay.length - 1].timestamp +
-                timingOffset +
-                CARET_BLINKING_INTERVAL <=
-                currentTime
-                ? "caret-blinking"
-                : ""}
+            id={isCaretBlinking ? "caret-blinking" : ""}
         />
         <div
             class="bg-blue-500/30"

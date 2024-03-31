@@ -24,7 +24,8 @@ export const handleIfCasualMatchOver = async (room: RoomWithSocketInfo) => {
             room.quote
         );
 
-        const isUserFinished = completedWords.length === room.quote.length;
+        const isUserFinished =
+            completedWords.length === room.quote.join(" ").length;
 
         return isUserFinished;
     });
