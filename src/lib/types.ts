@@ -1,7 +1,7 @@
 import type { User } from "@prisma/client";
 import type { Socket } from "socket.io";
 
-export type Provider = "github" | "google" | "discord";
+export type Provider = "google" | "github" | "discord";
 export type MatchType = "ranked" | "casual" | "private";
 
 export interface Match {

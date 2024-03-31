@@ -5,7 +5,7 @@ import { handler } from "../build/handler.js";
 
 const app = express();
 const server = http.createServer(app);
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 5173;
 
 injectSocketIO(server);
 

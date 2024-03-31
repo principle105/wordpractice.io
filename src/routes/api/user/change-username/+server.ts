@@ -24,24 +24,24 @@ export const POST: RequestHandler = async ({ locals, request, url }) => {
         throw error(400, errorWithUsername);
     }
 
-    // Check if username is already taken
-    const user = await client.user.findUnique({
-        where: { username: newUsername },
-    });
-
-    if (user) {
-        throw error(400, "Username already taken");
-    }
-
     if (newUsername !== locals.user.username) {
-        await client.user.update({
-            where: { id: locals.user.id },
-            data: {
-                username: newUsername,
-                pickedInitalUsername: true,
-            },
+        // Check if username is already taken
+        const user = await client.user.findUnique({
+            where: { username: newUsername },
         });
+
+        if (user) {
+            throw error(400, "Username already taken");
+        }
     }
+
+    await client.user.update({
+        where: { id: locals.user.id },
+        data: {
+            username: newUsername,
+            pickedInitalUsername: true,
+        },
+    });
 
     return new Response("Username changed", { status: 200 });
 };

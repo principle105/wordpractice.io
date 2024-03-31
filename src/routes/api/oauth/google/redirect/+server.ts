@@ -5,7 +5,6 @@ import { getRedirectURLFromState } from "$lib/utils/random";
 import { getExistingOrCreateNewUser } from "$lib/server/auth/utils";
 
 import type { RequestHandler } from "./$types";
-import { getSignInErrorMessage } from "$lib/server/auth/utils";
 
 export const GET: RequestHandler = async (event) => {
     const stateCookie = event.cookies.get("google_oauth_state");
@@ -26,58 +25,71 @@ export const GET: RequestHandler = async (event) => {
             {
                 type: "error",
                 message:
-                    "Something went wrong while signing in. Please try again.",
+                    "Malformed parameters in the request. Please try again.",
             },
             event
         );
     }
 
-    try {
-        const redirectURL = getRedirectURLFromState(state);
+    const redirectURL = getRedirectURLFromState(state);
 
-        const tokens = await google.validateAuthorizationCode(
-            code,
-            codeVerifierCookie
-        );
+    const tokens = await google.validateAuthorizationCode(
+        code,
+        codeVerifierCookie
+    );
 
-        const googleUserResponse = await fetch(
-            "https://openidconnect.googleapis.com/v1/userinfo",
-            {
-                headers: {
-                    Authorization: `Bearer ${tokens.accessToken}`,
-                },
-            }
-        );
-
-        const googleUser: GoogleUser = await googleUserResponse.json();
-
-        const user = await getExistingOrCreateNewUser("google", {
-            name: googleUser.name,
-            email: googleUser.email,
-            avatar: googleUser.picture,
-        });
-
-        const session = await lucia.createSession(user.id, {});
-        const sessionCookie = lucia.createSessionCookie(session.id);
-
-        return new Response(null, {
-            status: 302,
+    const googleUserResponse = await fetch(
+        "https://openidconnect.googleapis.com/v1/userinfo",
+        {
             headers: {
-                Location: `/${redirectURL.slice(1)}`, // prevents open redirect attack
-                "Set-Cookie": sessionCookie.serialize(),
+                Authorization: `Bearer ${tokens.accessToken}`,
             },
-        });
-    } catch (e) {
-        console.log(e);
+        }
+    );
+
+    if (!googleUserResponse.ok) {
         throw redirect(
             "/signin",
             {
                 type: "error",
-                message: getSignInErrorMessage(e),
+                message:
+                    "There was an error while trying to fetch your Google account information. Please try again.",
             },
             event
         );
     }
+
+    const googleUser: GoogleUser = await googleUserResponse.json();
+
+    const user = await getExistingOrCreateNewUser({
+        name: googleUser.name,
+        email: googleUser.email,
+        avatar: googleUser.picture,
+        provider: "google",
+    });
+
+    if (user === null) {
+        throw redirect(
+            "/signin",
+            {
+                type: "error",
+                message:
+                    "This email address is already used by another account.",
+            },
+            event
+        );
+    }
+
+    const session = await lucia.createSession(user.id, {});
+    const sessionCookie = lucia.createSessionCookie(session.id);
+
+    return new Response(null, {
+        status: 302,
+        headers: {
+            Location: `/${redirectURL.slice(1)}`, // prevents open redirect attack
+            "Set-Cookie": sessionCookie.serialize(),
+        },
+    });
 };
 
 interface GoogleUser {
