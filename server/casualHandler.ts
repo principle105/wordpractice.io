@@ -15,25 +15,22 @@ const MAX_ROOM_SIZE = 5;
 const COUNTDOWN_TIME = 7 * 1000;
 const MIN_JOIN_COUNTDOWN_TIME = 3 * 1000;
 
-export const handleIfCasualMatchOver = async (
-    room: RoomWithSocketInfo,
-    force = false
-) => {
-    if (!force) {
-        const allUsersFinished = Object.values(room.users).every((user) => {
-            if (user.connected === false) return true;
+export const handleIfCasualMatchOver = async (room: RoomWithSocketInfo) => {
+    const areAllUsersFinished = Object.values(room.users).every((user) => {
+        if (user.connected === false) return true;
 
-            const { completedWords } = getCompletedAndIncorrectWords(
-                convertReplayToWords(user.replay, room.quote),
-                room.quote
-            );
+        const { completedWords } = getCompletedAndIncorrectWords(
+            convertReplayToWords(user.replay, room.quote),
+            room.quote
+        );
 
-            return completedWords.length === room.quote.join(" ").length;
-        });
+        const isUserFinished = completedWords.length === room.quote.length;
 
-        if (!allUsersFinished) {
-            return;
-        }
+        return isUserFinished;
+    });
+
+    if (!areAllUsersFinished) {
+        return;
     }
 
     casualRooms.delete(room.roomId);
@@ -45,35 +42,41 @@ export const handleIfCasualMatchOver = async (
 };
 
 const registerCasualHandler = (socket: Socket, user: MatchUser) => {
-    let joinedRoom = false;
+    let hasUserJoinedARoom = false;
 
     for (const [roomId, room] of casualRooms) {
-        // If the room is not full and the countdown has not started
-        if (
-            Object.keys(room.users).length < MAX_ROOM_SIZE &&
-            (!room.startTime ||
-                room.startTime > Date.now() + MIN_JOIN_COUNTDOWN_TIME)
-        ) {
-            casualRooms.set(roomId, {
-                ...room,
-                users: { ...room.users, [user.id]: user },
-                sockets: new Map([...room.sockets, [user.id, socket]]),
-            });
-            socket.join(roomId);
-            joinedRoom = true;
-
-            socket.broadcast.to(roomId).emit("new-user", user);
-            socket.emit(
-                "existing-room-info",
-                removeSocketInformationFromRoom(room, user.id)
-            );
-
-            break;
+        // Checking if the room is full
+        if (Object.keys(room.users).length >= MAX_ROOM_SIZE) {
+            continue;
         }
+
+        // Checking if the countdown has started
+        if (
+            room.startTime &&
+            room.startTime <= Date.now() + MIN_JOIN_COUNTDOWN_TIME
+        ) {
+            continue;
+        }
+
+        casualRooms.set(roomId, {
+            ...room,
+            users: { ...room.users, [user.id]: user },
+            sockets: new Map([...room.sockets, [user.id, socket]]),
+        });
+        socket.join(roomId);
+        hasUserJoinedARoom = true;
+
+        socket.broadcast.to(roomId).emit("new-user", user);
+        socket.emit(
+            "existing-room-info",
+            removeSocketInformationFromRoom(room, user.id)
+        );
+
+        break;
     }
 
     // Creating a new room if there are no available rooms
-    if (!joinedRoom) {
+    if (!hasUserJoinedARoom) {
         const roomId = Math.random().toString(36).substring(2, 8);
 
         const quote =

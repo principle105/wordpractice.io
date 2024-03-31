@@ -24,36 +24,33 @@ const K_FACTOR = 32;
 
 export const handleIfRankedMatchOver = async (
     room: RoomWithSocketInfo,
-    socket: Socket,
-    force = false
+    socket: Socket
 ) => {
     if (!room) {
         return;
     }
 
-    if (!force) {
-        const totalUsersFinished = Object.values(room.users).reduce(
-            (count, user) => {
-                if (user.connected === false) return count + 1;
+    const totalUsersFinished = Object.values(room.users).reduce(
+        (count, user) => {
+            if (user.connected === false) return count + 1;
 
-                const { completedWords } = getCompletedAndIncorrectWords(
-                    convertReplayToWords(user.replay, room.quote),
-                    room.quote
-                );
+            const { completedWords } = getCompletedAndIncorrectWords(
+                convertReplayToWords(user.replay, room.quote),
+                room.quote
+            );
 
-                if (completedWords.length === room.quote.join(" ").length) {
-                    return count + 1;
-                }
+            if (completedWords.length === room.quote.join(" ").length) {
+                return count + 1;
+            }
 
-                return count;
-            },
-            0
-        );
+            return count;
+        },
+        0
+    );
 
-        // Checking if all the users - 1 have finished
-        if (totalUsersFinished < Object.keys(room.users).length - 1) {
-            return;
-        }
+    // Checking if all the users except one have finished
+    if (totalUsersFinished < Object.keys(room.users).length - 1) {
+        return;
     }
 
     rankedRooms.delete(room.roomId);
@@ -137,42 +134,48 @@ export const handleIfRankedMatchOver = async (
 };
 
 const registerRankedHandler = (socket: Socket, user: MatchUser) => {
-    let joinedRoom = false;
+    let hasUserJoinedARoom = false;
 
     for (const [roomId, room] of rankedRooms) {
-        // If the room is not full and the countdown has not started
-        if (
-            Object.keys(room.users).length < MAX_ROOM_SIZE &&
-            (!room.startTime ||
-                room.startTime > Date.now() + MIN_JOIN_COUNTDOWN_TIME)
-        ) {
-            const newRoomInfo = {
-                ...room,
-                users: { ...room.users, [user.id]: user },
-                sockets: new Map([...room.sockets, [user.id, socket]]),
-                startTime: room.startTime ?? Date.now() + COUNTDOWN_TIME,
-            };
-
-            rankedRooms.set(roomId, newRoomInfo);
-            socket.join(roomId);
-            joinedRoom = true;
-
-            socket.emit(
-                "existing-room-info",
-                removeSocketInformationFromRoom(newRoomInfo, user.id)
-            );
-
-            socket.broadcast
-                .to(roomId)
-                .emit("update-start-time", newRoomInfo.startTime);
-            socket.broadcast.to(roomId).emit("new-user", user);
-
-            break;
+        // Checking if the room is full
+        if (Object.keys(room.users).length >= MAX_ROOM_SIZE) {
+            continue;
         }
+
+        // Checking if the countdown has started
+        if (
+            room.startTime &&
+            room.startTime <= Date.now() + MIN_JOIN_COUNTDOWN_TIME
+        ) {
+            continue;
+        }
+
+        const newRoomInfo = {
+            ...room,
+            users: { ...room.users, [user.id]: user },
+            sockets: new Map([...room.sockets, [user.id, socket]]),
+            startTime: room.startTime ?? Date.now() + COUNTDOWN_TIME,
+        };
+
+        rankedRooms.set(roomId, newRoomInfo);
+        socket.join(roomId);
+        hasUserJoinedARoom = true;
+
+        socket.emit(
+            "existing-room-info",
+            removeSocketInformationFromRoom(newRoomInfo, user.id)
+        );
+
+        socket.broadcast
+            .to(roomId)
+            .emit("update-start-time", newRoomInfo.startTime);
+        socket.broadcast.to(roomId).emit("new-user", user);
+
+        break;
     }
 
     // Creating a new room if there are no available rooms
-    if (!joinedRoom) {
+    if (!hasUserJoinedARoom) {
         const roomId = Math.random().toString(36).substring(2, 8);
 
         const quote =
