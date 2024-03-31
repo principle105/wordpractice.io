@@ -6,9 +6,12 @@ declare global {
             user: import("@prisma/client").User | null;
             session: import("lucia").Session | null;
         }
+
         interface PageData {
             flash?: { type: "success" | "error"; message: string };
         }
     }
+
+    var __prisma: PrismaClient;
 }
 export {};
