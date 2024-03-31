@@ -30,14 +30,14 @@ const getMatchUserFromSession = async (
     token: string | undefined,
     guestAccountSeed: number,
     socket: Socket
-): Promise<MatchUser> => {
+): Promise<MatchUser | null> => {
     let user: User | null = null;
 
     if (token) {
         try {
             user = (await lucia.validateSession(token)).user as User | null;
         } catch (e) {
-            user = null;
+            return null;
         }
     }
 
@@ -96,12 +96,12 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
 
         for (const room of allRooms) {
             if (
-                room &&
                 room.startTime &&
                 Date.now() > room.startTime + MAX_MATCH_LENGTH
             ) {
                 room.sockets.forEach((socket) => {
                     socket.emit("match-ended");
+
                     if (room.matchType === "casual") {
                         handleIfCasualMatchOver(room);
                     } else if (room.matchType === "ranked") {
@@ -120,7 +120,7 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
         const { token, matchType, guestAccountSeed } = socket.handshake
             .query as {
             token: string | undefined;
-            matchType: MatchType | undefined;
+            matchType: string | undefined;
             guestAccountSeed: string | undefined;
         };
 
@@ -156,6 +156,22 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
             socket
         );
 
+        if (!user) {
+            socket.emit("error", "Invalid session.");
+            socket.disconnect();
+            return;
+        }
+
+        // Disconnecting the user if they are not authenticated for ranked mode
+        if (matchType === "ranked" && !token) {
+            socket.emit(
+                "error",
+                "You need to be signed in to play ranked mode."
+            );
+            socket.disconnect();
+            return;
+        }
+
         // Disconnecting the user from all the rooms they are currently in
         for (const room of [...rankedRooms.values(), ...casualRooms.values()]) {
             if (room.sockets.has(user.id) && room.users[user.id].connected) {
@@ -164,16 +180,6 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
         }
 
         if (matchType === "ranked") {
-            // Disconnecting a user if they are not authenticated
-            if (!token) {
-                socket.emit(
-                    "error",
-                    "You need to be signed in to play ranked mode."
-                );
-                socket.disconnect();
-                return;
-            }
-
             registerRankedHandler(socket, user);
         } else if (matchType === "casual") {
             registerCasualHandler(socket, user);
@@ -194,9 +200,11 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
             if (!rooms) return;
 
             for (const [roomId, room] of rooms) {
-                if (user.id in room.users) {
-                    room.users[user.id].connected = false;
+                if (!(user.id in room.users)) {
+                    return;
                 }
+
+                room.users[user.id].connected = false;
 
                 socket.broadcast.to(roomId).emit("user-disconnect", user.id);
 
@@ -206,8 +214,6 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
                 } else if (matchType === "casual") {
                     await handleIfCasualMatchOver(room);
                 }
-
-                break;
             }
         });
     });
