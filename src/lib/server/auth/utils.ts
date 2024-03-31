@@ -1,6 +1,5 @@
 import { DEFAULT_FONT_SCALE, DEFAULT_RATING } from "$lib/config";
 import type { Provider } from "$lib/types";
-import { Prisma } from "@prisma/client";
 
 import { client } from "./clients";
 
@@ -49,42 +48,37 @@ interface UserAttributes {
     email: string;
     name: string;
     avatar: string;
+    provider: Provider;
 }
 
 export const getExistingOrCreateNewUser = async (
-    provider: Provider,
     userAttributes: UserAttributes
 ) => {
     const existingUser = await client.user.findUnique({
         where: {
             email: userAttributes.email,
-            provider,
         },
     });
 
-    if (existingUser) return existingUser;
+    if (!existingUser) {
+        const username = await generateUsername(userAttributes.name);
 
-    const username = await generateUsername(userAttributes.name);
-
-    return await client.user.create({
-        data: {
-            username,
-            email: userAttributes.email,
-            rating: DEFAULT_RATING,
-            fontScale: DEFAULT_FONT_SCALE,
-            avatar: userAttributes.avatar,
-            pickedInitalUsername: false,
-            provider,
-        },
-    });
-};
-
-export const getSignInErrorMessage = (e: unknown): string => {
-    if (e instanceof Prisma.PrismaClientKnownRequestError) {
-        if (e.code === "P2002") {
-            return "That email address is already used by another account.";
-        }
+        return await client.user.create({
+            data: {
+                username,
+                email: userAttributes.email,
+                provider: userAttributes.provider,
+                rating: DEFAULT_RATING,
+                fontScale: DEFAULT_FONT_SCALE,
+                avatar: userAttributes.avatar,
+                pickedInitalUsername: false,
+            },
+        });
     }
 
-    return "Something went wrong while signing in. Please try again.";
+    if (existingUser.provider !== userAttributes.provider) {
+        return null;
+    }
+
+    return existingUser;
 };

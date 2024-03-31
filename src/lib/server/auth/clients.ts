@@ -25,8 +25,8 @@ export const lucia = new Lucia(adapter, {
             rating: databaseUser.rating,
             fontScale: databaseUser.fontScale,
             avatar: databaseUser.avatar,
-            provider: databaseUser.provider,
             pickedInitalUsername: databaseUser.pickedInitalUsername,
+            provider: databaseUser.provider,
         };
     },
 });
