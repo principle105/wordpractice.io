@@ -12,6 +12,6 @@ declare global {
         }
     }
 
-    var __prisma: PrismaClient;
+    var __prisma: PrismaClient; //eslint-disable-line no-var
 }
 export {};
