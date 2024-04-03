@@ -89,7 +89,7 @@
     <div slot="end-screen" let:startedRoomInfo>
         <div class="mt-16 flex flex-col justify-center">
             <h2 class="text-3xl">Your Stats</h2>
-            <EndScreen {replay} {roomInfo} />
+            <EndScreen {replay} {startedRoomInfo} />
         </div>
 
         <button

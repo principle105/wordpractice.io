@@ -4,18 +4,13 @@
     export let finished: boolean;
     export let roomInfo: BasicRoomInfo | null;
 
-    $: startedRoomInfo =
-        roomInfo === null ||
-        roomInfo.quote === null ||
-        roomInfo.startTime === null
-            ? null
-            : (roomInfo as BasicRoomInfoStarted);
+    $: startedRoomInfo = roomInfo as BasicRoomInfoStarted;
 </script>
 
 <div class="h-[86vh] max-w-screen-lg mx-auto flex flex-col">
     {#if roomInfo === null}
         <slot name="loading" />
-    {:else if startedRoomInfo === null}
+    {:else if roomInfo.quote === null || roomInfo.startTime === null}
         <slot name="waiting" />
     {:else}
         <div class="my-auto bg-zinc-100 p-8 rounded-lg">

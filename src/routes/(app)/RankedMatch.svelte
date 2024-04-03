@@ -114,7 +114,7 @@
     <div slot="end-screen" let:startedRoomInfo>
         <div class="mt-16 flex flex-col justify-center">
             <h2 class="text-3xl">Your Stats</h2>
-            <EndScreen {replay} {roomInfo} />
+            <EndScreen {replay} {startedRoomInfo} />
         </div>
         <button
             class="bg-zinc-500 p-3 rounded-md text-white"
@@ -151,7 +151,7 @@
     />
 
     <div slot="waiting">
-        <div>WAITING</div>
+        <div>Waiting for a player to join</div>
     </div>
 
     <div slot="loading">
