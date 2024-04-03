@@ -1,6 +1,6 @@
 <script lang="ts">
     import { DEFAULT_MAX_LINES_SHOWN } from "$lib/config";
-    import type { MatchUser, Replay, RoomInfo } from "$lib/types";
+    import type { MatchUser, Replay, BasicRoomInfoStarted } from "$lib/types";
     import {
         convertReplayToWords,
         getCompletedAndIncorrectWords,
@@ -8,7 +8,7 @@
 
     import Cursor from "./Cursor.svelte";
 
-    export let roomInfo: RoomInfo;
+    export let startedRoomInfo: BasicRoomInfoStarted;
     export let fontSize: number;
     export let timingOffset = 0;
 
@@ -24,10 +24,10 @@
               DEFAULT_MAX_LINES_SHOWN * fontSize * 1.5
             : 0;
 
-    $: wordsTyped = convertReplayToWords(replay, roomInfo.quote);
+    $: wordsTyped = convertReplayToWords(replay, startedRoomInfo.quote);
     $: ({ completedWords, incorrectChars } = getCompletedAndIncorrectWords(
         wordsTyped,
-        roomInfo.quote
+        startedRoomInfo.quote
     ));
 
     const updateWrapperSize = () => {
@@ -49,14 +49,14 @@
         bind:this={wrapperElement}
     >
         <span class="text-black">{completedWords}</span><span class="bg-red-400"
-            >{roomInfo.quote
+            >{startedRoomInfo.quote
                 .join(" ")
                 .slice(
                     completedWords.length,
                     completedWords.length + incorrectChars
                 )}</span
         ><span class="text-zinc-500"
-            >{roomInfo.quote
+            >{startedRoomInfo.quote
                 .join(" ")
                 .slice(completedWords.length + incorrectChars)}</span
         >
@@ -67,7 +67,7 @@
                 replay={matchUser.replay}
                 {wrapperElement}
                 username={matchUser.username}
-                quote={roomInfo.quote}
+                quote={startedRoomInfo.quote}
             />
         {/each}
     </div>
@@ -77,6 +77,6 @@
         {replay}
         {wrapperElement}
         bind:topPos
-        quote={roomInfo.quote}
+        quote={startedRoomInfo.quote}
     />
 </div>

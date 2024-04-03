@@ -37,18 +37,37 @@ export interface MatchUser extends UserProfile {
     connected: boolean;
 }
 
-export interface RoomInfo {
+export interface BasicRoomInfo {
+    id: string;
     matchType: MatchType;
-    roomId: string;
     startTime: number | null;
+    quote: string[] | null;
+}
+
+export interface BasicRoomInfoStarted extends BasicRoomInfo {
+    startTime: number;
     quote: string[];
 }
 
-export interface Room extends RoomInfo {
+interface SavedRoom extends BasicRoomInfo {
     users: { [key: string]: MatchUser }; // not using a Map because cannot be serialized by socket.io
 }
 
-export interface RoomWithSocketInfo extends Room {
+export interface RankedRoom extends SavedRoom {
+    matchType: "ranked";
+    scores: { [key: string]: number };
+    userBlacklistedTextTypes: { [key: string]: string[] };
+}
+
+export interface CasualRoom extends SavedRoom {
+    matchType: "casual";
+}
+
+export interface RankedRoomWithSocketInfo extends RankedRoom {
+    sockets: Map<string, Socket>;
+}
+
+export interface CasualRoomWithSocketInfo extends CasualRoom {
     sockets: Map<string, Socket>;
 }
 

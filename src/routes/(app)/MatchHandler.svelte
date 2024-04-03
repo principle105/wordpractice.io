@@ -8,10 +8,9 @@
     import { guestAccountSeed } from "$lib/stores/guestAccountSeed";
     import { match } from "$lib/stores/match";
     import type {
-        Room,
         MatchUser,
         Replay,
-        RoomInfo,
+        BasicRoomInfo,
         NewActionPayload,
     } from "$lib/types";
 
@@ -22,7 +21,7 @@
     export let sessionId: string | undefined;
 
     let replay: Replay = [];
-    let roomInfo: RoomInfo | null = null;
+    let roomInfo: BasicRoomInfo | null = null;
     let matchUsers = new Map<string, MatchUser>();
 
     let finished = false;
@@ -47,18 +46,6 @@
         disconnectedUser.connected = false;
         matchUsers.set(userId, disconnectedUser);
         matchUsers = matchUsers;
-    });
-
-    socket.on("existing-room-info", (existingRoomInfo: Room) => {
-        matchUsers = new Map(Object.entries(existingRoomInfo.users));
-
-        // Separating the room info from the users to avoid rerendering static data when the uses change
-        roomInfo = {
-            roomId: existingRoomInfo.roomId,
-            quote: existingRoomInfo.quote,
-            startTime: existingRoomInfo.startTime,
-            matchType: existingRoomInfo.matchType,
-        };
     });
 
     socket.on("error", (errorMessage: string) => {
@@ -174,21 +161,15 @@
     $: started = !!(countDown !== null && countDown <= 0);
 </script>
 
-{#if !roomInfo || $match === null}
+{#if $match === null}
     <div>Loading...</div>
 {:else}
-    {#if !started && !finished}
+    {#if !started && !finished && countDown !== null}
         <div
             class="fixed inset-0 bg-black/30 flex justify-center items-center z-10"
         >
             <div class="text-5xl text-white">
-                {#if countDown === null}
-                    {#if $match.type === "ranked"}
-                        Waiting for players...
-                    {/if}
-                {:else}
-                    {countDown}
-                {/if}
+                {countDown}
             </div>
         </div>
     {/if}
@@ -196,7 +177,7 @@
     {#if $match.type === "ranked"}
         <RankedMatch
             {user}
-            {roomInfo}
+            bind:roomInfo
             {matchUsers}
             {started}
             {finished}
@@ -206,7 +187,7 @@
     {:else if $match.type === "casual"}
         <CasualMatch
             {user}
-            {roomInfo}
+            bind:roomInfo
             {matchUsers}
             {started}
             {finished}

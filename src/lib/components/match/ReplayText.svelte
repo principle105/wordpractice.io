@@ -2,7 +2,7 @@
     import { onDestroy } from "svelte";
 
     import { START_TIME_LENIENCY } from "$lib/config";
-    import type { Replay, RoomInfo } from "$lib/types";
+    import type { Replay, BasicRoomInfoStarted } from "$lib/types";
     import { calculateWpm } from "$lib/utils/stats";
     import { getCompletedAndIncorrectWords } from "$lib/utils/textProcessing";
 
@@ -10,14 +10,14 @@
 
     export let replay: Replay;
     export let fontSize: number;
-    export let roomInfo: RoomInfo;
+    export let startedRoomInfo: BasicRoomInfoStarted;
 
     const getStartTime = () => {
-        if (roomInfo.startTime === null) {
+        if (startedRoomInfo.startTime === null) {
             return null;
         }
 
-        const maxStartTime = roomInfo.startTime + START_TIME_LENIENCY;
+        const maxStartTime = startedRoomInfo.startTime + START_TIME_LENIENCY;
 
         if (replay.length === 0) {
             return maxStartTime;
@@ -37,7 +37,7 @@
 
     $: ({ completedWords } = getCompletedAndIncorrectWords(
         replayText.split(" "),
-        roomInfo.quote
+        startedRoomInfo.quote
     ));
 
     $: slicedReplay = replay.slice(
@@ -146,7 +146,7 @@
     {#key resetWordDisplay}
         <WordDisplay
             {fontSize}
-            {roomInfo}
+            {startedRoomInfo}
             replay={slicedReplay}
             timingOffset={Date.now() - (timeElapsed + startTime)}
             matchUsers={[]}

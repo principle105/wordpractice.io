@@ -3,7 +3,12 @@
     import type { User } from "@prisma/client";
     import type { Socket } from "socket.io-client";
 
-    import type { MatchUser, Replay, RoomInfo } from "$lib/types";
+    import type {
+        CasualRoom,
+        MatchUser,
+        Replay,
+        BasicRoomInfo,
+    } from "$lib/types";
     import { defaultMatch } from "$lib/constants";
     import { match } from "$lib/stores/match";
     import { BASE_FONT_SIZE } from "$lib/config";
@@ -16,7 +21,7 @@
     import EndScreen from "$lib/components/match/EndScreen.svelte";
 
     export let user: User;
-    export let roomInfo: RoomInfo;
+    export let roomInfo: BasicRoomInfo | null;
     export let matchUsers = new Map<string, MatchUser>();
     export let replay: Replay = [];
     export let started: boolean;
@@ -26,6 +31,18 @@
     let showReplay = false;
 
     const fontSize: number = user.fontScale * BASE_FONT_SIZE;
+
+    socket.on("casual:existing-room-info", (existingRoomInfo: CasualRoom) => {
+        matchUsers = new Map(Object.entries(existingRoomInfo.users));
+
+        // Separating the room info from the users to avoid rerendering static data when the uses change
+        roomInfo = {
+            id: existingRoomInfo.id,
+            quote: existingRoomInfo.quote,
+            startTime: existingRoomInfo.startTime,
+            matchType: existingRoomInfo.matchType,
+        };
+    });
 
     const playAgain = () => {
         match.set(null);
@@ -57,15 +74,19 @@
     <title>Casual Match - WordPractice</title>
 </svelte:head>
 
-<MatchContainer {finished}>
-    <div slot="racers" class="flex flex-col gap-3">
-        <OpponentDisplay matchUser={clientMatchUser} {roomInfo} bind:finished />
+<MatchContainer {finished} {roomInfo}>
+    <div slot="racers" class="flex flex-col gap-3" let:startedRoomInfo>
+        <OpponentDisplay
+            matchUser={clientMatchUser}
+            {startedRoomInfo}
+            bind:finished
+        />
         {#each matchUsers.values() as matchUser}
-            <OpponentDisplay {matchUser} {roomInfo} />
+            <OpponentDisplay {matchUser} {startedRoomInfo} />
         {/each}
     </div>
 
-    <div slot="end-screen">
+    <div slot="end-screen" let:startedRoomInfo>
         <div class="mt-16 flex flex-col justify-center">
             <h2 class="text-3xl">Your Stats</h2>
             <EndScreen {replay} {roomInfo} />
@@ -84,20 +105,36 @@
             Play Again
         </button>
         {#if showReplay}
-            <ReplayText {fontSize} {replay} {roomInfo} />
+            <ReplayText {fontSize} {replay} {startedRoomInfo} />
         {/if}
     </div>
 
-    <svelte:fragment slot="word-display">
-        <WordDisplay
-            {fontSize}
-            matchUsers={Array.from(matchUsers.values())}
-            {replay}
-            {roomInfo}
-        />
-    </svelte:fragment>
+    <WordDisplay
+        slot="word-display"
+        let:startedRoomInfo
+        {fontSize}
+        matchUsers={Array.from(matchUsers.values())}
+        {replay}
+        {startedRoomInfo}
+    />
 
-    <svelte:fragment slot="input">
-        <TestInput bind:replay {started} {roomInfo} />
-    </svelte:fragment>
+    <TestInput
+        slot="input"
+        bind:replay
+        {started}
+        let:startedRoomInfo
+        {startedRoomInfo}
+    />
+
+    <div slot="waiting">
+        <div>WAITING</div>
+    </div>
+
+    <div slot="loading">
+        <div class="flex justify-center items-center h-[86vh]">
+            <div
+                class="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-zinc-500"
+            />
+        </div>
+    </div>
 </MatchContainer>

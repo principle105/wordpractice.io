@@ -2,8 +2,9 @@ import type { Socket } from "socket.io";
 import type {
     Replay,
     MatchUser,
-    RoomWithSocketInfo,
+    RankedRoomWithSocketInfo,
     NewActionPayload,
+    RankedRoom,
 } from "../src/lib/types";
 
 import { client } from "../src/lib/server/auth/clients";
@@ -14,7 +15,6 @@ import {
 } from "../src/lib/utils/textProcessing";
 import { rankedRooms } from "./state";
 import { START_TIME_LENIENCY } from "../src/lib/config";
-import { removeSocketInformationFromRoom } from "./utils";
 
 const MAX_ROOM_SIZE = 3;
 const COUNTDOWN_TIME = 6 * 1000;
@@ -22,38 +22,86 @@ const MIN_JOIN_COUNTDOWN_TIME = 3 * 1000;
 
 const K_FACTOR = 32;
 
-export const handleIfRankedMatchOver = async (
-    room: RoomWithSocketInfo,
-    socket: Socket
+const removeSocketInformationFromRankedRoom = (
+    room: RankedRoomWithSocketInfo,
+    userId: string
+): RankedRoom => {
+    const usersWithoutSocket = {
+        ...room.users,
+    };
+
+    if (userId in usersWithoutSocket) {
+        delete usersWithoutSocket[userId];
+    }
+
+    return {
+        id: room.id,
+        quote: room.quote,
+        startTime: room.startTime,
+        users: usersWithoutSocket,
+        matchType: room.matchType,
+        scores: room.scores,
+        userBlacklistedTextTypes: room.userBlacklistedTextTypes,
+    };
+};
+
+const addUserToRankedRoom = (
+    user: MatchUser,
+    socket: Socket,
+    room: RankedRoomWithSocketInfo
 ) => {
-    if (!room) {
+    const newRoomInfo = {
+        ...room,
+        users: { ...room.users, [user.id]: user },
+        sockets: new Map([...room.sockets, [user.id, socket]]),
+        startTime: room.startTime,
+        scores: { ...room.scores, [user.id]: 0 },
+    } satisfies RankedRoomWithSocketInfo;
+
+    if (Object.keys(newRoomInfo.users).length === 2) {
+        newRoomInfo.startTime = Date.now() + COUNTDOWN_TIME;
+    }
+
+    return newRoomInfo;
+};
+
+export const handleIfRankedMatchOver = async (
+    room: RankedRoomWithSocketInfo,
+    socket: Socket,
+    force = false
+) => {
+    if (room.quote === null) {
         return;
     }
 
-    const totalUsersFinished = Object.values(room.users).reduce(
-        (count, user) => {
-            if (user.connected === false) return count + 1;
+    const quote = room.quote;
 
-            const { completedWords } = getCompletedAndIncorrectWords(
-                convertReplayToWords(user.replay, room.quote),
-                room.quote
-            );
+    if (!force) {
+        const totalUsersFinished = Object.values(room.users).reduce(
+            (count, user) => {
+                if (user.connected === false) return count + 1;
 
-            if (completedWords.length === room.quote.join(" ").length) {
-                return count + 1;
-            }
+                const { completedWords } = getCompletedAndIncorrectWords(
+                    convertReplayToWords(user.replay, quote),
+                    quote
+                );
 
-            return count;
-        },
-        0
-    );
+                if (completedWords.length === quote.join(" ").length) {
+                    return count + 1;
+                }
 
-    // Checking if all the users except one have finished
-    if (totalUsersFinished < Object.keys(room.users).length - 1) {
-        return;
+                return count;
+            },
+            0
+        );
+
+        // Checking if all the users except one have finished
+        if (totalUsersFinished < Object.keys(room.users).length - 1) {
+            return;
+        }
     }
 
-    rankedRooms.delete(room.roomId);
+    rankedRooms.delete(room.id);
 
     // Rank the users based on their wpm
     const users = Object.values(room.users);
@@ -68,8 +116,8 @@ export const handleIfRankedMatchOver = async (
         );
 
         const { completedWords } = getCompletedAndIncorrectWords(
-            convertReplayToWords(replay, room.quote),
-            room.quote
+            convertReplayToWords(replay, quote),
+            quote
         );
 
         return calculateWpm(endTime, startTime, completedWords.length);
@@ -124,7 +172,7 @@ export const handleIfRankedMatchOver = async (
         rating: user.rating,
     }));
 
-    socket.broadcast.to(room.roomId).emit("update-rating", userRatings);
+    socket.broadcast.to(room.id).emit("update-rating", userRatings);
     socket.emit("update-rating", userRatings);
 
     // Disconnect all the users and delete the room
@@ -150,20 +198,15 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
             continue;
         }
 
-        const newRoomInfo = {
-            ...room,
-            users: { ...room.users, [user.id]: user },
-            sockets: new Map([...room.sockets, [user.id, socket]]),
-            startTime: room.startTime ?? Date.now() + COUNTDOWN_TIME,
-        };
+        const newRoomInfo = addUserToRankedRoom(user, socket, room);
 
         rankedRooms.set(roomId, newRoomInfo);
         socket.join(roomId);
         hasUserJoinedARoom = true;
 
         socket.emit(
-            "existing-room-info",
-            removeSocketInformationFromRoom(newRoomInfo, user.id)
+            "ranked:existing-room-info",
+            removeSocketInformationFromRankedRoom(newRoomInfo, user.id)
         );
 
         socket.broadcast
@@ -183,18 +226,22 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
                 " "
             );
 
-        const room: RoomWithSocketInfo = {
-            roomId,
-            users: { [user.id]: user },
+        let room: RankedRoomWithSocketInfo = {
+            matchType: "ranked",
+            id: roomId,
+            users: {},
             quote,
             startTime: null,
-            sockets: new Map([[user.id, socket]]),
-            matchType: "ranked",
+            scores: {},
+            userBlacklistedTextTypes: {},
+            sockets: new Map(),
         };
 
+        room = addUserToRankedRoom(user, socket, room);
+
         socket.emit(
-            "existing-room-info",
-            removeSocketInformationFromRoom(room, user.id)
+            "ranked:existing-room-info",
+            removeSocketInformationFromRankedRoom(room, user.id)
         );
 
         rankedRooms.set(roomId, room);

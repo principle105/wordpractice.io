@@ -2,14 +2,14 @@
     import { onMount } from "svelte";
 
     import { START_TIME_LENIENCY } from "$lib/config";
-    import type { MatchUser, RoomInfo } from "$lib/types";
+    import type { MatchUser, BasicRoomInfoStarted } from "$lib/types";
     import {
         convertReplayToWords,
         getCompletedAndIncorrectWords,
     } from "$lib/utils/textProcessing";
     import { calculateWpm } from "$lib/utils/stats";
 
-    export let roomInfo: RoomInfo;
+    export let startedRoomInfo: BasicRoomInfoStarted;
     export let matchUser: MatchUser;
     export let finished = false;
     export let showRating = false;
@@ -18,14 +18,14 @@
 
     onMount(() => {
         const interval = setInterval(() => {
-            if (roomInfo.startTime === null) return;
+            if (startedRoomInfo.startTime === null) return;
 
             const startTime = Math.min(
                 matchUser.replay[0]?.timestamp,
-                roomInfo.startTime + START_TIME_LENIENCY
+                startedRoomInfo.startTime + START_TIME_LENIENCY
             );
 
-            const quoteLength = roomInfo.quote.join(" ").length;
+            const quoteLength = startedRoomInfo.quote.join(" ").length;
 
             if (
                 finished ||
@@ -50,10 +50,13 @@
         return () => clearInterval(interval);
     });
 
-    $: wordsTyped = convertReplayToWords(matchUser.replay, roomInfo.quote);
+    $: wordsTyped = convertReplayToWords(
+        matchUser.replay,
+        startedRoomInfo.quote
+    );
     $: ({ completedWords } = getCompletedAndIncorrectWords(
         wordsTyped,
-        roomInfo.quote
+        startedRoomInfo.quote
     ));
 </script>
 
@@ -83,7 +86,7 @@
                 ? 'bg-green-500'
                 : 'bg-red-300'}"
             style="width: {(completedWords.length /
-                roomInfo.quote.join(' ').length) *
+                startedRoomInfo.quote.join(' ').length) *
                 100}%"
         />
     </div>

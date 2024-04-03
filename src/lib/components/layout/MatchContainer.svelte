@@ -1,16 +1,32 @@
 <script lang="ts">
+    import type { BasicRoomInfo, BasicRoomInfoStarted } from "$lib/types";
+
     export let finished: boolean;
+    export let roomInfo: BasicRoomInfo | null;
+
+    $: startedRoomInfo =
+        roomInfo === null ||
+        roomInfo.quote === null ||
+        roomInfo.startTime === null
+            ? null
+            : (roomInfo as BasicRoomInfoStarted);
 </script>
 
 <div class="h-[86vh] max-w-screen-lg mx-auto flex flex-col">
-    <div class="my-auto bg-zinc-100 p-8 rounded-lg">
-        <slot name="racers" />
+    {#if roomInfo === null}
+        <slot name="loading" />
+    {:else if startedRoomInfo === null}
+        <slot name="waiting" />
+    {:else}
+        <div class="my-auto bg-zinc-100 p-8 rounded-lg">
+            <slot name="racers" {startedRoomInfo} />
 
-        {#if finished}
-            <slot name="end-screen" />
-        {:else}
-            <slot name="word-display" />
-            <slot name="input" />
-        {/if}
-    </div>
+            {#if finished}
+                <slot name="end-screen" {startedRoomInfo} />
+            {:else}
+                <slot name="word-display" {startedRoomInfo} />
+                <slot name="input" {startedRoomInfo} />
+            {/if}
+        </div>
+    {/if}
 </div>
