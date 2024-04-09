@@ -40,8 +40,8 @@ export interface MatchUser extends UserProfile {
 export interface BasicRoomInfo {
     id: string;
     matchType: MatchType;
-    startTime: number | null;
     quote: string[] | null;
+    startTime: number | null;
 }
 
 export interface BasicRoomInfoStarted extends BasicRoomInfo {

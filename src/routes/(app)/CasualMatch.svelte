@@ -32,15 +32,24 @@
 
     const fontSize: number = user.fontScale * BASE_FONT_SIZE;
 
-    socket.on("casual:existing-room-info", (existingRoomInfo: CasualRoom) => {
-        matchUsers = new Map(Object.entries(existingRoomInfo.users));
+    socket.on("casual:new-room-info", (newRoomInfo: CasualRoom) => {
+        for (const [id, matchUser] of Object.entries(newRoomInfo.users)) {
+            if (id === user.id) {
+                replay = matchUser.replay;
+                continue;
+            }
+
+            matchUsers.set(id, matchUser);
+        }
+
+        matchUsers = matchUsers;
 
         // Separating the room info from the users to avoid rerendering static data when the uses change
         roomInfo = {
-            id: existingRoomInfo.id,
-            quote: existingRoomInfo.quote,
-            startTime: existingRoomInfo.startTime,
-            matchType: existingRoomInfo.matchType,
+            id: newRoomInfo.id,
+            quote: newRoomInfo.quote,
+            startTime: newRoomInfo.startTime,
+            matchType: newRoomInfo.matchType,
         };
     });
 
@@ -51,10 +60,10 @@
         setTimeout(() => {
             match.update((m) => {
                 if (m === null) {
-                    return { ...defaultMatch, type: "casual" };
+                    return { ...defaultMatch, matchType: "casual" };
                 }
 
-                m.type = "casual";
+                m.matchType = "casual";
                 return m;
             });
         });
@@ -74,7 +83,7 @@
     <title>Casual Match - WordPractice</title>
 </svelte:head>
 
-<MatchContainer {finished} {roomInfo}>
+<MatchContainer {finished} {started} {roomInfo}>
     <div slot="racers" class="flex flex-col gap-3" let:startedRoomInfo>
         <OpponentDisplay
             matchUser={clientMatchUser}

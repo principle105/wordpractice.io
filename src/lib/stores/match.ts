@@ -1,4 +1,4 @@
-import type { Match } from "$lib/types";
+import type { BasicRoomInfo } from "$lib/types";
 import { writable } from "svelte/store";
 
-export const match = writable<Match | null>(null);
+export const match = writable<BasicRoomInfo | null>(null);

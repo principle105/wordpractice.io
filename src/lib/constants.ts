@@ -1,6 +1,8 @@
-import type { Match } from "./types";
+import type { BasicRoomInfo } from "./types";
 
-export const defaultMatch: Match = {
-    type: "casual",
-    users: [],
+export const defaultMatch: BasicRoomInfo = {
+    id: "",
+    matchType: "casual",
+    quote: [],
+    startTime: null,
 };

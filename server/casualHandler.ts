@@ -55,11 +55,9 @@ export const handleIfCasualMatchOver = async (
     room: CasualRoomWithSocketInfo,
     force = false
 ) => {
-    if (room.quote === null) {
-        return;
-    }
-
     const quote = room.quote;
+
+    if (!quote) return;
 
     if (!force) {
         const areAllUsersFinished = Object.values(room.users).every((user) => {
@@ -115,7 +113,7 @@ const registerCasualHandler = (socket: Socket, user: MatchUser) => {
 
         socket.broadcast.to(roomId).emit("new-user", user);
         socket.emit(
-            "casual:existing-room-info",
+            "casual:new-room-info",
             removeSocketInformationFromCasualRoom(room, user.id)
         );
 
@@ -141,7 +139,7 @@ const registerCasualHandler = (socket: Socket, user: MatchUser) => {
         };
 
         socket.emit(
-            "casual:existing-room-info",
+            "casual:new-room-info",
             removeSocketInformationFromCasualRoom(room, user.id)
         );
 

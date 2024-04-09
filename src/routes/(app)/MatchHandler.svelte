@@ -26,14 +26,13 @@
 
     let finished = false;
     let countDown: number | null = null;
-    let interval: ReturnType<typeof setInterval>;
 
     let previousReplayLength = 0;
 
     let socket = io({
         query: {
             token: sessionId ? sessionId : "",
-            matchType: $match?.type,
+            matchType: $match?.matchType,
             guestAccountSeed: $guestAccountSeed,
         },
     });
@@ -98,8 +97,6 @@
 
         finished = true;
 
-        if (interval) clearInterval(interval);
-
         invalidateAll();
     });
 
@@ -118,7 +115,8 @@
         if (totalNewActions === 0) return;
 
         if (totalNewActions < 0) {
-            throw new Error("Something went wrong with the replay.");
+            previousReplayLength = replay.length;
+            return;
         }
 
         const newActions = replay.slice(-totalNewActions);
@@ -132,39 +130,46 @@
     };
 
     onMount(() => {
-        interval = setInterval(() => {
-            if (!roomInfo) {
-                return;
-            }
-
-            if (roomInfo.startTime === null) {
-                countDown = null;
-                return;
-            }
-
-            // Adding 1 to prevent the user from starting too early
-            countDown =
-                1 + Math.round((roomInfo.startTime - Date.now()) / 1000);
-
-            if (countDown <= 0) {
-                clearInterval(interval);
-            }
-        }, 100);
+        doCountDown();
 
         return () => {
             socket.disconnect();
-            clearInterval(interval);
         };
     });
 
+    $: roomInfo, doCountDown();
+
+    const doCountDown = () => {
+        if (
+            !roomInfo ||
+            roomInfo.startTime === null ||
+            roomInfo.quote === null
+        ) {
+            countDown = null;
+            return;
+        }
+
+        countDown = Math.ceil((roomInfo.startTime - Date.now()) / 1000);
+
+        const interval = setInterval(() => {
+            if (countDown === 1 || countDown === null) {
+                countDown = null;
+                clearInterval(interval);
+                return;
+            }
+
+            countDown -= 1;
+        }, 1000);
+    };
+
     $: replay, sendNewReplayAction(replay);
-    $: started = !!(countDown !== null && countDown <= 0);
+    $: started = countDown === null;
 </script>
 
 {#if $match === null}
     <div>Loading...</div>
 {:else}
-    {#if !started && !finished && countDown !== null}
+    {#if !started && !finished}
         <div
             class="fixed inset-0 bg-black/30 flex justify-center items-center z-10"
         >
@@ -174,27 +179,27 @@
         </div>
     {/if}
 
-    {#if $match.type === "ranked"}
+    {#if $match.matchType === "ranked"}
         <RankedMatch
             {user}
-            bind:roomInfo
-            {matchUsers}
             {started}
-            {finished}
+            bind:roomInfo
+            bind:matchUsers
+            bind:finished
             bind:replay
             bind:socket
         />
-    {:else if $match.type === "casual"}
+    {:else if $match.matchType === "casual"}
         <CasualMatch
             {user}
-            bind:roomInfo
-            {matchUsers}
             {started}
-            {finished}
+            bind:roomInfo
+            bind:matchUsers
+            bind:finished
             bind:replay
             bind:socket
         />
-    {:else if $match.type === "private"}
+    {:else if $match.matchType === "private"}
         <section>
             <div>Private Room</div>
         </section>

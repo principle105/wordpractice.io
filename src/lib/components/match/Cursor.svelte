@@ -53,6 +53,7 @@
         const words = completedWords.split(" ");
 
         let word: string;
+
         const currentIndex = words.length - 1;
 
         const loadedFromLastWord =
@@ -69,6 +70,8 @@
         } else {
             word = words[0];
         }
+
+        if (word === undefined) return;
 
         const caretMovement = getCaretData(replay);
 

@@ -34,37 +34,43 @@
 
     const fontSize: number = user.fontScale * BASE_FONT_SIZE;
 
-    socket.on("ranked:existing-room-info", (existingRoomInfo: RankedRoom) => {
-        matchUsers = new Map(Object.entries(existingRoomInfo.users));
+    socket.on("ranked:new-room-info", (newRoomInfo: RankedRoom) => {
+        matchUsers = new Map(
+            Object.entries(newRoomInfo.users).filter(([id]) => id !== user.id)
+        );
 
         // Separating the room info from the users to avoid rerendering static data when the uses change
         roomInfo = {
-            id: existingRoomInfo.id,
-            quote: existingRoomInfo.quote,
-            startTime: existingRoomInfo.startTime,
-            matchType: existingRoomInfo.matchType,
+            id: newRoomInfo.id,
+            quote: newRoomInfo.quote,
+            startTime: newRoomInfo.startTime,
+            matchType: newRoomInfo.matchType,
         };
 
-        scores = new Map(Object.entries(existingRoomInfo.scores));
+        scores = new Map(Object.entries(newRoomInfo.scores));
     });
 
-    socket.on("update-rating", (ratings: { id: string; rating: number }[]) => {
-        ratings.forEach((u) => {
-            if (u.id === user.id) {
-                user.rating = u.rating;
-            } else {
-                let user = matchUsers.get(u.id);
-
-                if (user) {
-                    matchUsers.set(u.id, {
-                        ...user,
-                        rating: u.rating,
-                    });
-                }
+    socket.on("ranked:next-round", (newRoomInfo: RankedRoom) => {
+        for (const [id, matchUser] of Object.entries(newRoomInfo.users)) {
+            if (id === user.id) {
+                user.rating = matchUser.rating;
+                replay = matchUser.replay;
+                continue;
             }
-        });
+
+            matchUsers.set(id, matchUser);
+        }
 
         matchUsers = matchUsers;
+
+        roomInfo = {
+            id: newRoomInfo.id,
+            quote: newRoomInfo.quote,
+            startTime: newRoomInfo.startTime,
+            matchType: newRoomInfo.matchType,
+        };
+
+        scores = new Map(Object.entries(newRoomInfo.scores));
     });
 
     const playAgain = () => {
@@ -74,10 +80,11 @@
         setTimeout(() => {
             match.update((m) => {
                 if (m === null) {
-                    return { ...defaultMatch, type: "ranked" };
+                    return { ...defaultMatch, matchType: "ranked" };
                 }
 
-                m.type = "ranked";
+                m.matchType = "ranked";
+
                 return m;
             });
         });
@@ -97,12 +104,11 @@
     <title>Ranked Match - WordPractice</title>
 </svelte:head>
 
-<MatchContainer {finished} {roomInfo}>
+<MatchContainer {finished} {started} {roomInfo}>
     <div slot="racers" class="flex flex-col gap-3" let:startedRoomInfo>
         <OpponentDisplay
             matchUser={clientMatchUser}
             {startedRoomInfo}
-            bind:finished
             showRating={true}
         />
 

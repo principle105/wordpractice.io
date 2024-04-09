@@ -16,24 +16,29 @@
 
     let wpm = 0;
 
+    $: wordsTyped = convertReplayToWords(
+        matchUser.replay,
+        startedRoomInfo.quote
+    );
+    $: ({ completedWords } = getCompletedAndIncorrectWords(
+        wordsTyped,
+        startedRoomInfo.quote
+    ));
+
+    $: finished =
+        completedWords.length === startedRoomInfo.quote.join(" ").length ||
+        !matchUser.connected;
+
     onMount(() => {
         const interval = setInterval(() => {
-            if (startedRoomInfo.startTime === null) return;
-
             const startTime = Math.min(
                 matchUser.replay[0]?.timestamp,
                 startedRoomInfo.startTime + START_TIME_LENIENCY
             );
 
-            const quoteLength = startedRoomInfo.quote.join(" ").length;
-
-            if (
-                finished ||
-                completedWords.length === quoteLength ||
-                !matchUser.connected
-            ) {
+            if (finished) {
                 clearInterval(interval);
-                finished = true;
+
                 wpm = calculateWpm(
                     matchUser.replay[matchUser.replay.length - 1]?.timestamp,
                     startTime,
@@ -47,17 +52,9 @@
                 );
             }
         }, 250);
+
         return () => clearInterval(interval);
     });
-
-    $: wordsTyped = convertReplayToWords(
-        matchUser.replay,
-        startedRoomInfo.quote
-    );
-    $: ({ completedWords } = getCompletedAndIncorrectWords(
-        wordsTyped,
-        startedRoomInfo.quote
-    ));
 </script>
 
 <div

@@ -13,10 +13,6 @@
     export let startedRoomInfo: BasicRoomInfoStarted;
 
     const getStartTime = () => {
-        if (startedRoomInfo.startTime === null) {
-            return null;
-        }
-
         const maxStartTime = startedRoomInfo.startTime + START_TIME_LENIENCY;
 
         if (replay.length === 0) {
@@ -26,7 +22,8 @@
         return Math.min(replay[0]?.timestamp, maxStartTime);
     };
 
-    const startTime: number | null = getStartTime();
+    const startTime = getStartTime();
+
     let actualStartTime = 0;
 
     let timeElapsed = 0;
@@ -51,10 +48,6 @@
 
     const play = () => {
         if (replay.length === 0) {
-            return;
-        }
-
-        if (startTime === null) {
             return;
         }
 

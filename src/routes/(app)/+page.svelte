@@ -44,10 +44,10 @@
 
         match.update((m) => {
             if (m === null) {
-                return { ...defaultMatch, type: newMatchType };
+                return { ...defaultMatch, matchType: newMatchType };
             }
 
-            m.type = newMatchType;
+            m.matchType = newMatchType;
             return m;
         });
     };
