@@ -1,6 +1,6 @@
 <script lang="ts">
     import { START_TIME_LENIENCY } from "$lib/config";
-    import type { Replay, RoomInfo } from "$lib/types";
+    import type { Replay, BasicRoomInfoStarted } from "$lib/types";
 
     import {
         convertReplayToWords,
@@ -13,20 +13,18 @@
     } from "$lib/utils/stats";
 
     export let replay: Replay;
-    export let roomInfo: RoomInfo;
+    export let startedRoomInfo: BasicRoomInfoStarted;
 
     const getWpm = (): number => {
-        if (roomInfo.startTime === null) return 0;
-
         const startTime = Math.min(
             replay[0]?.timestamp,
-            roomInfo.startTime + START_TIME_LENIENCY
+            startedRoomInfo.startTime + START_TIME_LENIENCY
         );
 
-        const wordsTyped = convertReplayToWords(replay, roomInfo.quote);
+        const wordsTyped = convertReplayToWords(replay, startedRoomInfo.quote);
         const { completedWords } = getCompletedAndIncorrectWords(
             wordsTyped,
-            roomInfo.quote
+            startedRoomInfo.quote
         );
 
         return calculateWpm(
@@ -38,7 +36,7 @@
 
     const getAccuracy = (): number => {
         const { totalCorrectChars, totalIncorrectChars } =
-            getTotalCorrectAndIncorrectChars(replay, roomInfo.quote);
+            getTotalCorrectAndIncorrectChars(replay, startedRoomInfo.quote);
 
         return calculateAccuracy(totalCorrectChars, totalIncorrectChars);
     };

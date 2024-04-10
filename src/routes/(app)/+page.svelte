@@ -5,10 +5,9 @@
 
     import { guestAccountSeed } from "$lib/stores/guestAccountSeed";
     import { DEFAULT_FONT_SCALE } from "$lib/config";
-    import { defaultMatch } from "$lib/constants";
     import { getGuestAvatar, getGuestUsername } from "$lib/utils/random";
     import type { MatchType } from "$lib/types";
-    import { match } from "$lib/stores/match";
+    import { matchType } from "$lib/stores/matchType";
 
     import MatchHandler from "./MatchHandler.svelte";
 
@@ -42,14 +41,7 @@
             return;
         }
 
-        match.update((m) => {
-            if (m === null) {
-                return { ...defaultMatch, type: newMatchType };
-            }
-
-            m.type = newMatchType;
-            return m;
-        });
+        matchType.set(newMatchType);
     };
 
     const createNewPrivateRoom = () => {
@@ -61,7 +53,7 @@
     <title>WordPractice</title>
 </svelte:head>
 
-{#if $match === null}
+{#if $matchType === null}
     <section class="pt-2">
         <div class="grid grid-cols-1 gap-6 mx-auto sm:grid-cols-3 grow">
             <button

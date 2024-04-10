@@ -3,7 +3,11 @@ import type { ViteDevServer } from "vite";
 import type { User } from "@prisma/client";
 
 import { lucia } from "../src/lib/server/auth/clients";
-import type { MatchUser, MatchType } from "../src/lib/types";
+import type {
+    CasualRoomWithSocketInfo,
+    MatchUser,
+    RankedRoomWithSocketInfo,
+} from "../src/lib/types";
 import { getGuestUsername, getGuestAvatar } from "../src/lib/utils/random";
 import { convertStringToInteger } from "../src/lib/utils/conversions";
 import { GUEST_SEED_SIZE } from "../src/lib/config";
@@ -92,7 +96,7 @@ const getCurrentRateLimit = (userId: string): number => {
 const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
     // Periodically checking if any rooms have gone over the time limit
     setInterval(() => {
-        const allRooms = new Map([...rankedRooms, ...casualRooms]).values();
+        const allRooms = [...rankedRooms.values(), ...casualRooms.values()];
 
         for (const room of allRooms) {
             if (
@@ -103,9 +107,9 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
                     socket.emit("match-ended");
 
                     if (room.matchType === "casual") {
-                        handleIfCasualMatchOver(room);
+                        handleIfCasualMatchOver(room, true);
                     } else if (room.matchType === "ranked") {
-                        handleIfRankedMatchOver(room, socket);
+                        handleIfRankedMatchOver(room, socket, true);
                     }
                 });
             }
@@ -210,9 +214,14 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
 
                 // TODO: create a utility function for this
                 if (matchType === "ranked") {
-                    await handleIfRankedMatchOver(room, socket);
+                    await handleIfRankedMatchOver(
+                        room as RankedRoomWithSocketInfo,
+                        socket
+                    );
                 } else if (matchType === "casual") {
-                    await handleIfCasualMatchOver(room);
+                    await handleIfCasualMatchOver(
+                        room as CasualRoomWithSocketInfo
+                    );
                 }
             }
         });

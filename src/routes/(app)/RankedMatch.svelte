@@ -2,10 +2,14 @@
     // TODO: add max wrong characters and add server-side validation for it
     import type { User } from "@prisma/client";
     import type { Socket } from "socket.io-client";
-    import { defaultMatch } from "$lib/constants";
 
-    import type { MatchUser, Replay, RoomInfo } from "$lib/types";
-    import { match } from "$lib/stores/match";
+    import type {
+        MatchUser,
+        Replay,
+        BasicRoomInfo,
+        RankedRoom,
+    } from "$lib/types";
+    import { matchType } from "$lib/stores/matchType";
     import { BASE_FONT_SIZE } from "$lib/config";
 
     import OpponentDisplay from "$lib/components/match/OpponentDisplay.svelte";
@@ -16,49 +20,67 @@
     import EndScreen from "$lib/components/match/EndScreen.svelte";
 
     export let user: User;
-    export let roomInfo: RoomInfo;
+    export let roomInfo: BasicRoomInfo | null;
     export let matchUsers = new Map<string, MatchUser>();
     export let replay: Replay = [];
     export let started: boolean;
     export let socket: Socket;
     export let finished: boolean;
 
+    let scores: Map<string, number> = new Map();
+
     let showReplay = false;
 
     const fontSize: number = user.fontScale * BASE_FONT_SIZE;
 
-    socket.on("update-rating", (ratings: { id: string; rating: number }[]) => {
-        ratings.forEach((u) => {
-            if (u.id === user.id) {
-                user.rating = u.rating;
-            } else {
-                let user = matchUsers.get(u.id);
+    $: roundNumber =
+        Array.from(scores.values()).reduce((acc, curr) => acc + curr, 0) + 1;
 
-                if (user) {
-                    matchUsers.set(u.id, {
-                        ...user,
-                        rating: u.rating,
-                    });
-                }
+    socket.on("ranked:new-room-info", (newRoomInfo: RankedRoom) => {
+        matchUsers = new Map(
+            Object.entries(newRoomInfo.users).filter(([id]) => id !== user.id)
+        );
+
+        // Separating the room info from the users to avoid rerendering static data when the uses change
+        roomInfo = {
+            id: newRoomInfo.id,
+            quote: newRoomInfo.quote,
+            startTime: newRoomInfo.startTime,
+            matchType: newRoomInfo.matchType,
+        };
+
+        scores = new Map(Object.entries(newRoomInfo.scores));
+    });
+
+    socket.on("ranked:update-room-info", (newRoomInfo: RankedRoom) => {
+        for (const [id, matchUser] of Object.entries(newRoomInfo.users)) {
+            if (id === user.id) {
+                user.rating = matchUser.rating;
+                replay = matchUser.replay;
+                continue;
             }
-        });
+
+            matchUsers.set(id, matchUser);
+        }
 
         matchUsers = matchUsers;
+
+        roomInfo = {
+            id: newRoomInfo.id,
+            quote: newRoomInfo.quote,
+            startTime: newRoomInfo.startTime,
+            matchType: newRoomInfo.matchType,
+        };
+
+        scores = new Map(Object.entries(newRoomInfo.scores));
     });
 
     const playAgain = () => {
-        match.set(null);
+        matchType.set(null);
         socket.disconnect();
 
         setTimeout(() => {
-            match.update((m) => {
-                if (m === null) {
-                    return { ...defaultMatch, type: "ranked" };
-                }
-
-                m.type = "ranked";
-                return m;
-            });
+            matchType.set("ranked");
         });
     };
 
@@ -76,24 +98,27 @@
     <title>Ranked Match - WordPractice</title>
 </svelte:head>
 
-<MatchContainer {finished}>
-    <div slot="racers" class="flex flex-col gap-3">
+<div class="fixed bottom-0 right-0 left-0 font-mono">
+    Round: {roundNumber}
+</div>
+
+<MatchContainer {finished} {started} {roomInfo}>
+    <div slot="racers" class="flex flex-col gap-3" let:startedRoomInfo>
         <OpponentDisplay
             matchUser={clientMatchUser}
-            {roomInfo}
-            bind:finished
+            {startedRoomInfo}
             showRating={true}
         />
 
         {#each matchUsers.values() as matchUser}
-            <OpponentDisplay {matchUser} {roomInfo} showRating={true} />
+            <OpponentDisplay {matchUser} {startedRoomInfo} showRating={true} />
         {/each}
     </div>
 
-    <div slot="end-screen">
+    <div slot="end-screen" let:startedRoomInfo>
         <div class="mt-16 flex flex-col justify-center">
             <h2 class="text-3xl">Your Stats</h2>
-            <EndScreen {replay} {roomInfo} />
+            <EndScreen {replay} {startedRoomInfo} />
         </div>
         <button
             class="bg-zinc-500 p-3 rounded-md text-white"
@@ -108,20 +133,36 @@
             Play Again
         </button>
         {#if showReplay}
-            <ReplayText {fontSize} {replay} {roomInfo} />
+            <ReplayText {fontSize} {replay} {startedRoomInfo} />
         {/if}
     </div>
 
-    <svelte:fragment slot="word-display">
-        <WordDisplay
-            {fontSize}
-            matchUsers={Array.from(matchUsers.values())}
-            {replay}
-            {roomInfo}
-        />
-    </svelte:fragment>
+    <WordDisplay
+        slot="word-display"
+        let:startedRoomInfo
+        {fontSize}
+        matchUsers={Array.from(matchUsers.values())}
+        {replay}
+        {startedRoomInfo}
+    />
 
-    <svelte:fragment slot="input">
-        <TestInput bind:replay {started} {roomInfo} />
-    </svelte:fragment>
+    <TestInput
+        slot="input"
+        let:startedRoomInfo
+        bind:replay
+        {started}
+        {startedRoomInfo}
+    />
+
+    <div slot="waiting">
+        <div>Waiting for a player to join</div>
+    </div>
+
+    <div slot="loading">
+        <div class="flex justify-center items-center h-[86vh]">
+            <div
+                class="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-zinc-500"
+            />
+        </div>
+    </div>
 </MatchContainer>

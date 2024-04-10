@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { PageData } from "./$types";
-    import { match } from "$lib/stores/match";
+    import { matchType } from "$lib/stores/matchType";
     import { fly } from "svelte/transition";
 
     import MaterialSymbolsKeyboardArrowDownRounded from "~icons/material-symbols/keyboard-arrow-down-rounded";
@@ -13,7 +13,7 @@
     let showDropdown = false;
 
     const exitActiveMatch = () => {
-        match.set(null);
+        matchType.set(null);
     };
 
     const signOut = async () => {

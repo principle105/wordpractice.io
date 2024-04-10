@@ -5,15 +5,15 @@
         Character,
         Delete,
         Replay,
-        RoomInfo,
+        BasicRoomInfoStarted,
     } from "$lib/types";
     import { convertReplayToWords } from "$lib/utils/textProcessing";
 
-    export let roomInfo: RoomInfo;
+    export let startedRoomInfo: BasicRoomInfoStarted;
     export let replay: Replay;
     export let started: boolean;
 
-    $: wordsTyped = convertReplayToWords(replay, roomInfo.quote);
+    $: wordsTyped = convertReplayToWords(replay, startedRoomInfo.quote);
 
     let currentWordIndex = 0;
     let wordInput = "";
@@ -95,7 +95,7 @@
         // Checking if the word is completed
         if (
             newChar === " " &&
-            roomInfo.quote[currentWordIndex] ===
+            startedRoomInfo.quote[currentWordIndex] ===
                 wordsTyped.slice(currentWordIndex).join(" ")
         ) {
             wordInput = "";
