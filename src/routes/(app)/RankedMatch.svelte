@@ -33,6 +33,9 @@
 
     const fontSize: number = user.fontScale * BASE_FONT_SIZE;
 
+    $: roundNumber =
+        Array.from(scores.values()).reduce((acc, curr) => acc + curr, 0) + 1;
+
     socket.on("ranked:new-room-info", (newRoomInfo: RankedRoom) => {
         matchUsers = new Map(
             Object.entries(newRoomInfo.users).filter(([id]) => id !== user.id)
@@ -94,6 +97,10 @@
 <svelte:head>
     <title>Ranked Match - WordPractice</title>
 </svelte:head>
+
+<div class="fixed bottom-0 right-0 left-0 font-mono">
+    Round: {roundNumber}
+</div>
 
 <MatchContainer {finished} {started} {roomInfo}>
     <div slot="racers" class="flex flex-col gap-3" let:startedRoomInfo>
