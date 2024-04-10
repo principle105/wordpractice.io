@@ -6,7 +6,7 @@
     import type { User } from "@prisma/client";
 
     import { guestAccountSeed } from "$lib/stores/guestAccountSeed";
-    import { match } from "$lib/stores/match";
+    import { matchType } from "$lib/stores/matchType";
     import type {
         MatchUser,
         Replay,
@@ -32,7 +32,7 @@
     let socket = io({
         query: {
             token: sessionId ? sessionId : "",
-            matchType: $match?.matchType,
+            matchType: $matchType,
             guestAccountSeed: $guestAccountSeed,
         },
     });
@@ -92,7 +92,7 @@
 
     socket.on("disconnect", () => {
         if (roomInfo === null) {
-            match.set(null);
+            matchType.set(null);
         }
 
         finished = true;
@@ -110,14 +110,13 @@
     const sendNewReplayAction = (replay: Replay) => {
         if (replay.length === 0) return;
 
+        if (previousReplayLength > replay.length) {
+            previousReplayLength = 0;
+        }
+
         const totalNewActions = replay.length - previousReplayLength;
 
         if (totalNewActions === 0) return;
-
-        if (totalNewActions < 0) {
-            previousReplayLength = replay.length;
-            return;
-        }
 
         const newActions = replay.slice(-totalNewActions);
 
@@ -166,7 +165,7 @@
     $: started = countDown === null;
 </script>
 
-{#if $match === null}
+{#if $matchType === null}
     <div>Loading...</div>
 {:else}
     {#if !started && !finished}
@@ -179,27 +178,27 @@
         </div>
     {/if}
 
-    {#if $match.matchType === "ranked"}
+    {#if $matchType === "ranked"}
         <RankedMatch
-            {user}
             {started}
+            bind:user
             bind:roomInfo
             bind:matchUsers
             bind:finished
             bind:replay
             bind:socket
         />
-    {:else if $match.matchType === "casual"}
+    {:else if $matchType === "casual"}
         <CasualMatch
-            {user}
             {started}
+            bind:user
             bind:roomInfo
             bind:matchUsers
             bind:finished
             bind:replay
             bind:socket
         />
-    {:else if $match.matchType === "private"}
+    {:else if $matchType === "private"}
         <section>
             <div>Private Room</div>
         </section>

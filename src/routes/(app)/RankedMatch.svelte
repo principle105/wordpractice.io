@@ -2,7 +2,6 @@
     // TODO: add max wrong characters and add server-side validation for it
     import type { User } from "@prisma/client";
     import type { Socket } from "socket.io-client";
-    import { defaultMatch } from "$lib/constants";
 
     import type {
         MatchUser,
@@ -10,7 +9,7 @@
         BasicRoomInfo,
         RankedRoom,
     } from "$lib/types";
-    import { match } from "$lib/stores/match";
+    import { matchType } from "$lib/stores/matchType";
     import { BASE_FONT_SIZE } from "$lib/config";
 
     import OpponentDisplay from "$lib/components/match/OpponentDisplay.svelte";
@@ -50,7 +49,7 @@
         scores = new Map(Object.entries(newRoomInfo.scores));
     });
 
-    socket.on("ranked:next-round", (newRoomInfo: RankedRoom) => {
+    socket.on("ranked:update-room-info", (newRoomInfo: RankedRoom) => {
         for (const [id, matchUser] of Object.entries(newRoomInfo.users)) {
             if (id === user.id) {
                 user.rating = matchUser.rating;
@@ -74,19 +73,11 @@
     });
 
     const playAgain = () => {
-        match.set(null);
+        matchType.set(null);
         socket.disconnect();
 
         setTimeout(() => {
-            match.update((m) => {
-                if (m === null) {
-                    return { ...defaultMatch, matchType: "ranked" };
-                }
-
-                m.matchType = "ranked";
-
-                return m;
-            });
+            matchType.set("ranked");
         });
     };
 
@@ -150,9 +141,9 @@
 
     <TestInput
         slot="input"
+        let:startedRoomInfo
         bind:replay
         {started}
-        let:startedRoomInfo
         {startedRoomInfo}
     />
 

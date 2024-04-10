@@ -130,66 +130,81 @@ export const handleIfRankedMatchOver = async (
         room.quote = "hello how are you doing".split(" ");
 
         socket.emit(
-            "ranked:next-round",
+            "ranked:update-room-info",
             removeSocketInformationFromRankedRoom(room)
         );
 
         socket.broadcast
             .to(room.id)
             .emit(
-                "ranked:next-round",
+                "ranked:update-room-info",
                 removeSocketInformationFromRankedRoom(room)
             );
 
         return;
     }
 
-    // rankedRooms.delete(room.id);
+    rankedRooms.delete(room.id);
 
-    // const [winner, loser] =
-    //     matchWinner === user1.id ? [user1, user2] : [user2, user1];
+    const [winner, loser] =
+        matchWinner === user1.id ? [user1, user2] : [user2, user1];
 
-    // // Handling the match being completely over
-    // const winnerChance =
-    //     1.0 / (1.0 + Math.pow(10, (loser.rating - winner.rating) / 400));
+    // Handling the match being completely over
+    const winnerChance =
+        1.0 / (1.0 + Math.pow(10, (loser.rating - winner.rating) / 400));
 
-    // const loserChance =
-    //     1.0 / (1.0 + Math.pow(10, (winner.rating - loser.rating) / 400));
+    const loserChance =
+        1.0 / (1.0 + Math.pow(10, (winner.rating - loser.rating) / 400));
 
-    // const winnerNewRating = Math.round(
-    //     winner.rating + K_FACTOR * (1 - winnerChance)
-    // );
-    // const loserNewRating = Math.round(
-    //     loser.rating + K_FACTOR * (0 - loserChance)
-    // );
+    const winnerNewRating = Math.round(
+        winner.rating + K_FACTOR * (1 - winnerChance)
+    );
+    const loserNewRating = Math.round(
+        loser.rating + K_FACTOR * (0 - loserChance)
+    );
 
-    // if (winner.id === user1.id) {
-    //     user1.rating = winnerNewRating;
-    //     user2.rating = loserNewRating;
-    // } else {
-    //     user1.rating = loserNewRating;
-    //     user2.rating = winnerNewRating;
-    // }
+    if (winner.id === user1.id) {
+        user1.rating = winnerNewRating;
+        user2.rating = loserNewRating;
+    } else {
+        user1.rating = loserNewRating;
+        user2.rating = winnerNewRating;
+    }
 
-    // // Update the rating for each match user in the database
-    // Object.values(room.users).forEach(async (user) => {
-    //     // TODO: add property error handling
-    //     try {
-    //         await client.user.update({
-    //             where: { id: user.id },
-    //             data: {
-    //                 rating: user.rating,
-    //             },
-    //         });
-    //     } catch (e) {
-    //         console.log(e);
-    //     }
-    // });
+    room.users[user1.id] = user1;
+    room.users[user2.id] = user2;
 
-    // // Disconnect all the users and delete the room
-    // for (const socket of room.sockets.values()) {
-    //     socket.disconnect();
-    // }
+    socket.emit(
+        "ranked:update-room-info",
+        removeSocketInformationFromRankedRoom(room)
+    );
+
+    socket.broadcast
+        .to(room.id)
+        .emit(
+            "ranked:update-room-info",
+            removeSocketInformationFromRankedRoom(room)
+        );
+
+    // Update the rating for each match user in the database
+    Object.values(room.users).forEach(async (user) => {
+        // TODO: add property error handling
+        try {
+            await client.user.update({
+                where: { id: user.id },
+                data: {
+                    rating: user.rating,
+                },
+            });
+        } catch (e) {
+            console.log(e);
+        }
+    });
+
+    // Disconnect all the users and delete the room
+    for (const socket of room.sockets.values()) {
+        socket.disconnect();
+    }
 };
 
 const registerRankedHandler = (socket: Socket, user: MatchUser) => {

@@ -9,8 +9,7 @@
         Replay,
         BasicRoomInfo,
     } from "$lib/types";
-    import { defaultMatch } from "$lib/constants";
-    import { match } from "$lib/stores/match";
+    import { matchType } from "$lib/stores/matchType";
     import { BASE_FONT_SIZE } from "$lib/config";
 
     import OpponentDisplay from "$lib/components/match/OpponentDisplay.svelte";
@@ -54,18 +53,11 @@
     });
 
     const playAgain = () => {
-        match.set(null);
+        matchType.set(null);
         socket.disconnect();
 
         setTimeout(() => {
-            match.update((m) => {
-                if (m === null) {
-                    return { ...defaultMatch, matchType: "casual" };
-                }
-
-                m.matchType = "casual";
-                return m;
-            });
+            matchType.set("casual");
         });
     };
 
