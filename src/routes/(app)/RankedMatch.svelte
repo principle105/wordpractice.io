@@ -11,6 +11,7 @@
     } from "$lib/types";
     import { matchType } from "$lib/stores/matchType";
     import { BASE_FONT_SIZE } from "$lib/config";
+    import type { TextCategory } from "$lib/types";
 
     import OpponentDisplay from "$lib/components/match/OpponentDisplay.svelte";
     import ReplayText from "$lib/components/match/ReplayText.svelte";
@@ -18,9 +19,8 @@
     import TestInput from "$lib/components/match/TestInput.svelte";
     import MatchContainer from "$lib/components/layout/MatchContainer.svelte";
     import EndScreen from "$lib/components/match/EndScreen.svelte";
-    import OpponentSearch from "$lib/components/match/OpponentSearch.svelte";
-    import TextEliminator from "./TextEliminator.svelte";
-    import type { TextCategory } from "$lib/types";
+    import OpponentSearch from "$lib/components/match/ranked/OpponentSearch.svelte";
+    import TextEliminator from "$lib/components/match/ranked/TextEliminator.svelte";
 
     export let user: User;
     export let roomInfo: BasicRoomInfo | null;
