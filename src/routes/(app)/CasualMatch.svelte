@@ -127,10 +127,6 @@
         {startedRoomInfo}
     />
 
-    <div slot="waiting">
-        <div>WAITING</div>
-    </div>
-
     <div slot="loading">
         <div class="flex justify-center items-center h-[86vh]">
             <div

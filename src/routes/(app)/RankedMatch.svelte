@@ -18,6 +18,7 @@
     import TestInput from "$lib/components/match/TestInput.svelte";
     import MatchContainer from "$lib/components/layout/MatchContainer.svelte";
     import EndScreen from "$lib/components/match/EndScreen.svelte";
+    import OpponentSearch from "$lib/components/match/OpponentSearch.svelte";
 
     export let user: User;
     export let roomInfo: BasicRoomInfo | null;
@@ -30,6 +31,9 @@
     let scores: Map<string, number> = new Map();
 
     let showReplay = false;
+
+    let minSearchRating = 0;
+    let maxSearchRating = 0;
 
     const fontSize: number = user.fontScale * BASE_FONT_SIZE;
 
@@ -73,6 +77,13 @@
         };
 
         scores = new Map(Object.entries(newRoomInfo.scores));
+    });
+
+    socket.on("ranked:waiting-for-match", (ratingPayload: [number, number]) => {
+        const [minRating, maxRating] = ratingPayload;
+
+        minSearchRating = minRating;
+        maxSearchRating = maxRating;
     });
 
     const playAgain = () => {
@@ -154,15 +165,29 @@
         {startedRoomInfo}
     />
 
-    <div slot="waiting">
-        <div>Waiting for a player to join</div>
+    <div slot="before-start">
+        <div>Eliminate a text type</div>
+        <div class="grid grid-cols-3 gap-4">
+            {#each ["dictionary easy", "dictionary hard", "quote easy", "quote hard"] as quoteType}
+                <button class="border bg-zinc-100 p-5 text-center rounded-lg">
+                    {quoteType}
+                </button>
+            {/each}
+        </div>
+        <button class="bg-red-500 p-3 rounded-md text-white">
+            Eliminate
+        </button>
     </div>
 
     <div slot="loading">
-        <div class="flex justify-center items-center h-[86vh]">
-            <div
-                class="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-zinc-500"
-            />
-        </div>
+        {#if minSearchRating === 0 && maxSearchRating === 0}
+            <div class="flex justify-center items-center h-[86vh]">
+                <div
+                    class="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-zinc-500"
+                />
+            </div>
+        {:else}
+            <OpponentSearch {minSearchRating} {maxSearchRating} />
+        {/if}
     </div>
 </MatchContainer>
