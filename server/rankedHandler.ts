@@ -222,7 +222,7 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
     let minRating = Math.round(user.rating / 100) * 100;
     let maxRating = Math.round(user.rating / 100) * 100;
 
-    let startSearchingTime = Date.now();
+    const startSearchingTime = Date.now();
     let searchingStepTime = SEARCHING_TIME_PER_STEP;
 
     const searchForOpponent = () => {
@@ -301,7 +301,7 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
         }
     };
 
-    let interval = setInterval(() => {
+    const interval = setInterval(() => {
         searchForOpponent();
     }, 1000);
 
