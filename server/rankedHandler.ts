@@ -5,6 +5,7 @@ import type {
     RankedRoomWithSocketInfo,
     NewActionPayload,
     RankedRoom,
+    TextCategory,
 } from "../src/lib/types";
 
 import { client } from "../src/lib/server/auth/clients";
@@ -271,6 +272,10 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
                 sockets: new Map(),
             };
 
+            // Removing the users from the queue
+            rankedQueue.delete(user.id);
+            rankedQueue.delete(queuedUser.id);
+
             room = addUserToRankedRoom(user, socket, room);
             room = addUserToRankedRoom(queuedUser, socket, room);
 
@@ -307,6 +312,8 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
 
     // Running once initially to circumvent the setInterval delay
     searchForOpponent();
+
+    socket.on("ranked:eliminate", (textCategory: TextCategory) => {});
 
     // New typing action from the user
     socket.on("new-action", async (newActionPayload: NewActionPayload) => {
@@ -350,6 +357,28 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
         socket.broadcast.to(roomId).emit("new-action", newActionPayload);
 
         await handleIfRankedMatchOver(room, socket);
+    });
+
+    // When the client disconnects
+    socket.on("disconnect", async () => {
+        const userInQueue = rankedQueue.delete(user.id);
+
+        if (userInQueue) return;
+
+        for (const [roomId, room] of rankedRooms) {
+            if (!(user.id in room.users)) {
+                return;
+            }
+
+            room.users[user.id].connected = false;
+
+            socket.broadcast.to(roomId).emit("user-disconnect", user.id);
+
+            await handleIfRankedMatchOver(
+                room as RankedRoomWithSocketInfo,
+                socket
+            );
+        }
     });
 };
 

@@ -80,3 +80,12 @@ export interface NewActionPayload {
     userId: string;
     actions: Replay;
 }
+
+export const textCategories = [
+    "dictionary easy",
+    "dictionary hard",
+    "quote easy",
+    "quote hard",
+] as const;
+
+export type TextCategory = (typeof textCategories)[number];

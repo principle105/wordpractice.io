@@ -3,11 +3,7 @@ import type { ViteDevServer } from "vite";
 import type { User } from "@prisma/client";
 
 import { lucia } from "../src/lib/server/auth/clients";
-import type {
-    CasualRoomWithSocketInfo,
-    MatchUser,
-    RankedRoomWithSocketInfo,
-} from "../src/lib/types";
+import type { MatchUser } from "../src/lib/types";
 import { getGuestUsername, getGuestAvatar } from "../src/lib/utils/random";
 import { convertStringToInteger } from "../src/lib/utils/conversions";
 import { GUEST_SEED_SIZE } from "../src/lib/config";
@@ -19,7 +15,7 @@ import registerCasualHandler, {
     handleIfCasualMatchOver,
 } from "./casualHandler";
 
-import { rankedRooms, casualRooms } from "./state";
+import { rankedRooms, casualRooms, rankedQueue } from "./state";
 
 const MAX_MATCH_LENGTH = 60 * 1000;
 
@@ -183,6 +179,17 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
             }
         }
 
+        // Removing the user from all the queues they are currently in
+        for (const {
+            user: queuedUser,
+            socket: queuedUserSocket,
+        } of rankedQueue.values()) {
+            if (queuedUser.id === user.id) {
+                queuedUserSocket.disconnect(true);
+                rankedQueue.delete(queuedUser.id);
+            }
+        }
+
         if (matchType === "ranked") {
             registerRankedHandler(socket, user);
         } else if (matchType === "casual") {
@@ -191,40 +198,6 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
             socket.disconnect();
             return;
         }
-
-        // When the client disconnects
-        socket.on("disconnect", async () => {
-            const rooms =
-                matchType === "ranked"
-                    ? rankedRooms
-                    : matchType === "casual"
-                    ? casualRooms
-                    : null;
-
-            if (!rooms) return;
-
-            for (const [roomId, room] of rooms) {
-                if (!(user.id in room.users)) {
-                    return;
-                }
-
-                room.users[user.id].connected = false;
-
-                socket.broadcast.to(roomId).emit("user-disconnect", user.id);
-
-                // TODO: create a utility function for this
-                if (matchType === "ranked") {
-                    await handleIfRankedMatchOver(
-                        room as RankedRoomWithSocketInfo,
-                        socket
-                    );
-                } else if (matchType === "casual") {
-                    await handleIfCasualMatchOver(
-                        room as CasualRoomWithSocketInfo
-                    );
-                }
-            }
-        });
     });
 };
 

@@ -19,6 +19,8 @@
     import MatchContainer from "$lib/components/layout/MatchContainer.svelte";
     import EndScreen from "$lib/components/match/EndScreen.svelte";
     import OpponentSearch from "$lib/components/match/OpponentSearch.svelte";
+    import TextEliminator from "./TextEliminator.svelte";
+    import type { TextCategory } from "$lib/types";
 
     export let user: User;
     export let roomInfo: BasicRoomInfo | null;
@@ -95,6 +97,10 @@
         });
     };
 
+    const onElimination = (textCategory: TextCategory) => {
+        socket.emit("ranked:eliminate", textCategory);
+    };
+
     $: clientMatchUser = {
         id: user.id,
         username: user.username,
@@ -166,17 +172,12 @@
     />
 
     <div slot="before-start">
-        <div>Eliminate a text type</div>
-        <div class="grid grid-cols-3 gap-4">
-            {#each ["dictionary easy", "dictionary hard", "quote easy", "quote hard"] as quoteType}
-                <button class="border bg-zinc-100 p-5 text-center rounded-lg">
-                    {quoteType}
-                </button>
-            {/each}
+        <div>
+            {user.username} vs {Array.from(matchUsers.values())
+                .map((matchUser) => matchUser.username)
+                .join(", ")}
         </div>
-        <button class="bg-red-500 p-3 rounded-md text-white">
-            Eliminate
-        </button>
+        <TextEliminator on:selection={(e) => onElimination(e.detail)} />
     </div>
 
     <div slot="loading">
