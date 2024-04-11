@@ -13,13 +13,17 @@ import {
     getCompletedAndIncorrectWords,
     convertReplayToWords,
 } from "../src/lib/utils/textProcessing";
-import { rankedRooms } from "./state";
+import { rankedQueue, rankedRooms } from "./state";
 import { START_TIME_LENIENCY } from "../src/lib/config";
 
 const BEST_OF = 3;
 const COUNTDOWN_TIME = 6 * 1000;
 
 const K_FACTOR = 32;
+
+const RATING_SEARCH_STEP = 100;
+const SEARCHING_TIME_PER_STEP = 15; // seconds
+const SEARCHING_TIME_STEP_MULTIPLIER = 2;
 
 const removeSocketInformationFromRankedRoom = (
     room: RankedRoomWithSocketInfo
@@ -210,64 +214,99 @@ export const handleIfRankedMatchOver = async (
 const registerRankedHandler = (socket: Socket, user: MatchUser) => {
     let hasUserJoinedARoom = false;
 
-    for (const [roomId, room] of rankedRooms) {
-        // Checking if the room already has two users
-        if (Object.keys(room.users).length > 1) {
-            continue;
+    rankedQueue.set(user.id, {
+        user,
+        socket,
+    });
+
+    let minRating = Math.round(user.rating / 100) * 100;
+    let maxRating = Math.round(user.rating / 100) * 100;
+
+    const startSearchingTime = Date.now();
+    let searchingStepTime = SEARCHING_TIME_PER_STEP;
+
+    const searchForOpponent = () => {
+        const secondsPassed = Math.floor(
+            (Date.now() - startSearchingTime) / 1000
+        );
+
+        if (secondsPassed % searchingStepTime === 0) {
+            if (minRating !== 0) {
+                minRating -= RATING_SEARCH_STEP;
+            }
+
+            maxRating += RATING_SEARCH_STEP;
+
+            searchingStepTime = Math.ceil(
+                searchingStepTime * SEARCHING_TIME_STEP_MULTIPLIER
+            );
         }
 
-        const newRoomInfo = addUserToRankedRoom(user, socket, room);
+        socket.emit("ranked:waiting-for-match", [minRating, maxRating]);
 
-        const quote = "power power power".split(" ");
+        for (const {
+            user: queuedUser,
+            socket: queuedUserSocket,
+        } of rankedQueue.values()) {
+            if (queuedUser.id === user.id) continue;
 
-        newRoomInfo.quote = quote;
-        newRoomInfo.startTime = Date.now() + COUNTDOWN_TIME;
+            // Checking if the opponent is outside the rating range
+            if (
+                queuedUser.rating < minRating ||
+                queuedUser.rating > maxRating
+            ) {
+                continue;
+            }
 
-        socket.emit(
-            "ranked:new-room-info",
-            removeSocketInformationFromRankedRoom(newRoomInfo)
-        );
+            const roomId = Math.random().toString(36).substring(2, 8);
 
-        socket.broadcast
-            .to(roomId)
-            .emit(
+            let room: RankedRoomWithSocketInfo = {
+                matchType: "ranked",
+                id: roomId,
+                users: {},
+                quote: null,
+                startTime: null,
+                scores: {},
+                userBlacklistedTextTypes: {},
+                sockets: new Map(),
+            };
+
+            room = addUserToRankedRoom(user, socket, room);
+            room = addUserToRankedRoom(queuedUser, socket, room);
+
+            rankedRooms.set(roomId, room);
+
+            socket.join(roomId);
+            queuedUserSocket.join(roomId);
+
+            socket.emit(
                 "ranked:new-room-info",
-                removeSocketInformationFromRankedRoom(newRoomInfo)
+                removeSocketInformationFromRankedRoom(room)
             );
 
-        rankedRooms.set(roomId, newRoomInfo);
-        socket.join(roomId);
+            socket.broadcast
+                .to(roomId)
+                .emit(
+                    "ranked:new-room-info",
+                    removeSocketInformationFromRankedRoom(room)
+                );
 
-        hasUserJoinedARoom = true;
+            hasUserJoinedARoom = true;
 
-        break;
-    }
+            break;
+        }
 
-    // Creating a new room if there are no available rooms
-    if (!hasUserJoinedARoom) {
-        const roomId = Math.random().toString(36).substring(2, 8);
+        if (hasUserJoinedARoom) {
+            clearInterval(interval);
+        }
+    };
 
-        let room: RankedRoomWithSocketInfo = {
-            matchType: "ranked",
-            id: roomId,
-            users: {},
-            quote: null,
-            startTime: null,
-            scores: {},
-            userBlacklistedTextTypes: {},
-            sockets: new Map(),
-        };
+    const interval = setInterval(() => {
+        searchForOpponent();
+    }, 1000);
 
-        room = addUserToRankedRoom(user, socket, room);
-
-        socket.emit(
-            "ranked:new-room-info",
-            removeSocketInformationFromRankedRoom(room)
-        );
-
-        rankedRooms.set(roomId, room);
-        socket.join(roomId);
-    }
+    // Running once initially to circumvent the setInterval delay
+    searchForOpponent();
 
     // New typing action from the user
     socket.on("new-action", async (newActionPayload: NewActionPayload) => {

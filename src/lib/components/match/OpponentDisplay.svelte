@@ -61,16 +61,14 @@
     class="flex items-center justify-between gap-3"
     style="order: {-completedWords.length - (finished ? wpm : 0)}"
 >
-    <div class="flex gap-5 items-center">
-        <div class="flex items-center gap-3">
-            <img
-                src={matchUser.avatar}
-                alt="{matchUser.username}'s Avatar"
-                class="h-12 w-12 object-cover rounded-full"
-            />
-            <div class={matchUser.connected ? "text-black" : "text-red-500"}>
-                {matchUser.username}{showRating ? `(${matchUser.rating})` : ""}
-            </div>
+    <div class="flex items-center gap-3 w-52">
+        <img
+            src={matchUser.avatar}
+            alt="{matchUser.username}'s Avatar"
+            class="h-12 w-12 object-cover rounded-full"
+        />
+        <div class={matchUser.connected ? "text-black" : "text-red-500"}>
+            {matchUser.username}{showRating ? `(${matchUser.rating})` : ""}
         </div>
     </div>
     <div
@@ -87,7 +85,7 @@
                 100}%"
         />
     </div>
-    <div class="w-32 text-right">
+    <div class="w-28 text-right">
         <span class="text-xl font-bold">{wpm}</span>
         <span class="text-gray-500"> WPM</span>
     </div>

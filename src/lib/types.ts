@@ -37,6 +37,11 @@ export interface MatchUser extends UserProfile {
     connected: boolean;
 }
 
+export interface WaitingUser {
+    user: MatchUser;
+    socket: Socket;
+}
+
 export interface BasicRoomInfo {
     id: string;
     matchType: MatchType;

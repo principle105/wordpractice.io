@@ -13,7 +13,7 @@
         {#if roomInfo === null}
             <slot name="loading" />
         {:else if roomInfo.startTime === null || roomInfo.quote === null}
-            <slot name="waiting" />
+            <slot name="before-start" />
         {:else}
             <div class="my-auto bg-zinc-100 p-8 rounded-lg">
                 <slot name="racers" {startedRoomInfo} />
