@@ -60,79 +60,123 @@ export const handleIfRankedMatchOver = async (
     socket: Socket,
     force = false
 ) => {
-    const quote = room.quote;
+    if (!force) {
+        const quote = room.quote;
 
-    if (!quote) return;
+        if (!quote) return;
 
-    let matchWinner: string | null = null;
+        let matchWinner: string | null = null;
 
-    const user1 = Object.values(room.users)[0];
-    const user2 = Object.values(room.users)[1];
+        const user1 = Object.values(room.users)[0];
+        const user2 = Object.values(room.users)[1];
 
-    if (!user1.connected) {
-        matchWinner = user2.id;
-    } else if (!user2.connected) {
-        matchWinner = user1.id;
-    }
+        if (!user1.connected) {
+            matchWinner = user2.id;
+        } else if (!user2.connected) {
+            matchWinner = user1.id;
+        }
 
-    if (!matchWinner) {
-        const getWpmFromReplay = (replay: Replay) => {
-            const startTime = Math.min(
-                replay[0]?.timestamp,
-                (room.startTime as number) + START_TIME_LENIENCY
-            );
+        if (!matchWinner) {
+            const getWpmFromReplay = (replay: Replay) => {
+                const startTime = Math.min(
+                    replay[0]?.timestamp,
+                    (room.startTime as number) + START_TIME_LENIENCY
+                );
 
-            const { completedWords } = getCompletedAndIncorrectWords(
-                convertReplayToWords(replay, quote),
-                quote
-            );
+                const { completedWords } = getCompletedAndIncorrectWords(
+                    convertReplayToWords(replay, quote),
+                    quote
+                );
 
-            // If the user has not finished yet
-            if (completedWords.length !== quote.join(" ").length) {
-                return 0;
+                // If the user has not finished yet
+                if (completedWords.length !== quote.join(" ").length) {
+                    return 0;
+                }
+
+                return calculateWpm(
+                    replay[replay.length - 1]?.timestamp,
+                    startTime,
+                    completedWords.length
+                );
+            };
+
+            const user1Wpm = getWpmFromReplay(user1.replay);
+            const user2Wpm = getWpmFromReplay(user2.replay);
+
+            // Checking if neither user has finished
+            if (user1Wpm === 0 && user2Wpm === 0) {
+                return;
             }
 
-            return calculateWpm(
-                replay[replay.length - 1]?.timestamp,
-                startTime,
-                completedWords.length
+            if (user1Wpm > user2Wpm) {
+                room.scores[user1.id] += 1;
+            } else {
+                room.scores[user2.id] += 1;
+            }
+
+            const winningScore = Math.ceil(BEST_OF / 2);
+
+            if (room.scores[user1.id] === winningScore) {
+                matchWinner = user1.id;
+            } else if (room.scores[user2.id] === winningScore) {
+                matchWinner = user2.id;
+            }
+        }
+
+        // If the match is not entirely over (i.e moving to the next round)
+        if (matchWinner === null) {
+            // Resetting the replays
+            user1.replay = [];
+            user2.replay = [];
+
+            room.users[user1.id] = user1;
+            room.users[user2.id] = user2;
+
+            room.startTime = Date.now() + COUNTDOWN_TIME;
+            room.quote = "hello how are you doing".split(" ");
+
+            socket.emit(
+                "ranked:update-room-info",
+                removeSocketInformationFromRankedRoom(room)
             );
-        };
 
-        const user1Wpm = getWpmFromReplay(user1.replay);
-        const user2Wpm = getWpmFromReplay(user2.replay);
+            socket.broadcast
+                .to(room.id)
+                .emit(
+                    "ranked:update-room-info",
+                    removeSocketInformationFromRankedRoom(room)
+                );
 
-        // Checking if neither user has finished
-        if (user1Wpm === 0 && user2Wpm === 0) {
             return;
         }
 
-        if (user1Wpm > user2Wpm) {
-            room.scores[user1.id] += 1;
+        const [winner, loser] =
+            matchWinner === user1.id ? [user1, user2] : [user2, user1];
+
+        // Handling the match being completely over
+        const winnerChance =
+            1.0 / (1.0 + Math.pow(10, (loser.rating - winner.rating) / 400));
+
+        const loserChance =
+            1.0 / (1.0 + Math.pow(10, (winner.rating - loser.rating) / 400));
+
+        const winnerNewRating = Math.round(
+            winner.rating + K_FACTOR * (1 - winnerChance)
+        );
+        const loserNewRating = Math.round(
+            loser.rating + K_FACTOR * (0 - loserChance)
+        );
+
+        if (winner.id === user1.id) {
+            user1.rating = winnerNewRating;
+            user2.rating = loserNewRating;
         } else {
-            room.scores[user2.id] += 1;
+            user1.rating = loserNewRating;
+            user2.rating = winnerNewRating;
         }
-
-        const winningScore = Math.ceil(BEST_OF / 2);
-
-        if (room.scores[user1.id] === winningScore) {
-            matchWinner = user1.id;
-        } else if (room.scores[user2.id] === winningScore) {
-            matchWinner = user2.id;
-        }
-    }
-
-    // If the match is not entirely over (i.e moving to the next round)
-    if (matchWinner === null) {
-        // Resetting the replays
-        user1.replay = [];
-        user2.replay = [];
 
         room.users[user1.id] = user1;
         room.users[user2.id] = user2;
-
-        room.startTime = Date.now() + COUNTDOWN_TIME;
-        room.quote = "hello how are you doing".split(" ");
 
         socket.emit(
             "ranked:update-room-info",
@@ -146,65 +190,23 @@ export const handleIfRankedMatchOver = async (
                 removeSocketInformationFromRankedRoom(room)
             );
 
-        return;
+        // Update the rating for each match user in the database
+        Object.values(room.users).forEach(async (user) => {
+            // TODO: add property error handling
+            try {
+                await client.user.update({
+                    where: { id: user.id },
+                    data: {
+                        rating: user.rating,
+                    },
+                });
+            } catch (e) {
+                console.log(e);
+            }
+        });
     }
 
     rankedRooms.delete(room.id);
-
-    const [winner, loser] =
-        matchWinner === user1.id ? [user1, user2] : [user2, user1];
-
-    // Handling the match being completely over
-    const winnerChance =
-        1.0 / (1.0 + Math.pow(10, (loser.rating - winner.rating) / 400));
-
-    const loserChance =
-        1.0 / (1.0 + Math.pow(10, (winner.rating - loser.rating) / 400));
-
-    const winnerNewRating = Math.round(
-        winner.rating + K_FACTOR * (1 - winnerChance)
-    );
-    const loserNewRating = Math.round(
-        loser.rating + K_FACTOR * (0 - loserChance)
-    );
-
-    if (winner.id === user1.id) {
-        user1.rating = winnerNewRating;
-        user2.rating = loserNewRating;
-    } else {
-        user1.rating = loserNewRating;
-        user2.rating = winnerNewRating;
-    }
-
-    room.users[user1.id] = user1;
-    room.users[user2.id] = user2;
-
-    socket.emit(
-        "ranked:update-room-info",
-        removeSocketInformationFromRankedRoom(room)
-    );
-
-    socket.broadcast
-        .to(room.id)
-        .emit(
-            "ranked:update-room-info",
-            removeSocketInformationFromRankedRoom(room)
-        );
-
-    // Update the rating for each match user in the database
-    Object.values(room.users).forEach(async (user) => {
-        // TODO: add property error handling
-        try {
-            await client.user.update({
-                where: { id: user.id },
-                data: {
-                    rating: user.rating,
-                },
-            });
-        } catch (e) {
-            console.log(e);
-        }
-    });
 
     // Disconnect all the users and delete the room
     for (const socket of room.sockets.values()) {
