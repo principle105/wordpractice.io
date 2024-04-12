@@ -3,7 +3,7 @@ import type { RequestHandler } from "./$types";
 import { client } from "$lib/server/auth/clients";
 import { findErrorWithUsername } from "$lib/utils/validation";
 
-export const POST: RequestHandler = async ({ locals, request, url }) => {
+export const POST: RequestHandler = async ({ locals, url }) => {
     if (locals.user === null) {
         throw error(401, "Unauthorized");
     }
