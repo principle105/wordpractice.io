@@ -89,3 +89,9 @@ export const textCategories = [
 ] as const;
 
 export type TextCategory = (typeof textCategories)[number];
+
+export interface Text {
+    category: string;
+    text: string;
+    source: string;
+}
