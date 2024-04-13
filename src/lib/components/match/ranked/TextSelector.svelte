@@ -20,14 +20,14 @@
     };
 </script>
 
-<div>Choose a text category to eliminate</div>
+<div>Choose a text category</div>
 
 <div class="grid grid-cols-3 gap-4">
     {#each textCategories as textCategory}
         {@const isSelected = selection === textCategory}
         <button
             class="border bg-zinc-100 p-5 text-center rounded-lg {isSelected
-                ? 'border-red-400'
+                ? 'border-emerald-400'
                 : ''}"
             on:click={() => makeSelection(textCategory)}
         >
@@ -37,9 +37,9 @@
 </div>
 {#if selection !== null}
     <button
-        class="bg-red-500 p-3 rounded-md text-white"
+        class="bg-emerald-500 p-3 rounded-md text-white"
         on:click={confirmSelection}
     >
-        Eliminate
+        Select
     </button>
 {/if}

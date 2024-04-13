@@ -16,6 +16,7 @@ import {
 } from "../src/lib/utils/textProcessing";
 import { rankedQueue, rankedRooms } from "./state";
 import { START_TIME_LENIENCY } from "../src/lib/config";
+import { getQuoteFromCategory } from "../data";
 
 const BEST_OF = 3;
 const COUNTDOWN_TIME = 6 * 1000;
@@ -37,6 +38,7 @@ const removeSocketInformationFromRankedRoom = (
         matchType: room.matchType,
         scores: room.scores,
         userBlacklistedTextTypes: room.userBlacklistedTextTypes,
+        firstUserToBlacklist: room.firstUserToBlacklist,
     };
 };
 
@@ -132,8 +134,8 @@ export const handleIfRankedMatchOver = async (
             room.users[user1.id] = user1;
             room.users[user2.id] = user2;
 
-            room.startTime = Date.now() + COUNTDOWN_TIME;
-            room.quote = "hello how are you doing".split(" ");
+            room.startTime = null;
+            room.quote = null;
 
             socket.emit(
                 "ranked:update-room-info",
@@ -263,6 +265,10 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
 
             const roomId = Math.random().toString(36).substring(2, 8);
 
+            // Select either queued user or current user to go first
+            const firstUserToBlacklist =
+                Math.random() < 0.5 ? user.id : queuedUser.id;
+
             let room: RankedRoomWithSocketInfo = {
                 matchType: "ranked",
                 id: roomId,
@@ -270,8 +276,9 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
                 quote: null,
                 startTime: null,
                 scores: {},
-                userBlacklistedTextTypes: {},
+                userBlacklistedTextTypes: [],
                 sockets: new Map(),
+                firstUserToBlacklist,
             };
 
             // Removing the users from the queue
@@ -315,7 +322,67 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
     // Running once initially to circumvent the setInterval delay
     searchForOpponent();
 
-    socket.on("ranked:eliminate", (textCategory: TextCategory) => {});
+    socket.on("ranked:elimination", (textCategory: TextCategory) => {
+        const roomId = Array.from(socket.rooms.values())[1];
+
+        const room = rankedRooms.get(roomId);
+
+        if (!room || !(user.id in room.users)) {
+            socket.emit(
+                "error",
+                "Something unexpected happened, please refresh"
+            );
+            socket.disconnect();
+            return;
+        }
+
+        if (room.userBlacklistedTextTypes.includes(textCategory)) {
+            socket.emit("error", "You have already blacklisted this category");
+            return;
+        }
+
+        room.userBlacklistedTextTypes.push(textCategory);
+
+        rankedRooms.set(roomId, room);
+
+        socket.emit("ranked:update-room-info", room);
+        socket.broadcast.to(roomId).emit("ranked:update-room-info", room);
+    });
+
+    socket.on("ranked:selection", async (textCategory: TextCategory) => {
+        const roomId = Array.from(socket.rooms.values())[1];
+
+        const room = rankedRooms.get(roomId);
+
+        if (!room || !(user.id in room.users)) {
+            socket.emit(
+                "error",
+                "Something unexpected happened, please refresh"
+            );
+            socket.disconnect();
+            return;
+        }
+
+        if (room.userBlacklistedTextTypes.includes(textCategory)) {
+            socket.emit("error", "That category has been blacklisted");
+            return;
+        }
+
+        const quote = await getQuoteFromCategory(textCategory);
+
+        if (!quote) {
+            socket.emit("error", "Something went wrong, please try again");
+            return;
+        }
+
+        room.quote = quote.text.split(" ");
+        room.startTime = Date.now() + COUNTDOWN_TIME;
+
+        rankedRooms.set(roomId, room);
+
+        socket.emit("ranked:update-room-info", room);
+        socket.broadcast.to(roomId).emit("ranked:update-room-info", room);
+    });
 
     // New typing action from the user
     socket.on("new-action", async (newActionPayload: NewActionPayload) => {
@@ -363,9 +430,7 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
 
     // When the client disconnects
     socket.on("disconnect", async () => {
-        const userInQueue = rankedQueue.delete(user.id);
-
-        if (userInQueue) return;
+        rankedQueue.delete(user.id);
 
         for (const [roomId, room] of rankedRooms) {
             if (!(user.id in room.users)) {

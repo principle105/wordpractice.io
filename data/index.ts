@@ -47,18 +47,20 @@ export const getQuoteFromCategory = async (
             await directories[Math.floor(Math.random() * directories.length)]
         ).default;
 
-        let text = "";
+        let text = [];
 
         while (text.length < DICTIONARY_LENGTH) {
-            text +=
+            const word =
                 categoryInfo.words[
                     Math.floor(Math.random() * categoryInfo.words.length)
                 ];
+
+            text.push(word);
         }
 
         return {
             category: categoryInfo.name,
-            text,
+            text: text.join(" "),
             source: "unknown",
         };
     }

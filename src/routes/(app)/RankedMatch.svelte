@@ -21,6 +21,7 @@
     import EndScreen from "$lib/components/match/EndScreen.svelte";
     import OpponentSearch from "$lib/components/match/ranked/OpponentSearch.svelte";
     import TextEliminator from "$lib/components/match/ranked/TextEliminator.svelte";
+    import TextSelector from "$lib/components/match/ranked/TextSelector.svelte";
 
     export let user: User;
     export let roomInfo: BasicRoomInfo | null;
@@ -31,8 +32,10 @@
     export let finished: boolean;
 
     let scores: Map<string, number> = new Map();
+    let eliminating = false;
 
     let showReplay = false;
+    let isFirstUserToBlacklist = false;
 
     let minSearchRating = 0;
     let maxSearchRating = 0;
@@ -54,6 +57,8 @@
             startTime: newRoomInfo.startTime,
             matchType: newRoomInfo.matchType,
         };
+
+        isFirstUserToBlacklist = newRoomInfo.firstUserToBlacklist === user.id;
 
         scores = new Map(Object.entries(newRoomInfo.scores));
     });
@@ -98,7 +103,11 @@
     };
 
     const onElimination = (textCategory: TextCategory) => {
-        socket.emit("ranked:eliminate", textCategory);
+        socket.emit("ranked:elimination", textCategory);
+    };
+
+    const onSelection = (textCategory: TextCategory) => {
+        socket.emit("ranked:selection", textCategory);
     };
 
     $: clientMatchUser = {
@@ -172,12 +181,19 @@
     />
 
     <div slot="before-start">
+        {@const isEliminating =
+            roundNumber % 2 === (isFirstUserToBlacklist ? 0 : 1)}
         <div>
             {user.username} vs {Array.from(matchUsers.values())
                 .map((matchUser) => matchUser.username)
                 .join(", ")}
         </div>
-        <TextEliminator on:selection={(e) => onElimination(e.detail)} />
+
+        {#if isEliminating}
+            <TextEliminator on:selection={(e) => onElimination(e.detail)} />
+        {:else}
+            <TextSelector on:selection={(e) => onSelection(e.detail)} />
+        {/if}
     </div>
 
     <div slot="loading">

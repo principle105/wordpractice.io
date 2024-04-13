@@ -61,7 +61,8 @@ interface SavedRoom extends BasicRoomInfo {
 export interface RankedRoom extends SavedRoom {
     matchType: "ranked";
     scores: { [key: string]: number };
-    userBlacklistedTextTypes: { [key: string]: string[] };
+    userBlacklistedTextTypes: TextCategory[];
+    firstUserToBlacklist: string | null;
 }
 
 export interface CasualRoom extends SavedRoom {
