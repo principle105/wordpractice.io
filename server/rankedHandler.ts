@@ -336,6 +336,19 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
             return;
         }
 
+        // TODO: create a util for this
+        const roundNumber =
+            Object.values(room.scores).reduce((acc, curr) => acc + curr, 0) + 1;
+
+        // Check if it's the user's turn to blacklist
+        if (
+            roundNumber % 2 !==
+            (room.firstUserToBlacklist === user.id ? 0 : 1)
+        ) {
+            socket.emit("error", "It's not your turn to blacklist");
+            return;
+        }
+
         if (room.userBlacklistedTextTypes.includes(textCategory)) {
             socket.emit("error", "You have already blacklisted this category");
             return;
@@ -365,6 +378,27 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
 
         if (room.userBlacklistedTextTypes.includes(textCategory)) {
             socket.emit("error", "That category has been blacklisted");
+            return;
+        }
+
+        const roundNumber =
+            Object.values(room.scores).reduce((acc, curr) => acc + curr, 0) + 1;
+
+        // Check if the other user has not already blacklisted a category
+        if (room.userBlacklistedTextTypes.length !== roundNumber) {
+            socket.emit(
+                "error",
+                "Wait for the other user to blacklist a category"
+            );
+            return;
+        }
+
+        // Check if it's the user's turn to select a quote
+        if (
+            roundNumber % 2 ===
+            (room.firstUserToBlacklist === user.id ? 0 : 1)
+        ) {
+            socket.emit("error", "It's not your turn to select a quote");
             return;
         }
 

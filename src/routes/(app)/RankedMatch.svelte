@@ -31,8 +31,7 @@
     export let socket: Socket;
     export let finished: boolean;
 
-    let scores: Map<string, number> = new Map();
-    let eliminating = false;
+    let scores: RankedRoom["scores"] = {};
 
     let showReplay = false;
     let isFirstUserToBlacklist = false;
@@ -40,10 +39,12 @@
     let minSearchRating = 0;
     let maxSearchRating = 0;
 
+    let blacklist: TextCategory[] = [];
+
     const fontSize: number = user.fontScale * BASE_FONT_SIZE;
 
     $: roundNumber =
-        Array.from(scores.values()).reduce((acc, curr) => acc + curr, 0) + 1;
+        Object.values(scores).reduce((acc, curr) => acc + curr, 0) + 1;
 
     socket.on("ranked:new-room-info", (newRoomInfo: RankedRoom) => {
         matchUsers = new Map(
@@ -58,9 +59,10 @@
             matchType: newRoomInfo.matchType,
         };
 
-        isFirstUserToBlacklist = newRoomInfo.firstUserToBlacklist === user.id;
+        blacklist = newRoomInfo.userBlacklistedTextTypes;
+        scores = newRoomInfo.scores;
 
-        scores = new Map(Object.entries(newRoomInfo.scores));
+        isFirstUserToBlacklist = newRoomInfo.firstUserToBlacklist === user.id;
     });
 
     socket.on("ranked:update-room-info", (newRoomInfo: RankedRoom) => {
@@ -83,7 +85,10 @@
             matchType: newRoomInfo.matchType,
         };
 
-        scores = new Map(Object.entries(newRoomInfo.scores));
+        blacklist = newRoomInfo.userBlacklistedTextTypes;
+        scores = newRoomInfo.scores;
+
+        isFirstUserToBlacklist = newRoomInfo.firstUserToBlacklist === user.id;
     });
 
     socket.on("ranked:waiting-for-match", (ratingPayload: [number, number]) => {
@@ -189,10 +194,22 @@
                 .join(", ")}
         </div>
 
-        {#if isEliminating}
-            <TextEliminator on:selection={(e) => onElimination(e.detail)} />
+        {#if !isEliminating}
+            {#if blacklist.length === roundNumber}
+                <TextSelector
+                    on:selection={(e) => onSelection(e.detail)}
+                    {blacklist}
+                />
+            {:else}
+                <div>Waiting for other user to eliminate</div>
+            {/if}
+        {:else if blacklist.length !== roundNumber}
+            <TextEliminator
+                on:selection={(e) => onElimination(e.detail)}
+                {blacklist}
+            />
         {:else}
-            <TextSelector on:selection={(e) => onSelection(e.detail)} />
+            <div>Waiting for other user to select a text category</div>
         {/if}
     </div>
 

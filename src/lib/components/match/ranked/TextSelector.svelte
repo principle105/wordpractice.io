@@ -7,6 +7,8 @@
         selection: TextCategory;
     }>();
 
+    export let blacklist: TextCategory[] = [];
+
     let selection: TextCategory | null = null;
 
     const makeSelection = (textCategory: TextCategory) => {
@@ -24,11 +26,12 @@
 
 <div class="grid grid-cols-3 gap-4">
     {#each textCategories as textCategory}
-        {@const isSelected = selection === textCategory}
+        {@const isCategorySelected = selection === textCategory}
+        {@const isCategoryBlacklisted = blacklist.includes(textCategory)}
         <button
-            class="border bg-zinc-100 p-5 text-center rounded-lg {isSelected
-                ? 'border-emerald-400'
-                : ''}"
+            class="border bg-zinc-100 p-5 text-center rounded-lg disabled:opacity-30 {isCategorySelected &&
+                'border-red-400'}"
+            disabled={isCategoryBlacklisted}
             on:click={() => makeSelection(textCategory)}
         >
             {textCategory}
