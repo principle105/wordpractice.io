@@ -194,15 +194,13 @@ const registerCasualHandler = (socket: Socket, user: MatchUser) => {
     // When the client disconnects
     socket.on("disconnect", async () => {
         for (const [roomId, room] of casualRooms) {
-            if (!(user.id in room.users)) {
-                return;
-            }
+            if (!(user.id in room.users)) continue;
 
             room.users[user.id].connected = false;
 
             socket.broadcast.to(roomId).emit("user-disconnect", user.id);
 
-            await handleIfCasualMatchOver(room as CasualRoomWithSocketInfo);
+            await handleIfCasualMatchOver(room);
         }
     });
 };

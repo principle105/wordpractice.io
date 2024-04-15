@@ -37,7 +37,7 @@ const removeSocketInformationFromRankedRoom = (
         users: room.users,
         matchType: room.matchType,
         scores: room.scores,
-        userBlacklistedTextTypes: room.userBlacklistedTextTypes,
+        blacklistedTextCategories: room.blacklistedTextCategories,
         firstUserToBlacklist: room.firstUserToBlacklist,
     };
 };
@@ -276,7 +276,7 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
                 quote: null,
                 startTime: null,
                 scores: {},
-                userBlacklistedTextTypes: [],
+                blacklistedTextCategories: [],
                 sockets: new Map(),
                 firstUserToBlacklist,
             };
@@ -349,12 +349,12 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
             return;
         }
 
-        if (room.userBlacklistedTextTypes.includes(textCategory)) {
+        if (room.blacklistedTextCategories.includes(textCategory)) {
             socket.emit("error", "You have already blacklisted this category");
             return;
         }
 
-        room.userBlacklistedTextTypes.push(textCategory);
+        room.blacklistedTextCategories.push(textCategory);
 
         rankedRooms.set(roomId, room);
 
@@ -376,7 +376,7 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
             return;
         }
 
-        if (room.userBlacklistedTextTypes.includes(textCategory)) {
+        if (room.blacklistedTextCategories.includes(textCategory)) {
             socket.emit("error", "That category has been blacklisted");
             return;
         }
@@ -385,7 +385,7 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
             Object.values(room.scores).reduce((acc, curr) => acc + curr, 0) + 1;
 
         // Check if the other user has not already blacklisted a category
-        if (room.userBlacklistedTextTypes.length !== roundNumber) {
+        if (room.blacklistedTextCategories.length !== roundNumber) {
             socket.emit(
                 "error",
                 "Wait for the other user to blacklist a category"
@@ -467,18 +467,13 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
         rankedQueue.delete(user.id);
 
         for (const [roomId, room] of rankedRooms) {
-            if (!(user.id in room.users)) {
-                return;
-            }
+            if (!(user.id in room.users)) continue;
 
             room.users[user.id].connected = false;
 
             socket.broadcast.to(roomId).emit("user-disconnect", user.id);
 
-            await handleIfRankedMatchOver(
-                room as RankedRoomWithSocketInfo,
-                socket
-            );
+            await handleIfRankedMatchOver(room, socket);
         }
     });
 };

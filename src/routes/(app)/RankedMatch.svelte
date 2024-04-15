@@ -59,7 +59,7 @@
             matchType: newRoomInfo.matchType,
         };
 
-        blacklist = newRoomInfo.userBlacklistedTextTypes;
+        blacklist = newRoomInfo.blacklistedTextCategories;
         scores = newRoomInfo.scores;
 
         isFirstUserToBlacklist = newRoomInfo.firstUserToBlacklist === user.id;
@@ -85,7 +85,7 @@
             matchType: newRoomInfo.matchType,
         };
 
-        blacklist = newRoomInfo.userBlacklistedTextTypes;
+        blacklist = newRoomInfo.blacklistedTextCategories;
         scores = newRoomInfo.scores;
 
         isFirstUserToBlacklist = newRoomInfo.firstUserToBlacklist === user.id;

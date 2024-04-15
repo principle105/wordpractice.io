@@ -1,4 +1,9 @@
-import type { TextCategory, Text } from "../src/lib/types";
+import type {
+    TextCategory,
+    QuoteCategory,
+    DictionaryCategory,
+    Text,
+} from "../src/lib/types";
 
 const DICTIONARY_LENGTH = 30;
 
@@ -7,8 +12,6 @@ const quoteDirectories = {
     "quote hard": import("./quotes/hard-quotes.json"),
 };
 
-type QuoteCategory = keyof typeof quoteDirectories;
-
 const dictionaryDirectories = {
     "dictionary easy": [
         import("./dictionary/easy/english-200.json"),
@@ -16,8 +19,6 @@ const dictionaryDirectories = {
     ],
     "dictionary hard": [import("./dictionary/hard/english-10k.json")],
 };
-
-type DictionaryCategory = keyof typeof dictionaryDirectories;
 
 export const getQuoteFromCategory = async (
     textCategory: TextCategory

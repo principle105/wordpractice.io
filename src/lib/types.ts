@@ -61,7 +61,7 @@ interface SavedRoom extends BasicRoomInfo {
 export interface RankedRoom extends SavedRoom {
     matchType: "ranked";
     scores: { [key: string]: number };
-    userBlacklistedTextTypes: TextCategory[];
+    blacklistedTextCategories: TextCategory[];
     firstUserToBlacklist: string | null;
 }
 
@@ -82,14 +82,10 @@ export interface NewActionPayload {
     actions: Replay;
 }
 
-export const textCategories = [
-    "dictionary easy",
-    "dictionary hard",
-    "quote easy",
-    "quote hard",
-] as const;
+export type QuoteCategory = "quote easy" | "quote hard";
+export type DictionaryCategory = "dictionary easy" | "dictionary hard";
 
-export type TextCategory = (typeof textCategories)[number];
+export type TextCategory = QuoteCategory | DictionaryCategory;
 
 export interface Text {
     category: string;
