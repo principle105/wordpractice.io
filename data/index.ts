@@ -47,7 +47,7 @@ export const getQuoteFromCategory = async (
             await directories[Math.floor(Math.random() * directories.length)]
         ).default;
 
-        let text = [];
+        const text = [];
 
         while (text.length < DICTIONARY_LENGTH) {
             const word =
