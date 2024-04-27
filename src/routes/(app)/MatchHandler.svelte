@@ -37,16 +37,6 @@
         },
     });
 
-    socket.on("user-disconnect", (userId: string) => {
-        let disconnectedUser = matchUsers.get(userId);
-
-        if (!disconnectedUser) return;
-
-        disconnectedUser.connected = false;
-        matchUsers.set(userId, disconnectedUser);
-        matchUsers = matchUsers;
-    });
-
     socket.on("error", (errorMessage: string) => {
         toast.error(errorMessage);
     });
@@ -74,20 +64,6 @@
 
         matchUsers.set(newUser.id, newUser);
         matchUsers = matchUsers;
-    });
-
-    socket.on("match-ended", () => {
-        if (finished === false) {
-            finished = true;
-            toast.error("The match reached the maximum time limit.");
-        }
-
-        matchUsers = new Map(
-            Array.from(matchUsers, ([id, user]) => [
-                id,
-                { ...user, connected: false } satisfies MatchUser,
-            ])
-        );
     });
 
     socket.on("disconnect", () => {
@@ -151,7 +127,7 @@
         countDown = Math.ceil((roomInfo.startTime - Date.now()) / 1000);
 
         const interval = setInterval(() => {
-            if (countDown === 1 || countDown === null) {
+            if (countDown === null || countDown <= 1) {
                 countDown = null;
                 clearInterval(interval);
                 return;

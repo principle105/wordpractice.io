@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { createEventDispatcher } from "svelte";
+    import { createEventDispatcher, onMount } from "svelte";
 
     import type { TextCategory } from "$lib/types";
     import { textCategories } from "$lib/constants";
@@ -9,6 +9,8 @@
     }>();
 
     export let blacklist: TextCategory[] = [];
+    export let blacklistDecisionEndTime: number | null = null;
+    export let currentTime: number;
 
     let selection: TextCategory | null = null;
 
@@ -24,6 +26,13 @@
 </script>
 
 <div>Choose a text category to eliminate</div>
+
+<div>
+    {#if blacklistDecisionEndTime}
+        {@const timeLeft = Math.max(0, blacklistDecisionEndTime - currentTime)}
+        <p>Time left: {Math.floor(timeLeft / 1000)}</p>
+    {/if}
+</div>
 
 <div class="grid grid-cols-3 gap-4">
     {#each Object.entries(textCategories) as [textCategoryName, textCategory]}

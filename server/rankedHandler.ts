@@ -27,6 +27,8 @@ const RATING_SEARCH_STEP = 100;
 const SEARCHING_TIME_PER_STEP = 15; // seconds
 const SEARCHING_TIME_STEP_MULTIPLIER = 2;
 
+const DECISION_MAKING_TIME = 20 * 1000;
+
 const removeSocketInformationFromRankedRoom = (
     room: RankedRoomWithSocketInfo
 ): RankedRoom => {
@@ -39,6 +41,8 @@ const removeSocketInformationFromRankedRoom = (
         scores: room.scores,
         blacklistedTextCategories: room.blacklistedTextCategories,
         firstUserToBlacklist: room.firstUserToBlacklist,
+        blacklistDecisionEndTime: room.blacklistDecisionEndTime,
+        quoteSelectionDecisionEndTime: room.quoteSelectionDecisionEndTime,
     };
 };
 
@@ -62,123 +66,102 @@ export const handleIfRankedMatchOver = async (
     socket: Socket,
     force = false
 ) => {
-    if (!force) {
-        const quote = room.quote;
+    const quote = room.quote;
 
-        if (!quote) return;
+    if (!quote) return;
 
-        let matchWinner: string | null = null;
+    let matchWinner: string | null = null;
 
-        const user1 = Object.values(room.users)[0];
-        const user2 = Object.values(room.users)[1];
+    const user1 = Object.values(room.users)[0];
+    const user2 = Object.values(room.users)[1];
 
-        if (!user1.connected) {
-            matchWinner = user2.id;
-        } else if (!user2.connected) {
-            matchWinner = user1.id;
-        }
+    if (!user1.connected) {
+        matchWinner = user2.id;
+    } else if (!user2.connected) {
+        matchWinner = user1.id;
+    }
 
-        if (!matchWinner) {
-            const getWpmFromReplay = (replay: Replay) => {
-                const startTime = Math.min(
-                    replay[0]?.timestamp,
-                    (room.startTime as number) + START_TIME_LENIENCY
-                );
+    if (!matchWinner) {
+        const { completedWords: user1CompletedWords } =
+            getCompletedAndIncorrectWords(
+                convertReplayToWords(user1.replay, quote),
+                quote
+            );
 
-                const { completedWords } = getCompletedAndIncorrectWords(
-                    convertReplayToWords(replay, quote),
-                    quote
-                );
+        const { completedWords: user2CompletedWords } =
+            getCompletedAndIncorrectWords(
+                convertReplayToWords(user2.replay, quote),
+                quote
+            );
 
-                // If the user has not finished yet
-                if (completedWords.length !== quote.join(" ").length) {
-                    return 0;
-                }
+        const quoteLength = quote.join(" ").length;
 
-                return calculateWpm(
-                    replay[replay.length - 1]?.timestamp,
-                    startTime,
-                    completedWords.length
-                );
-            };
+        if (
+            user1CompletedWords.length === quoteLength &&
+            user2CompletedWords.length !== quoteLength
+        ) {
+            room.scores[user1.id] += 1;
+        } else if (
+            user2CompletedWords.length === quoteLength &&
+            user1CompletedWords.length !== quoteLength
+        ) {
+            room.scores[user2.id] += 1;
+        } else {
+            // Check if neither are finished and the force flag is not set
+            if (user1CompletedWords.length !== quoteLength && !force) return;
 
-            const user1Wpm = getWpmFromReplay(user1.replay);
-            const user2Wpm = getWpmFromReplay(user2.replay);
+            // If both are finished
+            const user1StartTime = Math.min(
+                user1.replay[0]?.timestamp,
+                (room.startTime as number) + START_TIME_LENIENCY
+            );
 
-            // Checking if neither user has finished
-            if (user1Wpm === 0 && user2Wpm === 0) {
-                return;
-            }
+            const user2StartTime = Math.min(
+                user2.replay[0]?.timestamp,
+                (room.startTime as number) + START_TIME_LENIENCY
+            );
+
+            const user1Wpm = calculateWpm(
+                user1.replay[user1.replay.length - 1]?.timestamp,
+                user1StartTime,
+                user1CompletedWords.length
+            );
+
+            const user2Wpm = calculateWpm(
+                user2.replay[user2.replay.length - 1]?.timestamp,
+                user2StartTime,
+                user2CompletedWords.length
+            );
 
             if (user1Wpm > user2Wpm) {
                 room.scores[user1.id] += 1;
             } else {
                 room.scores[user2.id] += 1;
             }
-
-            const winningScore = Math.ceil(BEST_OF / 2);
-
-            if (room.scores[user1.id] === winningScore) {
-                matchWinner = user1.id;
-            } else if (room.scores[user2.id] === winningScore) {
-                matchWinner = user2.id;
-            }
         }
 
-        // If the match is not entirely over (i.e moving to the next round)
-        if (matchWinner === null) {
-            // Resetting the replays
-            user1.replay = [];
-            user2.replay = [];
+        const winningScore = Math.ceil(BEST_OF / 2);
 
-            room.users[user1.id] = user1;
-            room.users[user2.id] = user2;
-
-            room.startTime = null;
-            room.quote = null;
-
-            socket.emit(
-                "ranked:update-room-info",
-                removeSocketInformationFromRankedRoom(room)
-            );
-
-            socket.broadcast
-                .to(room.id)
-                .emit(
-                    "ranked:update-room-info",
-                    removeSocketInformationFromRankedRoom(room)
-                );
-
-            return;
+        if (room.scores[user1.id] === winningScore) {
+            matchWinner = user1.id;
+        } else if (room.scores[user2.id] === winningScore) {
+            matchWinner = user2.id;
         }
+    }
 
-        const [winner, loser] =
-            matchWinner === user1.id ? [user1, user2] : [user2, user1];
-
-        // Handling the match being completely over
-        const winnerChance =
-            1.0 / (1.0 + Math.pow(10, (loser.rating - winner.rating) / 400));
-
-        const loserChance =
-            1.0 / (1.0 + Math.pow(10, (winner.rating - loser.rating) / 400));
-
-        const winnerNewRating = Math.round(
-            winner.rating + K_FACTOR * (1 - winnerChance)
-        );
-        const loserNewRating = Math.round(
-            loser.rating + K_FACTOR * (0 - loserChance)
-        );
-
-        if (winner.id === user1.id) {
-            user1.rating = winnerNewRating;
-            user2.rating = loserNewRating;
-        } else {
-            user1.rating = loserNewRating;
-            user2.rating = winnerNewRating;
-        }
+    // If the match is not entirely over (i.e moving to the next round)
+    if (matchWinner === null) {
+        // Resetting the replays
+        user1.replay = [];
+        user2.replay = [];
 
         room.users[user1.id] = user1;
         room.users[user2.id] = user2;
+
+        room.startTime = null;
+        room.quote = null;
+
+        room.blacklistDecisionEndTime = Date.now() + DECISION_MAKING_TIME;
 
         socket.emit(
             "ranked:update-room-info",
@@ -192,21 +175,63 @@ export const handleIfRankedMatchOver = async (
                 removeSocketInformationFromRankedRoom(room)
             );
 
-        // Update the rating for each match user in the database
-        Object.values(room.users).forEach(async (user) => {
-            // TODO: add property error handling
-            try {
-                await client.user.update({
-                    where: { id: user.id },
-                    data: {
-                        rating: user.rating,
-                    },
-                });
-            } catch (e) {
-                console.log(e);
-            }
-        });
+        return;
     }
+
+    const [winner, loser] =
+        matchWinner === user1.id ? [user1, user2] : [user2, user1];
+
+    // Handling the match being completely over
+    const winnerChance =
+        1.0 / (1.0 + Math.pow(10, (loser.rating - winner.rating) / 400));
+
+    const loserChance =
+        1.0 / (1.0 + Math.pow(10, (winner.rating - loser.rating) / 400));
+
+    const winnerNewRating = Math.round(
+        winner.rating + K_FACTOR * (1 - winnerChance)
+    );
+    const loserNewRating = Math.round(
+        loser.rating + K_FACTOR * (0 - loserChance)
+    );
+
+    if (winner.id === user1.id) {
+        user1.rating = winnerNewRating;
+        user2.rating = loserNewRating;
+    } else {
+        user1.rating = loserNewRating;
+        user2.rating = winnerNewRating;
+    }
+
+    room.users[user1.id] = user1;
+    room.users[user2.id] = user2;
+
+    socket.emit(
+        "ranked:update-room-info",
+        removeSocketInformationFromRankedRoom(room)
+    );
+
+    socket.broadcast
+        .to(room.id)
+        .emit(
+            "ranked:update-room-info",
+            removeSocketInformationFromRankedRoom(room)
+        );
+
+    // Update the rating for each match user in the database
+    Object.values(room.users).forEach(async (user) => {
+        // TODO: add property error handling
+        try {
+            await client.user.update({
+                where: { id: user.id },
+                data: {
+                    rating: user.rating,
+                },
+            });
+        } catch (e) {
+            console.log(e);
+        }
+    });
 
     rankedRooms.delete(room.id);
 
@@ -217,8 +242,6 @@ export const handleIfRankedMatchOver = async (
 };
 
 const registerRankedHandler = (socket: Socket, user: MatchUser) => {
-    let hasUserJoinedARoom = false;
-
     rankedQueue.set(user.id, {
         user,
         socket,
@@ -279,6 +302,8 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
                 blacklistedTextCategories: [],
                 sockets: new Map(),
                 firstUserToBlacklist,
+                blacklistDecisionEndTime: Date.now() + DECISION_MAKING_TIME,
+                quoteSelectionDecisionEndTime: null,
             };
 
             // Removing the users from the queue
@@ -305,19 +330,15 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
                     removeSocketInformationFromRankedRoom(room)
                 );
 
-            hasUserJoinedARoom = true;
-
             break;
         }
 
-        if (hasUserJoinedARoom) {
-            clearInterval(interval);
+        if (rankedQueue.has(user.id)) {
+            setTimeout(() => {
+                searchForOpponent();
+            }, 1000);
         }
     };
-
-    const interval = setInterval(() => {
-        searchForOpponent();
-    }, 1000);
 
     // Running once initially to circumvent the setInterval delay
     searchForOpponent();
@@ -333,6 +354,14 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
                 "Something unexpected happened, please refresh"
             );
             socket.disconnect();
+            return;
+        }
+
+        if (
+            room.blacklistDecisionEndTime === null ||
+            Date.now() > room.blacklistDecisionEndTime
+        ) {
+            socket.emit("error", "The time to blacklist has passed");
             return;
         }
 
@@ -355,6 +384,7 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
         }
 
         room.blacklistedTextCategories.push(textCategory);
+        room.quoteSelectionDecisionEndTime = Date.now() + DECISION_MAKING_TIME;
 
         rankedRooms.set(roomId, room);
 
@@ -373,6 +403,14 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
                 "Something unexpected happened, please refresh"
             );
             socket.disconnect();
+            return;
+        }
+
+        if (
+            room.quoteSelectionDecisionEndTime === null ||
+            Date.now() > room.quoteSelectionDecisionEndTime
+        ) {
+            socket.emit("error", "The time to select your quote has passed");
             return;
         }
 

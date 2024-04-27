@@ -2,6 +2,7 @@
     // TODO: add max wrong characters and add server-side validation for it
     import type { User } from "@prisma/client";
     import type { Socket } from "socket.io-client";
+    import toast from "svelte-french-toast";
 
     import type {
         CasualRoom,
@@ -30,6 +31,30 @@
     let showReplay = false;
 
     const fontSize: number = user.fontScale * BASE_FONT_SIZE;
+
+    socket.on("user-disconnect", (userId: string) => {
+        let disconnectedUser = matchUsers.get(userId);
+
+        if (!disconnectedUser) return;
+
+        disconnectedUser.connected = false;
+        matchUsers.set(userId, disconnectedUser);
+        matchUsers = matchUsers;
+    });
+
+    socket.on("casual:match-expired", () => {
+        if (finished === false) {
+            finished = true;
+            toast.error("The match reached the maximum time limit.");
+        }
+
+        matchUsers = new Map(
+            Array.from(matchUsers, ([id, user]) => [
+                id,
+                { ...user, connected: false } satisfies MatchUser,
+            ])
+        );
+    });
 
     socket.on("casual:new-room-info", (newRoomInfo: CasualRoom) => {
         for (const [id, matchUser] of Object.entries(newRoomInfo.users)) {

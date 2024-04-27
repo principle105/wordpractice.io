@@ -22,6 +22,8 @@
     import OpponentSearch from "$lib/components/match/ranked/OpponentSearch.svelte";
     import TextEliminator from "$lib/components/match/ranked/TextEliminator.svelte";
     import TextSelector from "$lib/components/match/ranked/TextSelector.svelte";
+    import { onMount } from "svelte";
+    import toast from "svelte-french-toast";
 
     export let user: User;
     export let roomInfo: BasicRoomInfo | null;
@@ -40,13 +42,40 @@
     let maxSearchRating = 0;
 
     let blacklist: TextCategory[] = [];
+    let blacklistDecisionEndTime: number | null;
+    let quoteSelectionDecisionEndTime: number | null;
+
+    let currentTime: number = Date.now();
 
     const fontSize: number = user.fontScale * BASE_FONT_SIZE;
 
     $: roundNumber =
         Object.values(scores).reduce((acc, curr) => acc + curr, 0) + 1;
 
+    socket.on("user-disconnect", (userId: string) => {
+        let disconnectedUser = matchUsers.get(userId);
+
+        if (!disconnectedUser) return;
+
+        toast.error("Opponent disconnected.");
+
+        disconnectedUser.connected = false;
+        matchUsers.set(userId, disconnectedUser);
+        matchUsers = matchUsers;
+
+        finished = true;
+    });
+
+    socket.on("ranked:match-expired", () => {
+        if (finished === false) {
+            finished = true;
+            toast.error("The match reached the maximum time limit.");
+        }
+    });
+
     socket.on("ranked:new-room-info", (newRoomInfo: RankedRoom) => {
+        toast.success("Opponent found!");
+
         matchUsers = new Map(
             Object.entries(newRoomInfo.users).filter(([id]) => id !== user.id)
         );
@@ -60,6 +89,9 @@
         };
 
         blacklist = newRoomInfo.blacklistedTextCategories;
+        blacklistDecisionEndTime = newRoomInfo.blacklistDecisionEndTime;
+        quoteSelectionDecisionEndTime =
+            newRoomInfo.quoteSelectionDecisionEndTime;
         scores = newRoomInfo.scores;
 
         isFirstUserToBlacklist = newRoomInfo.firstUserToBlacklist === user.id;
@@ -86,6 +118,9 @@
         };
 
         blacklist = newRoomInfo.blacklistedTextCategories;
+        blacklistDecisionEndTime = newRoomInfo.blacklistDecisionEndTime;
+        quoteSelectionDecisionEndTime =
+            newRoomInfo.quoteSelectionDecisionEndTime;
         scores = newRoomInfo.scores;
 
         isFirstUserToBlacklist = newRoomInfo.firstUserToBlacklist === user.id;
@@ -96,6 +131,14 @@
 
         minSearchRating = minRating;
         maxSearchRating = maxRating;
+    });
+
+    onMount(() => {
+        const interval = setInterval(() => {
+            currentTime = Date.now();
+        }, 1000);
+
+        return () => clearInterval(interval);
     });
 
     const playAgain = () => {
@@ -187,7 +230,9 @@
 
     <div slot="before-start">
         {@const isEliminating =
-            roundNumber % 2 === (isFirstUserToBlacklist ? 0 : 1)}
+            roundNumber % 2 === (isFirstUserToBlacklist ? 0 : 1) &&
+            blacklistDecisionEndTime &&
+            blacklistDecisionEndTime > currentTime}
         <div>
             {user.username} vs {Array.from(matchUsers.values())
                 .map((matchUser) => matchUser.username)
@@ -199,6 +244,8 @@
                 <TextSelector
                     on:selection={(e) => onSelection(e.detail)}
                     {blacklist}
+                    {quoteSelectionDecisionEndTime}
+                    {currentTime}
                 />
             {:else}
                 <div>Waiting for other user to eliminate</div>
@@ -207,6 +254,8 @@
             <TextEliminator
                 on:selection={(e) => onElimination(e.detail)}
                 {blacklist}
+                {blacklistDecisionEndTime}
+                {currentTime}
             />
         {:else}
             <div>Waiting for other user to select a text category</div>

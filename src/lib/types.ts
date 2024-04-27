@@ -63,6 +63,8 @@ export interface RankedRoom extends SavedRoom {
     scores: { [key: string]: number };
     blacklistedTextCategories: TextCategory[];
     firstUserToBlacklist: string | null;
+    blacklistDecisionEndTime: number | null;
+    quoteSelectionDecisionEndTime: number | null;
 }
 
 export interface CasualRoom extends SavedRoom {

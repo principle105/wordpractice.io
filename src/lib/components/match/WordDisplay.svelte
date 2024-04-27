@@ -25,6 +25,7 @@
             : 0;
 
     $: wordsTyped = convertReplayToWords(replay, startedRoomInfo.quote);
+
     $: ({ completedWords, incorrectChars } = getCompletedAndIncorrectWords(
         wordsTyped,
         startedRoomInfo.quote

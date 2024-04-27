@@ -90,6 +90,10 @@ const getCurrentRateLimit = (userId: string): number => {
 };
 
 const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
+    if (!server) return;
+
+    const io = new Server(server);
+
     // Periodically checking if any rooms have gone over the time limit
     setInterval(() => {
         const allRooms = [...rankedRooms.values(), ...casualRooms.values()];
@@ -100,21 +104,17 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
                 Date.now() > room.startTime + MAX_MATCH_LENGTH
             ) {
                 room.sockets.forEach((socket) => {
-                    socket.emit("match-ended");
-
                     if (room.matchType === "casual") {
+                        socket.emit("casual:match-ended");
                         handleIfCasualMatchOver(room, true);
                     } else if (room.matchType === "ranked") {
+                        socket.emit("ranked:match-ended");
                         handleIfRankedMatchOver(room, socket, true);
                     }
                 });
             }
         }
     }, 5000);
-
-    if (!server) return;
-
-    const io = new Server(server);
 
     io.on("connection", async (socket) => {
         const { token, matchType, guestAccountSeed } = socket.handshake
@@ -184,10 +184,10 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
             user: queuedUser,
             socket: queuedUserSocket,
         } of rankedQueue.values()) {
-            if (queuedUser.id === user.id) {
-                queuedUserSocket.disconnect(true);
-                rankedQueue.delete(queuedUser.id);
-            }
+            if (queuedUser.id !== user.id) continue;
+
+            queuedUserSocket.disconnect(true);
+            rankedQueue.delete(queuedUser.id);
         }
 
         if (matchType === "ranked") {
