@@ -17,6 +17,7 @@ import {
 import { rankedQueue, rankedRooms } from "./state";
 import { START_TIME_LENIENCY } from "../src/lib/config";
 import { getQuoteFromCategory } from "../data";
+import { textCategories } from "../src/lib/constants";
 
 const BEST_OF = 3;
 const COUNTDOWN_TIME = 6 * 1000;
@@ -27,7 +28,7 @@ const RATING_SEARCH_STEP = 100;
 const SEARCHING_TIME_PER_STEP = 15; // seconds
 const SEARCHING_TIME_STEP_MULTIPLIER = 2;
 
-const DECISION_MAKING_TIME = 20 * 1000;
+const MAX_DECISION_MAKING_TIME = 20 * 1000;
 
 const removeSocketInformationFromRankedRoom = (
     room: RankedRoomWithSocketInfo
@@ -59,6 +60,59 @@ const addUserToRankedRoom = (
     } satisfies RankedRoomWithSocketInfo;
 
     return newRoomInfo;
+};
+
+const handleTextCategoryElimination = (
+    socket: Socket,
+    room: RankedRoomWithSocketInfo,
+    textCategory: TextCategory
+) => {
+    room.blacklistedTextCategories.push(textCategory);
+
+    room.blacklistDecisionEndTime = null;
+    room.quoteSelectionDecisionEndTime = Date.now() + MAX_DECISION_MAKING_TIME;
+
+    rankedRooms.set(room.id, room);
+
+    socket.emit(
+        "ranked:update-room-info",
+        removeSocketInformationFromRankedRoom(room)
+    );
+    socket.broadcast
+        .to(room.id)
+        .emit(
+            "ranked:update-room-info",
+            removeSocketInformationFromRankedRoom(room)
+        );
+};
+
+const handleTextCategorySelection = async (
+    socket: Socket,
+    room: RankedRoomWithSocketInfo,
+    textCategory: TextCategory
+) => {
+    const quote = await getQuoteFromCategory(textCategory);
+
+    if (!quote) {
+        socket.emit("error", "Something went wrong, please try again");
+        return;
+    }
+
+    room.quote = quote.text.split(" ");
+    room.startTime = Date.now() + COUNTDOWN_TIME;
+
+    rankedRooms.set(room.id, room);
+
+    socket.emit(
+        "ranked:update-room-info",
+        removeSocketInformationFromRankedRoom(room)
+    );
+    socket.broadcast
+        .to(room.id)
+        .emit(
+            "ranked:update-room-info",
+            removeSocketInformationFromRankedRoom(room)
+        );
 };
 
 export const handleIfRankedMatchOver = async (
@@ -161,7 +215,7 @@ export const handleIfRankedMatchOver = async (
         room.startTime = null;
         room.quote = null;
 
-        room.blacklistDecisionEndTime = Date.now() + DECISION_MAKING_TIME;
+        room.blacklistDecisionEndTime = Date.now() + MAX_DECISION_MAKING_TIME;
 
         socket.emit(
             "ranked:update-room-info",
@@ -249,6 +303,7 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
 
     let minRating = Math.round(user.rating / 100) * 100;
     let maxRating = Math.round(user.rating / 100) * 100;
+    let selectionTimeout: ReturnType<typeof setTimeout> | null = null;
 
     const startSearchingTime = Date.now();
     let searchingStepTime = SEARCHING_TIME_PER_STEP;
@@ -302,7 +357,7 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
                 blacklistedTextCategories: [],
                 sockets: new Map(),
                 firstUserToBlacklist,
-                blacklistDecisionEndTime: Date.now() + DECISION_MAKING_TIME,
+                blacklistDecisionEndTime: Date.now() + MAX_DECISION_MAKING_TIME,
                 quoteSelectionDecisionEndTime: null,
             };
 
@@ -330,6 +385,24 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
                     removeSocketInformationFromRankedRoom(room)
                 );
 
+            selectionTimeout = setTimeout(() => {
+                const nonEliminatedTextCategories = Object.values(
+                    textCategories
+                ).filter(
+                    (category) =>
+                        !room.blacklistedTextCategories.includes(category)
+                );
+
+                const randomCategory =
+                    nonEliminatedTextCategories[
+                        Math.floor(
+                            Math.random() * nonEliminatedTextCategories.length
+                        )
+                    ];
+
+                handleTextCategoryElimination(socket, room, randomCategory);
+            }, MAX_DECISION_MAKING_TIME);
+
             break;
         }
 
@@ -340,7 +413,6 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
         }
     };
 
-    // Running once initially to circumvent the setInterval delay
     searchForOpponent();
 
     socket.on("ranked:elimination", (textCategory: TextCategory) => {
@@ -383,13 +455,29 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
             return;
         }
 
-        room.blacklistedTextCategories.push(textCategory);
-        room.quoteSelectionDecisionEndTime = Date.now() + DECISION_MAKING_TIME;
+        if (selectionTimeout) {
+            clearTimeout(selectionTimeout);
+            selectionTimeout = null;
+        }
 
-        rankedRooms.set(roomId, room);
+        selectionTimeout = setTimeout(async () => {
+            const nonEliminatedTextCategories = Object.values(
+                textCategories
+            ).filter(
+                (category) => !room.blacklistedTextCategories.includes(category)
+            );
 
-        socket.emit("ranked:update-room-info", room);
-        socket.broadcast.to(roomId).emit("ranked:update-room-info", room);
+            const randomCategory =
+                nonEliminatedTextCategories[
+                    Math.floor(
+                        Math.random() * nonEliminatedTextCategories.length
+                    )
+                ];
+
+            await handleTextCategorySelection(socket, room, randomCategory);
+        }, MAX_DECISION_MAKING_TIME);
+
+        handleTextCategoryElimination(socket, room, textCategory);
     });
 
     socket.on("ranked:selection", async (textCategory: TextCategory) => {
@@ -440,20 +528,7 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
             return;
         }
 
-        const quote = await getQuoteFromCategory(textCategory);
-
-        if (!quote) {
-            socket.emit("error", "Something went wrong, please try again");
-            return;
-        }
-
-        room.quote = quote.text.split(" ");
-        room.startTime = Date.now() + COUNTDOWN_TIME;
-
-        rankedRooms.set(roomId, room);
-
-        socket.emit("ranked:update-room-info", room);
-        socket.broadcast.to(roomId).emit("ranked:update-room-info", room);
+        await handleTextCategorySelection(socket, room, textCategory);
     });
 
     // New typing action from the user

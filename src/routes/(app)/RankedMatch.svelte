@@ -230,9 +230,7 @@
 
     <div slot="before-start">
         {@const isEliminating =
-            roundNumber % 2 === (isFirstUserToBlacklist ? 0 : 1) &&
-            blacklistDecisionEndTime &&
-            blacklistDecisionEndTime > currentTime}
+            roundNumber % 2 === (isFirstUserToBlacklist ? 0 : 1)}
         <div>
             {user.username} vs {Array.from(matchUsers.values())
                 .map((matchUser) => matchUser.username)
@@ -248,7 +246,9 @@
                     {currentTime}
                 />
             {:else}
-                <div>Waiting for other user to eliminate</div>
+                <div>
+                    Waiting for your opponent to eliminate a text category...
+                </div>
             {/if}
         {:else if blacklist.length !== roundNumber}
             <TextEliminator
@@ -258,7 +258,7 @@
                 {currentTime}
             />
         {:else}
-            <div>Waiting for other user to select a text category</div>
+            <div>Waiting for your opponent to select a text category...</div>
         {/if}
     </div>
 
