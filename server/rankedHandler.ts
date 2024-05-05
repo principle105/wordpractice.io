@@ -343,9 +343,9 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
 
             const roomId = Math.random().toString(36).substring(2, 8);
 
-            // Select either queued user or current user to go first
+            // Selecting the lower rated user to blacklist first
             const firstUserToBlacklist =
-                Math.random() < 0.5 ? user.id : queuedUser.id;
+                user.rating < queuedUser.rating ? user.id : queuedUser.id;
 
             let room: RankedRoomWithSocketInfo = {
                 matchType: "ranked",
