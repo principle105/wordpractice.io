@@ -27,6 +27,8 @@
     let finished = false;
     let countDown: number | null = null;
 
+    let interval: ReturnType<typeof setInterval> | null = null;
+
     let previousReplayLength = 0;
 
     let socket = io({
@@ -121,15 +123,23 @@
             roomInfo.quote === null
         ) {
             countDown = null;
+
+            if (interval !== null) {
+                clearInterval(interval);
+            }
+
             return;
         }
 
         countDown = Math.ceil((roomInfo.startTime - Date.now()) / 1000);
 
-        const interval = setInterval(() => {
+        interval = setInterval(() => {
             if (countDown === null || countDown <= 1) {
                 countDown = null;
-                clearInterval(interval);
+
+                if (interval !== null) {
+                    clearInterval(interval);
+                }
                 return;
             }
 
@@ -140,6 +150,10 @@
     $: replay, sendNewReplayAction(replay);
     $: started = countDown === null;
 </script>
+
+<div class="font-mono bottom-0 left-1/2 right-1/2 fixed">
+    {JSON.stringify({ countDown, started, finished, interval })}
+</div>
 
 {#if $matchType === null}
     <div>Loading...</div>

@@ -1,6 +1,5 @@
 import type { Socket } from "socket.io";
 import type {
-    Replay,
     MatchUser,
     RankedRoomWithSocketInfo,
     NewActionPayload,
@@ -25,10 +24,10 @@ const COUNTDOWN_TIME = 6 * 1000;
 const K_FACTOR = 32;
 
 const RATING_SEARCH_STEP = 100;
-const SEARCHING_TIME_PER_STEP = 15; // seconds
-const SEARCHING_TIME_STEP_MULTIPLIER = 2;
+const BASE_SEARCHING_TIME_PER_STEP = 10; // seconds
+const SEARCHING_TIME_STEP_MULTIPLIER = 1.5;
 
-const MAX_DECISION_MAKING_TIME = 20 * 1000;
+const MAX_DECISION_MAKING_TIME = 10 * 1000;
 
 const removeSocketInformationFromRankedRoom = (
     room: RankedRoomWithSocketInfo
@@ -303,10 +302,9 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
 
     let minRating = Math.round(user.rating / 100) * 100;
     let maxRating = Math.round(user.rating / 100) * 100;
-    let selectionTimeout: ReturnType<typeof setTimeout> | null = null;
 
     const startSearchingTime = Date.now();
-    let searchingStepTime = SEARCHING_TIME_PER_STEP;
+    let searchingStepTime = BASE_SEARCHING_TIME_PER_STEP;
 
     const searchForOpponent = () => {
         const secondsPassed = Math.floor(
@@ -385,7 +383,10 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
                     removeSocketInformationFromRankedRoom(room)
                 );
 
-            selectionTimeout = setTimeout(() => {
+            setTimeout(() => {
+                // Check if the user has already eliminated a category
+                if (room.blacklistDecisionEndTime === null) return;
+
                 const nonEliminatedTextCategories = Object.values(
                     textCategories
                 ).filter(
@@ -415,7 +416,7 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
 
     searchForOpponent();
 
-    socket.on("ranked:elimination", (textCategory: TextCategory) => {
+    socket.on("ranked:elimination", async (textCategory: TextCategory) => {
         const roomId = Array.from(socket.rooms.values())[1];
 
         const room = rankedRooms.get(roomId);
@@ -455,12 +456,9 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
             return;
         }
 
-        if (selectionTimeout) {
-            clearTimeout(selectionTimeout);
-            selectionTimeout = null;
-        }
+        setTimeout(async () => {
+            if (room.quoteSelectionDecisionEndTime) return;
 
-        selectionTimeout = setTimeout(async () => {
             const nonEliminatedTextCategories = Object.values(
                 textCategories
             ).filter(

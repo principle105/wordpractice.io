@@ -147,6 +147,10 @@
             wrapperElement.offsetHeight -
             DEFAULT_MAX_LINES_SHOWN * fontSize * 1.5;
 
+        if (wrappedThreshold <= 0) {
+            return topPos;
+        }
+
         if (wrappedThreshold < topPos) {
             return topPos - wrappedThreshold;
         }
@@ -164,6 +168,8 @@
             updatePositioning(replay.slice(0, i + 1));
         }
     };
+
+    $: wrapperElement, handleResize();
 
     $: isCaretBlinking =
         replay.length === 0 ||
