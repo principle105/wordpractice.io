@@ -7,12 +7,7 @@
 
     import { guestAccountSeed } from "$lib/stores/guestAccountSeed";
     import { matchType } from "$lib/stores/matchType";
-    import type {
-        MatchUser,
-        Replay,
-        BasicRoomInfo,
-        NewActionPayload,
-    } from "$lib/types";
+    import type { Replay, BasicRoomInfo, NewActionPayload } from "$lib/types";
 
     import CasualMatch from "./CasualMatch.svelte";
     import RankedMatch from "./RankedMatch.svelte";
@@ -22,7 +17,6 @@
 
     let replay: Replay = [];
     let roomInfo: BasicRoomInfo | null = null;
-    let matchUsers = new Map<string, MatchUser>();
 
     let finished = false;
     let countDown: number | null = null;
@@ -49,26 +43,8 @@
         roomInfo = { ...roomInfo, startTime };
     });
 
-    socket.on("new-action", (newActionPayload: NewActionPayload) => {
-        let matchUser = matchUsers.get(newActionPayload.userId);
-
-        if (!matchUser) return;
-
-        // Adding the new actions to the user's replay
-        matchUser.replay = matchUser.replay.concat(newActionPayload.actions);
-
-        matchUsers.set(matchUser.id, matchUser);
-        matchUsers = matchUsers;
-    });
-
-    socket.on("new-user", (newUser: MatchUser) => {
-        if (matchUsers.has(newUser.id)) return;
-
-        matchUsers.set(newUser.id, newUser);
-        matchUsers = matchUsers;
-    });
-
     socket.on("disconnect", () => {
+        toast.error("I GOT DISCONNECTED");
         if (roomInfo === null) {
             matchType.set(null);
         }
@@ -151,10 +127,6 @@
     $: started = countDown === null;
 </script>
 
-<div class="font-mono bottom-0 left-1/2 right-1/2 fixed">
-    {JSON.stringify({ countDown, started, finished, interval })}
-</div>
-
 {#if $matchType === null}
     <div>Loading...</div>
 {:else}
@@ -173,7 +145,6 @@
             {started}
             bind:user
             bind:roomInfo
-            bind:matchUsers
             bind:finished
             bind:replay
             bind:socket
@@ -183,7 +154,6 @@
             {started}
             bind:user
             bind:roomInfo
-            bind:matchUsers
             bind:finished
             bind:replay
             bind:socket

@@ -6,9 +6,10 @@
 
     import type {
         CasualRoom,
-        MatchUser,
+        CasualMatchUser,
         Replay,
         BasicRoomInfo,
+        NewActionPayload,
     } from "$lib/types";
     import { matchType } from "$lib/stores/matchType";
     import { BASE_FONT_SIZE } from "$lib/config";
@@ -18,11 +19,11 @@
     import WordDisplay from "$lib/components/match/WordDisplay.svelte";
     import TestInput from "$lib/components/match/TestInput.svelte";
     import MatchContainer from "$lib/components/layout/MatchContainer.svelte";
-    import EndScreen from "$lib/components/match/EndScreen.svelte";
+    import MatchStats from "$lib/components/match/MatchStats.svelte";
 
     export let user: User;
     export let roomInfo: BasicRoomInfo | null;
-    export let matchUsers = new Map<string, MatchUser>();
+    export let matchUsers = new Map<string, CasualMatchUser>();
     export let replay: Replay = [];
     export let started: boolean;
     export let socket: Socket;
@@ -42,6 +43,25 @@
         matchUsers = matchUsers;
     });
 
+    socket.on("new-action", (newActionPayload: NewActionPayload) => {
+        let matchUser = matchUsers.get(newActionPayload.userId);
+
+        if (!matchUser) return;
+
+        // Adding the new actions to the user's replay
+        matchUser.replay = matchUser.replay.concat(newActionPayload.actions);
+
+        matchUsers.set(matchUser.id, matchUser);
+        matchUsers = matchUsers;
+    });
+
+    socket.on("casual:new-user", (newUser: CasualMatchUser) => {
+        if (matchUsers.has(newUser.id)) return;
+
+        matchUsers.set(newUser.id, newUser);
+        matchUsers = matchUsers;
+    });
+
     socket.on("casual:match-expired", () => {
         if (finished === false) {
             finished = true;
@@ -51,7 +71,7 @@
         matchUsers = new Map(
             Array.from(matchUsers, ([id, user]) => [
                 id,
-                { ...user, connected: false } satisfies MatchUser,
+                { ...user, connected: false } satisfies CasualMatchUser,
             ])
         );
     });
@@ -93,7 +113,7 @@
         rating: user.rating,
         connected: true,
         replay,
-    } satisfies MatchUser;
+    } satisfies CasualMatchUser;
 </script>
 
 <svelte:head>
@@ -115,7 +135,7 @@
     <div slot="end-screen" let:startedRoomInfo>
         <div class="mt-16 flex flex-col justify-center">
             <h2 class="text-3xl">Your Stats</h2>
-            <EndScreen {replay} {startedRoomInfo} />
+            <MatchStats {replay} {startedRoomInfo} />
         </div>
 
         <button

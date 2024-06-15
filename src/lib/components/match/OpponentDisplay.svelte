@@ -2,7 +2,7 @@
     import { onMount } from "svelte";
 
     import { START_TIME_LENIENCY } from "$lib/config";
-    import type { MatchUser, BasicRoomInfoStarted } from "$lib/types";
+    import type { CasualMatchUser, BasicRoomInfoStarted } from "$lib/types";
     import {
         convertReplayToWords,
         getCompletedAndIncorrectWords,
@@ -10,7 +10,7 @@
     import { calculateWpm } from "$lib/utils/stats";
 
     export let startedRoomInfo: BasicRoomInfoStarted;
-    export let matchUser: MatchUser;
+    export let matchUser: CasualMatchUser;
     export let finished = false;
     export let showRating = false;
 

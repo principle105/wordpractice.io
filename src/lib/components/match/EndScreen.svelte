@@ -1,54 +1,48 @@
 <script lang="ts">
-    import { START_TIME_LENIENCY } from "$lib/config";
-    import type { Replay, BasicRoomInfoStarted } from "$lib/types";
+    import type {
+        BasicRoomInfo,
+        BasicRoomInfoStarted,
+        Replay,
+    } from "$lib/types";
+    import type { User } from "@prisma/client";
+    import MatchStats from "./MatchStats.svelte";
+    import ReplayText from "./ReplayText.svelte";
+    import { BASE_FONT_SIZE } from "$lib/config";
 
-    import {
-        convertReplayToWords,
-        getCompletedAndIncorrectWords,
-    } from "$lib/utils/textProcessing";
-    import {
-        calculateWpm,
-        calculateAccuracy,
-        getTotalCorrectAndIncorrectChars,
-    } from "$lib/utils/stats";
+    export let user: User;
+    export let roomInfo: BasicRoomInfo;
+    export let replays: { [key: string]: Replay };
 
-    export let replay: Replay;
-    export let startedRoomInfo: BasicRoomInfoStarted;
+    let showReplay = false;
+    let replay: Replay = replays[Object.keys(replays)[0]];
 
-    const getWpm = (): number => {
-        const startTime = Math.min(
-            replay[0]?.timestamp,
-            startedRoomInfo.startTime + START_TIME_LENIENCY
-        );
+    const fontSize: number = user.fontScale * BASE_FONT_SIZE;
 
-        const wordsTyped = convertReplayToWords(replay, startedRoomInfo.quote);
-        const { completedWords } = getCompletedAndIncorrectWords(
-            wordsTyped,
-            startedRoomInfo.quote
-        );
+    $: startedRoomInfo = roomInfo as BasicRoomInfoStarted;
+    $: raceStarted = !(roomInfo.startTime === null || roomInfo.quote === null);
 
-        return calculateWpm(
-            replay[replay.length - 1]?.timestamp,
-            startTime,
-            completedWords.length
-        );
-    };
-
-    const getAccuracy = (): number => {
-        const { totalCorrectChars, totalIncorrectChars } =
-            getTotalCorrectAndIncorrectChars(replay, startedRoomInfo.quote);
-
-        return calculateAccuracy(totalCorrectChars, totalIncorrectChars);
+    const changeReplay = (replayName: string) => {
+        replay = replays[replayName];
     };
 </script>
 
-<section class="flex flex-col">
-    <div>
-        <div>Words Per Minute</div>
-        <div>{getWpm()}</div>
+<div>
+    <div class="flex gap-5">
+        {#each Object.keys(replays) as replayKey}
+            <button>{replayKey}</button>
+        {/each}
     </div>
-    <div>
-        <div>Accuracy</div>
-        <div>{getAccuracy()}%</div>
-    </div>
-</section>
+    {#if raceStarted}
+        <MatchStats {replay} {startedRoomInfo} />
+    {/if}
+</div>
+<button
+    class="bg-zinc-500 p-3 rounded-md text-white"
+    on:click={() => (showReplay = true)}
+>
+    Replay
+</button>
+
+{#if showReplay}
+    <ReplayText {fontSize} {replay} {startedRoomInfo} />
+{/if}

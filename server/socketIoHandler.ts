@@ -3,7 +3,7 @@ import type { ViteDevServer } from "vite";
 import type { User } from "@prisma/client";
 
 import { lucia } from "../src/lib/server/auth/clients";
-import type { MatchUser } from "../src/lib/types";
+import type { UserProfile } from "../src/lib/types";
 import { getGuestUsername, getGuestAvatar } from "../src/lib/utils/random";
 import { convertStringToInteger } from "../src/lib/utils/conversions";
 import { GUEST_SEED_SIZE } from "../src/lib/config";
@@ -30,7 +30,7 @@ const getMatchUserFromSession = async (
     token: string | undefined,
     guestAccountSeed: number,
     socket: Socket
-): Promise<MatchUser | null> => {
+): Promise<UserProfile | null> => {
     let user: User | null = null;
 
     if (token) {
@@ -49,8 +49,6 @@ const getMatchUserFromSession = async (
             username,
             rating: 0,
             avatar: getGuestAvatar(username),
-            connected: true,
-            replay: [],
         };
     }
 
@@ -59,8 +57,6 @@ const getMatchUserFromSession = async (
         username: user.username,
         rating: user.rating,
         avatar: user.avatar,
-        connected: true,
-        replay: [],
     };
 };
 

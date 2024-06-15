@@ -1,13 +1,12 @@
 import type { User } from "@prisma/client";
 import type { Socket } from "socket.io";
 
+// Auth
+
 export type Provider = "google" | "github" | "discord";
 export type MatchType = "ranked" | "casual" | "private";
 
-export interface Match {
-    type: MatchType;
-    users: string[];
-}
+// Replay
 
 export interface Character {
     type: "character";
@@ -30,16 +29,27 @@ export interface Delete {
 
 export type Replay = (Character | Delete | CaretMovement)[];
 
+// Match
+
+export interface Match {
+    type: MatchType;
+    users: string[];
+}
+
 export type UserProfile = Pick<User, "id" | "username" | "rating" | "avatar">;
 
-export interface MatchUser extends UserProfile {
+export interface WaitingUser {
+    user: UserProfile;
+    socket: Socket;
+}
+
+export interface CasualMatchUser extends UserProfile {
     replay: Replay;
     connected: boolean;
 }
 
-export interface WaitingUser {
-    user: MatchUser;
-    socket: Socket;
+export interface RankedMatchUser extends CasualMatchUser {
+    score: number;
 }
 
 export interface BasicRoomInfo {
@@ -54,35 +64,41 @@ export interface BasicRoomInfoStarted extends BasicRoomInfo {
     quote: string[];
 }
 
-interface SavedRoom extends BasicRoomInfo {
-    users: { [key: string]: MatchUser }; // not using a Map because cannot be serialized by socket.io
-}
-
-export interface RankedRoom extends SavedRoom {
+export interface RankedRoom extends BasicRoomInfo {
     matchType: "ranked";
-    scores: { [key: string]: number };
+    users: { [key: string]: RankedMatchUser };
     blacklistedTextCategories: TextCategory[];
     firstUserToBlacklist: string | null;
     blacklistDecisionEndTime: number | null;
     quoteSelectionDecisionEndTime: number | null;
+    sockets: Map<string, Socket>;
 }
 
-export interface CasualRoom extends SavedRoom {
+export interface CasualRoom extends BasicRoomInfo {
     matchType: "casual";
-}
-
-export interface RankedRoomWithSocketInfo extends RankedRoom {
+    users: { [key: string]: CasualMatchUser };
     sockets: Map<string, Socket>;
 }
 
-export interface CasualRoomWithSocketInfo extends CasualRoom {
-    sockets: Map<string, Socket>;
-}
+// General socket event payloads
 
 export interface NewActionPayload {
     userId: string;
     actions: Replay;
 }
+
+export interface UpdateReplayPayload {
+    userId: string;
+    replay: Replay;
+}
+
+// Casual socket event payloads
+export type CasualRoomPayload = Omit<CasualRoom, "sockets">;
+
+// Ranked socket event payloads
+export type RankedRoomPayload = Omit<RankedRoom, "sockets">;
+
+// Texts
 
 export type QuoteCategory = "quote easy" | "quote hard";
 export type DictionaryCategory = "dictionary easy" | "dictionary hard";

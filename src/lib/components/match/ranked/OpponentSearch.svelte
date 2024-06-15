@@ -24,11 +24,7 @@
     )}:${String(startSearchTime % 60).padStart(2, "0")}`;
 </script>
 
-<div>
-    Tip: Lorem ipsum dolor, sit amet consectetur adipisicing elit.
-    Exercitationem alias incidunt voluptatum provident minima maxime perferendis
-    sed fugiat! Officiis, illum?
-</div>
+<div>Tip: Lorem ipsum dolor sit amet consectetur adipisicing elit.</div>
 
 <div>
     Looking for an opponent ({minSearchRating} - {maxSearchRating})

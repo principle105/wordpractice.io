@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { createEventDispatcher, onMount } from "svelte";
+    import { createEventDispatcher } from "svelte";
 
     import type { TextCategory } from "$lib/types";
     import { textCategories } from "$lib/constants";

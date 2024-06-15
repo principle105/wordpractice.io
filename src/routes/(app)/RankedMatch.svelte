@@ -4,54 +4,55 @@
     import type { Socket } from "socket.io-client";
 
     import type {
-        MatchUser,
+        RankedMatchUser,
         Replay,
         BasicRoomInfo,
         RankedRoom,
+        NewActionPayload,
     } from "$lib/types";
     import { matchType } from "$lib/stores/matchType";
     import { BASE_FONT_SIZE } from "$lib/config";
     import type { TextCategory } from "$lib/types";
 
     import OpponentDisplay from "$lib/components/match/OpponentDisplay.svelte";
-    import ReplayText from "$lib/components/match/ReplayText.svelte";
     import WordDisplay from "$lib/components/match/WordDisplay.svelte";
     import TestInput from "$lib/components/match/TestInput.svelte";
     import MatchContainer from "$lib/components/layout/MatchContainer.svelte";
-    import EndScreen from "$lib/components/match/EndScreen.svelte";
     import OpponentSearch from "$lib/components/match/ranked/OpponentSearch.svelte";
     import TextEliminator from "$lib/components/match/ranked/TextEliminator.svelte";
     import TextSelector from "$lib/components/match/ranked/TextSelector.svelte";
     import { onMount } from "svelte";
     import toast from "svelte-french-toast";
     import WaitingForOpponent from "$lib/components/match/ranked/WaitingForOpponent.svelte";
+    import EndScreen from "$lib/components/match/EndScreen.svelte";
 
     export let user: User;
     export let roomInfo: BasicRoomInfo | null;
-    export let matchUsers = new Map<string, MatchUser>();
+    export let matchUsers = new Map<string, RankedMatchUser>();
     export let replay: Replay = [];
     export let started: boolean;
     export let socket: Socket;
     export let finished: boolean;
 
-    let scores: RankedRoom["scores"] = {};
-
-    let showReplay = false;
-    let isFirstUserToBlacklist = false;
+    const fontSize: number = user.fontScale * BASE_FONT_SIZE;
 
     let minSearchRating = 0;
     let maxSearchRating = 0;
 
+    let isFirstUserToBlacklist = false;
     let blacklist: TextCategory[] = [];
     let blacklistDecisionEndTime: number | null;
     let quoteSelectionDecisionEndTime: number | null;
 
-    let currentTime: number = Date.now();
+    let replays: { [key: string]: Replay } = {};
 
-    const fontSize: number = user.fontScale * BASE_FONT_SIZE;
+    let currentTime: number = Date.now();
+    let score = 0;
 
     $: roundNumber =
-        Object.values(scores).reduce((acc, curr) => acc + curr, 0) + 1;
+        score +
+        Array.from(matchUsers).reduce((acc, curr) => acc + curr[1].score, 0) +
+        1;
 
     socket.on("user-disconnect", (userId: string) => {
         let disconnectedUser = matchUsers.get(userId);
@@ -65,6 +66,18 @@
         matchUsers = matchUsers;
 
         finished = true;
+    });
+
+    socket.on("new-action", (newActionPayload: NewActionPayload) => {
+        let matchUser = matchUsers.get(newActionPayload.userId);
+
+        if (!matchUser) return;
+
+        // Adding the new actions to the user's replay
+        matchUser.replay = matchUser.replay.concat(newActionPayload.actions);
+
+        matchUsers.set(matchUser.id, matchUser);
+        matchUsers = matchUsers;
     });
 
     socket.on("ranked:match-expired", () => {
@@ -93,7 +106,6 @@
         blacklistDecisionEndTime = newRoomInfo.blacklistDecisionEndTime;
         quoteSelectionDecisionEndTime =
             newRoomInfo.quoteSelectionDecisionEndTime;
-        scores = newRoomInfo.scores;
 
         isFirstUserToBlacklist = newRoomInfo.firstUserToBlacklist === user.id;
     });
@@ -103,6 +115,7 @@
             if (id === user.id) {
                 user.rating = matchUser.rating;
                 replay = matchUser.replay;
+                score = matchUser.score;
                 continue;
             }
 
@@ -122,7 +135,6 @@
         blacklistDecisionEndTime = newRoomInfo.blacklistDecisionEndTime;
         quoteSelectionDecisionEndTime =
             newRoomInfo.quoteSelectionDecisionEndTime;
-        scores = newRoomInfo.scores;
 
         isFirstUserToBlacklist = newRoomInfo.firstUserToBlacklist === user.id;
     });
@@ -166,7 +178,8 @@
         rating: user.rating,
         connected: true,
         replay,
-    } satisfies MatchUser;
+        score,
+    } satisfies RankedMatchUser;
 </script>
 
 <svelte:head>
@@ -191,25 +204,14 @@
     </div>
 
     <div slot="end-screen" let:startedRoomInfo>
-        <div class="mt-16 flex flex-col justify-center">
-            <h2 class="text-3xl">Your Stats</h2>
-            <EndScreen {replay} {startedRoomInfo} />
-        </div>
-        <button
-            class="bg-zinc-500 p-3 rounded-md text-white"
-            on:click={() => (showReplay = true)}
-        >
-            Replay
-        </button>
+        <EndScreen {user} roomInfo={startedRoomInfo} {replays} />
+
         <button
             class="bg-emerald-500 p-3 rounded-md text-white"
             on:click={playAgain}
         >
             Play Again
         </button>
-        {#if showReplay}
-            <ReplayText {fontSize} {replay} {startedRoomInfo} />
-        {/if}
     </div>
 
     <WordDisplay
