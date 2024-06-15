@@ -45,7 +45,7 @@
     class="absolute top-0 left-0 right-0 h-[14vh] flex justify-between items-center px-20 z-50"
 >
     <nav class="flex gap-12 items-center">
-        <h3 class="text-3xl">Typing Website</h3>
+        <h3 class="text-3xl">WordPractice</h3>
         <a href="/" on:click={exitActiveMatch}>Play</a>
         <a href="/leaderboards">Leaderboards</a>
     </nav>

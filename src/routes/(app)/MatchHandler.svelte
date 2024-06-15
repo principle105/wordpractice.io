@@ -7,12 +7,7 @@
 
     import { guestAccountSeed } from "$lib/stores/guestAccountSeed";
     import { matchType } from "$lib/stores/matchType";
-    import type {
-        MatchUser,
-        Replay,
-        BasicRoomInfo,
-        NewActionPayload,
-    } from "$lib/types";
+    import type { Replay, BasicRoomInfo, NewActionPayload } from "$lib/types";
 
     import CasualMatch from "./CasualMatch.svelte";
     import RankedMatch from "./RankedMatch.svelte";
@@ -22,10 +17,11 @@
 
     let replay: Replay = [];
     let roomInfo: BasicRoomInfo | null = null;
-    let matchUsers = new Map<string, MatchUser>();
 
     let finished = false;
     let countDown: number | null = null;
+
+    let interval: ReturnType<typeof setInterval> | null = null;
 
     let previousReplayLength = 0;
 
@@ -37,16 +33,6 @@
         },
     });
 
-    socket.on("user-disconnect", (userId: string) => {
-        let disconnectedUser = matchUsers.get(userId);
-
-        if (!disconnectedUser) return;
-
-        disconnectedUser.connected = false;
-        matchUsers.set(userId, disconnectedUser);
-        matchUsers = matchUsers;
-    });
-
     socket.on("error", (errorMessage: string) => {
         toast.error(errorMessage);
     });
@@ -55,39 +41,6 @@
         if (roomInfo === null) return;
 
         roomInfo = { ...roomInfo, startTime };
-    });
-
-    socket.on("new-action", (newActionPayload: NewActionPayload) => {
-        let matchUser = matchUsers.get(newActionPayload.userId);
-
-        if (!matchUser) return;
-
-        // Adding the new actions to the user's replay
-        matchUser.replay = matchUser.replay.concat(newActionPayload.actions);
-
-        matchUsers.set(matchUser.id, matchUser);
-        matchUsers = matchUsers;
-    });
-
-    socket.on("new-user", (newUser: MatchUser) => {
-        if (matchUsers.has(newUser.id)) return;
-
-        matchUsers.set(newUser.id, newUser);
-        matchUsers = matchUsers;
-    });
-
-    socket.on("match-ended", () => {
-        if (finished === false) {
-            finished = true;
-            toast.error("The match reached the maximum time limit.");
-        }
-
-        matchUsers = new Map(
-            Array.from(matchUsers, ([id, user]) => [
-                id,
-                { ...user, connected: false } satisfies MatchUser,
-            ])
-        );
     });
 
     socket.on("disconnect", () => {
@@ -145,15 +98,23 @@
             roomInfo.quote === null
         ) {
             countDown = null;
+
+            if (interval !== null) {
+                clearInterval(interval);
+            }
+
             return;
         }
 
         countDown = Math.ceil((roomInfo.startTime - Date.now()) / 1000);
 
-        const interval = setInterval(() => {
-            if (countDown === 1 || countDown === null) {
+        interval = setInterval(() => {
+            if (countDown === null || countDown <= 1) {
                 countDown = null;
-                clearInterval(interval);
+
+                if (interval !== null) {
+                    clearInterval(interval);
+                }
                 return;
             }
 
@@ -183,7 +144,6 @@
             {started}
             bind:user
             bind:roomInfo
-            bind:matchUsers
             bind:finished
             bind:replay
             bind:socket
@@ -193,7 +153,6 @@
             {started}
             bind:user
             bind:roomInfo
-            bind:matchUsers
             bind:finished
             bind:replay
             bind:socket

@@ -1,6 +1,10 @@
 <script lang="ts">
     import { DEFAULT_MAX_LINES_SHOWN } from "$lib/config";
-    import type { MatchUser, Replay, BasicRoomInfoStarted } from "$lib/types";
+    import type {
+        CasualMatchUser,
+        Replay,
+        BasicRoomInfoStarted,
+    } from "$lib/types";
     import {
         convertReplayToWords,
         getCompletedAndIncorrectWords,
@@ -13,7 +17,7 @@
     export let timingOffset = 0;
 
     export let replay: Replay;
-    export let matchUsers: MatchUser[];
+    export let matchUsers: CasualMatchUser[];
 
     let wrapperElement: HTMLElement | null = null;
     let topPos = 0;
@@ -25,6 +29,7 @@
             : 0;
 
     $: wordsTyped = convertReplayToWords(replay, startedRoomInfo.quote);
+
     $: ({ completedWords, incorrectChars } = getCompletedAndIncorrectWords(
         wordsTyped,
         startedRoomInfo.quote

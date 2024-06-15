@@ -1,10 +1,11 @@
 import type { Socket } from "socket.io";
 import type {
-    Replay,
-    MatchUser,
-    RankedRoomWithSocketInfo,
+    RankedMatchUser,
     NewActionPayload,
     RankedRoom,
+    TextCategory,
+    RankedRoomPayload,
+    UserProfile,
 } from "../src/lib/types";
 
 import { client } from "../src/lib/server/auth/clients";
@@ -15,6 +16,8 @@ import {
 } from "../src/lib/utils/textProcessing";
 import { rankedQueue, rankedRooms } from "./state";
 import { START_TIME_LENIENCY } from "../src/lib/config";
+import { getQuoteFromCategory } from "../data";
+import { textCategories } from "../src/lib/constants";
 
 const BEST_OF = 3;
 const COUNTDOWN_TIME = 6 * 1000;
@@ -22,47 +25,77 @@ const COUNTDOWN_TIME = 6 * 1000;
 const K_FACTOR = 32;
 
 const RATING_SEARCH_STEP = 100;
-const SEARCHING_TIME_PER_STEP = 15; // seconds
-const SEARCHING_TIME_STEP_MULTIPLIER = 2;
+const BASE_SEARCHING_TIME_PER_STEP = 1; // seconds
+const SEARCHING_TIME_STEP_MULTIPLIER = 1.5;
 
-const removeSocketInformationFromRankedRoom = (
-    room: RankedRoomWithSocketInfo
-): RankedRoom => {
-    return {
-        id: room.id,
-        quote: room.quote,
-        startTime: room.startTime,
-        users: room.users,
-        matchType: room.matchType,
-        scores: room.scores,
-        userBlacklistedTextTypes: room.userBlacklistedTextTypes,
-    };
+const MAX_DECISION_MAKING_TIME = 20 * 1000;
+
+const getRankedRoomPayload = (room: RankedRoom): RankedRoomPayload => {
+    const { sockets, ...newRoom } = room;
+
+    return newRoom;
 };
 
 const addUserToRankedRoom = (
-    user: MatchUser,
-    socket: Socket,
-    room: RankedRoomWithSocketInfo
+    user: RankedMatchUser,
+    userSocket: Socket,
+    room: RankedRoom
 ) => {
     const newRoomInfo = {
         ...room,
         users: { ...room.users, [user.id]: user },
-        sockets: new Map([...room.sockets, [user.id, socket]]),
-        scores: { ...room.scores, [user.id]: 0 },
-    } satisfies RankedRoomWithSocketInfo;
+        sockets: new Map([...room.sockets, [user.id, userSocket]]),
+    };
 
     return newRoomInfo;
 };
 
+const handleTextCategoryElimination = (
+    socket: Socket,
+    room: RankedRoom,
+    textCategory: TextCategory
+) => {
+    room.blacklistedTextCategories.push(textCategory);
+
+    room.blacklistDecisionEndTime = null;
+    room.quoteSelectionDecisionEndTime = Date.now() + MAX_DECISION_MAKING_TIME;
+
+    rankedRooms.set(room.id, room);
+
+    socket.emit("ranked:update-room-info", getRankedRoomPayload(room));
+    socket.broadcast
+        .to(room.id)
+        .emit("ranked:update-room-info", getRankedRoomPayload(room));
+};
+
+const handleTextCategorySelection = async (
+    socket: Socket,
+    room: RankedRoom,
+    textCategory: TextCategory
+) => {
+    const quote = await getQuoteFromCategory(textCategory);
+
+    if (!quote) {
+        socket.emit("error", "Something went wrong, please try again");
+        return;
+    }
+
+    room.quote = quote.text.split(" ");
+    room.startTime = Date.now() + COUNTDOWN_TIME;
+
+    rankedRooms.set(room.id, room);
+
+    socket.emit("ranked:update-room-info", getRankedRoomPayload(room));
+    socket.broadcast
+        .to(room.id)
+        .emit("ranked:update-room-info", getRankedRoomPayload(room));
+};
+
 export const handleIfRankedMatchOver = async (
-    room: RankedRoomWithSocketInfo,
+    room: RankedRoom,
     socket: Socket,
     force = false
 ) => {
-    const quote = room.quote;
-
-    if (!quote) return;
-
     let matchWinner: string | null = null;
 
     const user1 = Object.values(room.users)[0];
@@ -70,53 +103,80 @@ export const handleIfRankedMatchOver = async (
 
     if (!user1.connected) {
         matchWinner = user2.id;
+        user2.score += 1;
     } else if (!user2.connected) {
         matchWinner = user1.id;
+        user1.score += 1;
     }
 
     if (!matchWinner) {
-        const getWpmFromReplay = (replay: Replay) => {
-            const startTime = Math.min(
-                replay[0]?.timestamp,
-                (room.startTime as number) + START_TIME_LENIENCY
-            );
+        const quote = room.quote;
 
-            const { completedWords } = getCompletedAndIncorrectWords(
-                convertReplayToWords(replay, quote),
+        if (!quote) return;
+
+        const { completedWords: user1CompletedWords } =
+            getCompletedAndIncorrectWords(
+                convertReplayToWords(user1.replay, quote),
                 quote
             );
 
-            // If the user has not finished yet
-            if (completedWords.length !== quote.join(" ").length) {
-                return 0;
-            }
-
-            return calculateWpm(
-                replay[replay.length - 1]?.timestamp,
-                startTime,
-                completedWords.length
+        const { completedWords: user2CompletedWords } =
+            getCompletedAndIncorrectWords(
+                convertReplayToWords(user2.replay, quote),
+                quote
             );
-        };
 
-        const user1Wpm = getWpmFromReplay(user1.replay);
-        const user2Wpm = getWpmFromReplay(user2.replay);
+        const quoteLength = quote.join(" ").length;
 
-        // Checking if neither user has finished
-        if (user1Wpm === 0 && user2Wpm === 0) {
-            return;
-        }
-
-        if (user1Wpm > user2Wpm) {
-            room.scores[user1.id] += 1;
+        if (
+            user1CompletedWords.length === quoteLength &&
+            user2CompletedWords.length !== quoteLength
+        ) {
+            user1.score += 1;
+        } else if (
+            user2CompletedWords.length === quoteLength &&
+            user1CompletedWords.length !== quoteLength
+        ) {
+            user2.score += 1;
         } else {
-            room.scores[user2.id] += 1;
+            // Check if neither are finished and the force flag is not set
+            if (user1CompletedWords.length !== quoteLength && !force) return;
+
+            // If both are finished
+            const user1StartTime = Math.min(
+                user1.replay[0]?.timestamp,
+                (room.startTime as number) + START_TIME_LENIENCY
+            );
+
+            const user2StartTime = Math.min(
+                user2.replay[0]?.timestamp,
+                (room.startTime as number) + START_TIME_LENIENCY
+            );
+
+            const user1Wpm = calculateWpm(
+                user1.replay[user1.replay.length - 1]?.timestamp,
+                user1StartTime,
+                user1CompletedWords.length
+            );
+
+            const user2Wpm = calculateWpm(
+                user2.replay[user2.replay.length - 1]?.timestamp,
+                user2StartTime,
+                user2CompletedWords.length
+            );
+
+            if (user1Wpm > user2Wpm) {
+                user1.score += 1;
+            } else {
+                user2.score += 1;
+            }
         }
 
         const winningScore = Math.ceil(BEST_OF / 2);
 
-        if (room.scores[user1.id] === winningScore) {
+        if (user1.score === winningScore) {
             matchWinner = user1.id;
-        } else if (room.scores[user2.id] === winningScore) {
+        } else if (user2.score === winningScore) {
             matchWinner = user2.id;
         }
     }
@@ -130,25 +190,19 @@ export const handleIfRankedMatchOver = async (
         room.users[user1.id] = user1;
         room.users[user2.id] = user2;
 
-        room.startTime = Date.now() + COUNTDOWN_TIME;
-        room.quote = "hello how are you doing".split(" ");
+        room.startTime = null;
+        room.quote = null;
 
-        socket.emit(
-            "ranked:update-room-info",
-            removeSocketInformationFromRankedRoom(room)
-        );
+        room.blacklistDecisionEndTime = Date.now() + MAX_DECISION_MAKING_TIME;
+
+        socket.emit("ranked:update-room-info", getRankedRoomPayload(room));
 
         socket.broadcast
             .to(room.id)
-            .emit(
-                "ranked:update-room-info",
-                removeSocketInformationFromRankedRoom(room)
-            );
+            .emit("ranked:update-room-info", getRankedRoomPayload(room));
 
         return;
     }
-
-    rankedRooms.delete(room.id);
 
     const [winner, loser] =
         matchWinner === user1.id ? [user1, user2] : [user2, user1];
@@ -178,17 +232,11 @@ export const handleIfRankedMatchOver = async (
     room.users[user1.id] = user1;
     room.users[user2.id] = user2;
 
-    socket.emit(
-        "ranked:update-room-info",
-        removeSocketInformationFromRankedRoom(room)
-    );
+    socket.emit("ranked:update-room-info", getRankedRoomPayload(room));
 
     socket.broadcast
         .to(room.id)
-        .emit(
-            "ranked:update-room-info",
-            removeSocketInformationFromRankedRoom(room)
-        );
+        .emit("ranked:update-room-info", getRankedRoomPayload(room));
 
     // Update the rating for each match user in the database
     Object.values(room.users).forEach(async (user) => {
@@ -205,14 +253,21 @@ export const handleIfRankedMatchOver = async (
         }
     });
 
+    rankedRooms.delete(room.id);
+
     // Disconnect all the users and delete the room
     for (const socket of room.sockets.values()) {
         socket.disconnect();
     }
 };
 
-const registerRankedHandler = (socket: Socket, user: MatchUser) => {
-    let hasUserJoinedARoom = false;
+const registerRankedHandler = (socket: Socket, userProfile: UserProfile) => {
+    const user: RankedMatchUser = {
+        ...userProfile,
+        replay: [],
+        connected: true,
+        score: 0,
+    };
 
     rankedQueue.set(user.id, {
         user,
@@ -223,7 +278,7 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
     let maxRating = Math.round(user.rating / 100) * 100;
 
     const startSearchingTime = Date.now();
-    let searchingStepTime = SEARCHING_TIME_PER_STEP;
+    let searchingStepTime = BASE_SEARCHING_TIME_PER_STEP;
 
     const searchForOpponent = () => {
         const secondsPassed = Math.floor(
@@ -245,68 +300,216 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
         socket.emit("ranked:waiting-for-match", [minRating, maxRating]);
 
         for (const {
-            user: queuedUser,
+            user: queuedUserProfile,
             socket: queuedUserSocket,
         } of rankedQueue.values()) {
-            if (queuedUser.id === user.id) continue;
+            if (queuedUserProfile.id === user.id) continue;
 
             // Checking if the opponent is outside the rating range
             if (
-                queuedUser.rating < minRating ||
-                queuedUser.rating > maxRating
+                queuedUserProfile.rating < minRating ||
+                queuedUserProfile.rating > maxRating
             ) {
                 continue;
             }
 
             const roomId = Math.random().toString(36).substring(2, 8);
 
-            let room: RankedRoomWithSocketInfo = {
+            // Selecting the lower rated user to blacklist first
+            const firstUserToBlacklist =
+                user.rating < queuedUserProfile.rating
+                    ? user.id
+                    : queuedUserProfile.id;
+
+            let room: RankedRoom = {
                 matchType: "ranked",
                 id: roomId,
                 users: {},
                 quote: null,
                 startTime: null,
-                scores: {},
-                userBlacklistedTextTypes: {},
+                blacklistedTextCategories: [],
                 sockets: new Map(),
+                firstUserToBlacklist,
+                blacklistDecisionEndTime: Date.now() + MAX_DECISION_MAKING_TIME,
+                quoteSelectionDecisionEndTime: null,
+            };
+
+            // Removing the users from the queue
+            rankedQueue.delete(user.id);
+            rankedQueue.delete(queuedUserProfile.id);
+
+            const queuedUser: RankedMatchUser = {
+                ...queuedUserProfile,
+                replay: [],
+                connected: true,
+                score: 0,
             };
 
             room = addUserToRankedRoom(user, socket, room);
-            room = addUserToRankedRoom(queuedUser, socket, room);
+            room = addUserToRankedRoom(queuedUser, queuedUserSocket, room);
 
             rankedRooms.set(roomId, room);
 
             socket.join(roomId);
             queuedUserSocket.join(roomId);
 
-            socket.emit(
-                "ranked:new-room-info",
-                removeSocketInformationFromRankedRoom(room)
-            );
+            socket.emit("ranked:new-room-info", getRankedRoomPayload(room));
 
             socket.broadcast
                 .to(roomId)
-                .emit(
-                    "ranked:new-room-info",
-                    removeSocketInformationFromRankedRoom(room)
+                .emit("ranked:new-room-info", getRankedRoomPayload(room));
+
+            setTimeout(() => {
+                // Check if the user has already eliminated a category
+                if (room.blacklistDecisionEndTime === null) return;
+
+                const nonEliminatedTextCategories = Object.values(
+                    textCategories
+                ).filter(
+                    (category) =>
+                        !room.blacklistedTextCategories.includes(category)
                 );
 
-            hasUserJoinedARoom = true;
+                const randomCategory =
+                    nonEliminatedTextCategories[
+                        Math.floor(
+                            Math.random() * nonEliminatedTextCategories.length
+                        )
+                    ];
+
+                handleTextCategoryElimination(socket, room, randomCategory);
+            }, MAX_DECISION_MAKING_TIME);
 
             break;
         }
 
-        if (hasUserJoinedARoom) {
-            clearInterval(interval);
+        if (rankedQueue.has(user.id)) {
+            setTimeout(() => {
+                searchForOpponent();
+            }, 1000);
         }
     };
 
-    const interval = setInterval(() => {
-        searchForOpponent();
-    }, 1000);
-
-    // Running once initially to circumvent the setInterval delay
     searchForOpponent();
+
+    socket.on("ranked:elimination", async (textCategory: TextCategory) => {
+        const roomId = Array.from(socket.rooms.values())[1];
+
+        const room = rankedRooms.get(roomId);
+
+        if (!room || !(user.id in room.users)) {
+            socket.emit(
+                "error",
+                "Something unexpected happened, please refresh"
+            );
+            socket.disconnect();
+            return;
+        }
+
+        if (
+            room.blacklistDecisionEndTime === null ||
+            Date.now() > room.blacklistDecisionEndTime
+        ) {
+            socket.emit("error", "The time to blacklist has passed");
+            return;
+        }
+
+        // TODO: create a util for this
+        const roundNumber =
+            Object.values(room.users).reduce(
+                (acc, curr) => acc + curr.score,
+                0
+            ) + 1;
+
+        // Check if it's the user's turn to blacklist
+        if (
+            roundNumber % 2 !==
+            (room.firstUserToBlacklist === user.id ? 0 : 1)
+        ) {
+            socket.emit("error", "It's not your turn to blacklist");
+            return;
+        }
+
+        if (room.blacklistedTextCategories.includes(textCategory)) {
+            socket.emit("error", "You have already blacklisted this category");
+            return;
+        }
+
+        setTimeout(async () => {
+            if (room.quoteSelectionDecisionEndTime) return;
+
+            const nonEliminatedTextCategories = Object.values(
+                textCategories
+            ).filter(
+                (category) => !room.blacklistedTextCategories.includes(category)
+            );
+
+            const randomCategory =
+                nonEliminatedTextCategories[
+                    Math.floor(
+                        Math.random() * nonEliminatedTextCategories.length
+                    )
+                ];
+
+            await handleTextCategorySelection(socket, room, randomCategory);
+        }, MAX_DECISION_MAKING_TIME);
+
+        handleTextCategoryElimination(socket, room, textCategory);
+    });
+
+    socket.on("ranked:selection", async (textCategory: TextCategory) => {
+        const roomId = Array.from(socket.rooms.values())[1];
+
+        const room = rankedRooms.get(roomId);
+
+        if (!room || !(user.id in room.users)) {
+            socket.emit(
+                "error",
+                "Something unexpected happened, please refresh"
+            );
+            socket.disconnect();
+            return;
+        }
+
+        if (
+            room.quoteSelectionDecisionEndTime === null ||
+            Date.now() > room.quoteSelectionDecisionEndTime
+        ) {
+            socket.emit("error", "The time to select your quote has passed");
+            return;
+        }
+
+        if (room.blacklistedTextCategories.includes(textCategory)) {
+            socket.emit("error", "That category has been blacklisted");
+            return;
+        }
+
+        const roundNumber =
+            Object.values(room.users).reduce(
+                (acc, curr) => acc + curr.score,
+                0
+            ) + 1;
+
+        // Check if the other user has not already blacklisted a category
+        if (room.blacklistedTextCategories.length !== roundNumber) {
+            socket.emit(
+                "error",
+                "Wait for the other user to blacklist a category"
+            );
+            return;
+        }
+
+        // Check if it's the user's turn to select a quote
+        if (
+            roundNumber % 2 ===
+            (room.firstUserToBlacklist === user.id ? 0 : 1)
+        ) {
+            socket.emit("error", "It's not your turn to select a quote");
+            return;
+        }
+
+        await handleTextCategorySelection(socket, room, textCategory);
+    });
 
     // New typing action from the user
     socket.on("new-action", async (newActionPayload: NewActionPayload) => {
@@ -350,6 +553,21 @@ const registerRankedHandler = (socket: Socket, user: MatchUser) => {
         socket.broadcast.to(roomId).emit("new-action", newActionPayload);
 
         await handleIfRankedMatchOver(room, socket);
+    });
+
+    // When the client disconnects
+    socket.on("disconnect", async () => {
+        rankedQueue.delete(user.id);
+
+        for (const [roomId, room] of rankedRooms) {
+            if (!(user.id in room.users)) continue;
+
+            room.users[user.id].connected = false;
+
+            socket.broadcast.to(roomId).emit("user-disconnect", user.id);
+
+            await handleIfRankedMatchOver(room, socket);
+        }
     });
 };
 

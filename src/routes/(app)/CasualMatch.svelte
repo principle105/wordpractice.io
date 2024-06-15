@@ -2,18 +2,19 @@
     // TODO: add max wrong characters and add server-side validation for it
     import type { User } from "@prisma/client";
     import type { Socket } from "socket.io-client";
+    import toast from "svelte-french-toast";
 
     import type {
         CasualRoom,
-        MatchUser,
+        CasualMatchUser,
         Replay,
         BasicRoomInfo,
+        NewActionPayload,
     } from "$lib/types";
     import { matchType } from "$lib/stores/matchType";
     import { BASE_FONT_SIZE } from "$lib/config";
 
     import OpponentDisplay from "$lib/components/match/OpponentDisplay.svelte";
-    import ReplayText from "$lib/components/match/ReplayText.svelte";
     import WordDisplay from "$lib/components/match/WordDisplay.svelte";
     import TestInput from "$lib/components/match/TestInput.svelte";
     import MatchContainer from "$lib/components/layout/MatchContainer.svelte";
@@ -21,15 +22,56 @@
 
     export let user: User;
     export let roomInfo: BasicRoomInfo | null;
-    export let matchUsers = new Map<string, MatchUser>();
+    export let matchUsers = new Map<string, CasualMatchUser>();
     export let replay: Replay = [];
     export let started: boolean;
     export let socket: Socket;
     export let finished: boolean;
 
-    let showReplay = false;
-
     const fontSize: number = user.fontScale * BASE_FONT_SIZE;
+
+    socket.on("user-disconnect", (userId: string) => {
+        let disconnectedUser = matchUsers.get(userId);
+
+        if (!disconnectedUser) return;
+
+        disconnectedUser.connected = false;
+        matchUsers.set(userId, disconnectedUser);
+        matchUsers = matchUsers;
+    });
+
+    socket.on("new-action", (newActionPayload: NewActionPayload) => {
+        let matchUser = matchUsers.get(newActionPayload.userId);
+
+        if (!matchUser) return;
+
+        // Adding the new actions to the user's replay
+        matchUser.replay = matchUser.replay.concat(newActionPayload.actions);
+
+        matchUsers.set(matchUser.id, matchUser);
+        matchUsers = matchUsers;
+    });
+
+    socket.on("casual:new-user", (newUser: CasualMatchUser) => {
+        if (matchUsers.has(newUser.id)) return;
+
+        matchUsers.set(newUser.id, newUser);
+        matchUsers = matchUsers;
+    });
+
+    socket.on("casual:match-expired", () => {
+        if (finished === false) {
+            finished = true;
+            toast.error("The match reached the maximum time limit.");
+        }
+
+        matchUsers = new Map(
+            Array.from(matchUsers, ([id, user]) => [
+                id,
+                { ...user, connected: false } satisfies CasualMatchUser,
+            ])
+        );
+    });
 
     socket.on("casual:new-room-info", (newRoomInfo: CasualRoom) => {
         for (const [id, matchUser] of Object.entries(newRoomInfo.users)) {
@@ -68,7 +110,7 @@
         rating: user.rating,
         connected: true,
         replay,
-    } satisfies MatchUser;
+    } satisfies CasualMatchUser;
 </script>
 
 <svelte:head>
@@ -87,27 +129,17 @@
         {/each}
     </div>
 
-    <div slot="end-screen" let:startedRoomInfo>
-        <div class="mt-16 flex flex-col justify-center">
-            <h2 class="text-3xl">Your Stats</h2>
-            <EndScreen {replay} {startedRoomInfo} />
-        </div>
+    <div slot="end-screen">
+        {#if roomInfo !== null}
+            <EndScreen {user} {roomInfo} replays={{ replay }} />
+        {/if}
 
-        <button
-            class="bg-zinc-500 p-3 rounded-md text-white"
-            on:click={() => (showReplay = true)}
-        >
-            Replay
-        </button>
         <button
             class="bg-emerald-500 p-3 rounded-md text-white"
             on:click={playAgain}
         >
             Play Again
         </button>
-        {#if showReplay}
-            <ReplayText {fontSize} {replay} {startedRoomInfo} />
-        {/if}
     </div>
 
     <WordDisplay
