@@ -16,7 +16,7 @@ import {
 } from "../src/lib/utils/textProcessing";
 import { rankedQueue, rankedRooms } from "./state";
 import { START_TIME_LENIENCY } from "../src/lib/config";
-import { getQuoteFromCategory } from "../data";
+import { getQuoteFromCategory } from "../data/utils";
 import { textCategories } from "../src/lib/constants";
 
 const BEST_OF = 3;
