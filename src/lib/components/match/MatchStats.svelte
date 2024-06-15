@@ -16,6 +16,8 @@
     export let startedRoomInfo: BasicRoomInfoStarted;
 
     const getWpm = (): number => {
+        if (replay.length === 0) return 0;
+
         const startTime = Math.min(
             replay[0]?.timestamp,
             startedRoomInfo.startTime + START_TIME_LENIENCY

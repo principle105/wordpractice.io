@@ -15,11 +15,10 @@
     import { BASE_FONT_SIZE } from "$lib/config";
 
     import OpponentDisplay from "$lib/components/match/OpponentDisplay.svelte";
-    import ReplayText from "$lib/components/match/ReplayText.svelte";
     import WordDisplay from "$lib/components/match/WordDisplay.svelte";
     import TestInput from "$lib/components/match/TestInput.svelte";
     import MatchContainer from "$lib/components/layout/MatchContainer.svelte";
-    import MatchStats from "$lib/components/match/MatchStats.svelte";
+    import EndScreen from "$lib/components/match/EndScreen.svelte";
 
     export let user: User;
     export let roomInfo: BasicRoomInfo | null;
@@ -28,8 +27,6 @@
     export let started: boolean;
     export let socket: Socket;
     export let finished: boolean;
-
-    let showReplay = false;
 
     const fontSize: number = user.fontScale * BASE_FONT_SIZE;
 
@@ -132,27 +129,17 @@
         {/each}
     </div>
 
-    <div slot="end-screen" let:startedRoomInfo>
-        <div class="mt-16 flex flex-col justify-center">
-            <h2 class="text-3xl">Your Stats</h2>
-            <MatchStats {replay} {startedRoomInfo} />
-        </div>
+    <div slot="end-screen">
+        {#if roomInfo !== null}
+            <EndScreen {user} {roomInfo} replays={{ replay }} />
+        {/if}
 
-        <button
-            class="bg-zinc-500 p-3 rounded-md text-white"
-            on:click={() => (showReplay = true)}
-        >
-            Replay
-        </button>
         <button
             class="bg-emerald-500 p-3 rounded-md text-white"
             on:click={playAgain}
         >
             Play Again
         </button>
-        {#if showReplay}
-            <ReplayText {fontSize} {replay} {startedRoomInfo} />
-        {/if}
     </div>
 
     <WordDisplay

@@ -44,7 +44,6 @@
     });
 
     socket.on("disconnect", () => {
-        toast.error("I GOT DISCONNECTED");
         if (roomInfo === null) {
             matchType.set(null);
         }

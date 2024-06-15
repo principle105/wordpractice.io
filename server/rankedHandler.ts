@@ -103,8 +103,10 @@ export const handleIfRankedMatchOver = async (
 
     if (!user1.connected) {
         matchWinner = user2.id;
+        user2.score += 1;
     } else if (!user2.connected) {
         matchWinner = user1.id;
+        user1.score += 1;
     }
 
     if (!matchWinner) {

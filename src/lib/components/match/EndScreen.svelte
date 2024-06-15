@@ -14,7 +14,7 @@
     export let replays: { [key: string]: Replay };
 
     let showReplay = false;
-    let replay: Replay = replays[Object.keys(replays)[0]];
+    let replay: Replay | null = replays[Object.keys(replays)[0]] ?? null;
 
     const fontSize: number = user.fontScale * BASE_FONT_SIZE;
 
@@ -26,23 +26,29 @@
     };
 </script>
 
-<div>
-    <div class="flex gap-5">
-        {#each Object.keys(replays) as replayKey}
-            <button>{replayKey}</button>
-        {/each}
+<div>New Rating: {user.rating}</div>
+{#if replay !== null}
+    <div>
+        {#if Object.keys(replays).length > 1}
+            <div class="flex gap-5">
+                {#each Object.keys(replays) as replayName}
+                    <button on:click={() => changeReplay(replayName)}>
+                        {replayName}
+                    </button>
+                {/each}
+            </div>
+        {/if}
+        <button
+            class="bg-zinc-500 p-3 rounded-md text-white"
+            on:click={() => (showReplay = true)}
+        >
+            Replay
+        </button>
+        {#if raceStarted}
+            <MatchStats {replay} {startedRoomInfo} />
+        {/if}
+        {#if showReplay}
+            <ReplayText {fontSize} {replay} {startedRoomInfo} />
+        {/if}
     </div>
-    {#if raceStarted}
-        <MatchStats {replay} {startedRoomInfo} />
-    {/if}
-</div>
-<button
-    class="bg-zinc-500 p-3 rounded-md text-white"
-    on:click={() => (showReplay = true)}
->
-    Replay
-</button>
-
-{#if showReplay}
-    <ReplayText {fontSize} {replay} {startedRoomInfo} />
 {/if}

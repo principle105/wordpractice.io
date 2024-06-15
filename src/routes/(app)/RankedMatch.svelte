@@ -171,6 +171,32 @@
         socket.emit("ranked:selection", textCategory);
     };
 
+    const showMatchOutcome = () => {
+        if (!finished) return;
+
+        // Check if opponent is disconnected
+        if (
+            Array.from(matchUsers.values()).some(
+                (matchUser) => !matchUser.connected
+            )
+        ) {
+            toast.success("You win!");
+            return;
+        }
+
+        // Check if you won by score
+        const wonByScore = Array.from(matchUsers.values()).every(
+            (matchUser) => matchUser.score < score
+        );
+
+        if (wonByScore) {
+            toast.success("You won!");
+            return;
+        }
+
+        toast.error("You lost!");
+    };
+
     $: clientMatchUser = {
         id: user.id,
         username: user.username,
@@ -180,6 +206,8 @@
         replay,
         score,
     } satisfies RankedMatchUser;
+
+    $: finished, showMatchOutcome();
 </script>
 
 <svelte:head>
@@ -203,8 +231,10 @@
         {/each}
     </div>
 
-    <div slot="end-screen" let:startedRoomInfo>
-        <EndScreen {user} roomInfo={startedRoomInfo} {replays} />
+    <div slot="end-screen">
+        {#if roomInfo !== null}
+            <EndScreen {user} {roomInfo} {replays} />
+        {/if}
 
         <button
             class="bg-emerald-500 p-3 rounded-md text-white"

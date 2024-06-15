@@ -13,13 +13,17 @@
         {#if roomInfo === null}
             <slot name="loading" />
         {:else if roomInfo.startTime === null || roomInfo.quote === null}
-            <slot name="before-start" />
+            {#if finished}
+                <slot name="end-screen" />
+            {:else}
+                <slot name="before-start" />
+            {/if}
         {:else}
             <div class="my-auto bg-zinc-100 p-8 rounded-lg">
                 <slot name="racers" {startedRoomInfo} />
 
                 {#if finished}
-                    <slot name="end-screen" {startedRoomInfo} />
+                    <slot name="end-screen" />
                 {:else}
                     <slot name="word-display" {startedRoomInfo} />
                     <slot name="input" {startedRoomInfo} />
