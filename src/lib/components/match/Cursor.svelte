@@ -90,6 +90,8 @@
             leftPos = newLeftPos;
             topPos = newTopPos;
             return;
+        } else {
+            highlightWidth = 0;
         }
 
         const wordWidth = word.length * charWidthIncrease;
@@ -181,10 +183,12 @@
 
 <svelte:window on:resize={handleResize} />
 
+<!-- Source of Cubic Bezier: https://stackoverflow.com/questions/9245030/looking-for-a-swing-like-easing-expressible-both-with-jquery-and-css3 -->
 <div
     class="absolute"
     style="top: {getTopPos(topPos) +
-        fontSize * 0.1}px; left: {leftPos}px; transition: left 0.06s linear"
+        fontSize *
+            0.1}px; left: {leftPos}px; transition: left 100ms cubic-bezier(.02, .01, .47, 1);"
 >
     <div class="flex">
         <div

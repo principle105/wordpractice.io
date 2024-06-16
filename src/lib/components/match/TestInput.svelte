@@ -8,6 +8,7 @@
         BasicRoomInfoStarted,
     } from "$lib/types";
     import { convertReplayToWords } from "$lib/utils/textProcessing";
+    import { onMount } from "svelte";
 
     export let startedRoomInfo: BasicRoomInfoStarted;
     export let replay: Replay;
@@ -21,6 +22,10 @@
     let inputElement: HTMLInputElement | null = null;
 
     $: started, inputElement, focusInputWhenRaceStarts();
+
+    onMount(() => {
+        replay = replay;
+    });
 
     const focusInputWhenRaceStarts = () => {
         if (!started) return;
@@ -66,30 +71,33 @@
         );
 
         if (removedSlice !== null) {
+            const lastAction = replay[replay.length - 1];
+
             replay.push({
                 type: "delete",
                 slice: removedSlice,
                 timestamp: now,
             } satisfies Delete);
 
-            if (inputElement === null) {
-                return;
+            if (lastAction && lastAction.type === "caret") {
+                if (inputElement === null) {
+                    return;
+                }
+
+                const selectionStart = inputElement.selectionStart;
+                const selectionEnd = inputElement.selectionEnd;
+
+                if (selectionStart === null || selectionEnd === null) {
+                    return;
+                }
+
+                replay.push({
+                    type: "caret",
+                    start: selectionStart,
+                    end: selectionEnd,
+                    timestamp: now,
+                } satisfies CaretMovement);
             }
-
-            const selectionStart = inputElement.selectionStart;
-            const selectionEnd = inputElement.selectionEnd;
-
-            if (selectionStart === null || selectionEnd === null) {
-                return;
-            }
-
-            // TODO: Limit doing this only when the caret has actually moved
-            replay.push({
-                type: "caret",
-                start: selectionStart,
-                end: selectionEnd,
-                timestamp: now,
-            } satisfies CaretMovement);
         }
 
         // Checking if the word is completed

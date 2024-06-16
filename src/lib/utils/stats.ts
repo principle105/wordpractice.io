@@ -61,5 +61,11 @@ export const calculateWpm = (
 ) => {
     const minutesElapsed = (endTime - startTime) / 1000 / 60;
 
-    return Math.round(correctChars / minutesElapsed / 5);
+    const wpm = Math.round(correctChars / minutesElapsed / 5);
+
+    if (isNaN(wpm)) {
+        return 0;
+    }
+
+    return wpm;
 };

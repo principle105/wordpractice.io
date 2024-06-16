@@ -153,8 +153,8 @@
 
     <TestInput
         slot="input"
-        bind:replay
         {started}
+        bind:replay
         let:startedRoomInfo
         {startedRoomInfo}
     />
