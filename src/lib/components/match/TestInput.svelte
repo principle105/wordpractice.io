@@ -36,13 +36,17 @@
     const findRemovedSlice = (
         wordBefore: string,
         wordAfter: string,
-        newChar: string | null
+        newChar: string | null,
+        cursorPosition: number
     ): [number, number] | null => {
         if (newChar !== null) {
-            wordAfter = wordAfter.slice(0, -1);
+            wordAfter =
+                wordAfter.slice(0, cursorPosition - 1) +
+                wordAfter.slice(cursorPosition);
         }
 
         let i = 0;
+
         while (i < wordBefore.length && i < wordAfter.length) {
             if (wordBefore[i] !== wordAfter[i]) {
                 break;
@@ -54,7 +58,7 @@
             return null;
         }
 
-        return [i, wordBefore.length];
+        return [i, i + (wordBefore.length - wordAfter.length)];
     };
 
     const handleInput: EventHandler<Event, HTMLInputElement> = (e) => {
@@ -67,7 +71,8 @@
         let removedSlice = findRemovedSlice(
             wordsTyped[wordsTyped.length - 1],
             wordInput,
-            newChar
+            newChar,
+            inputElement?.selectionStart ?? 0
         );
 
         if (removedSlice !== null) {
@@ -163,6 +168,9 @@
     placeholder={wordsTyped.join(" ") === "" ? "Type here" : ""}
     class="w-full p-3 outline-none border-zinc-500 border rounded-md"
     on:keydown={checkForCursorEvent}
+    on:mousedown={checkForCursorEvent}
+    on:click={checkForCursorEvent}
+    on:select={checkForCursorEvent}
     bind:value={wordInput}
     on:input={handleInput}
     bind:this={inputElement}

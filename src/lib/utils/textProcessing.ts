@@ -9,8 +9,13 @@ export const convertReplayToWords = (
     let quoteWordIndex = 0;
     let currentWord = "";
 
+    let cursorIndex = 0;
+
     for (const action of replay) {
         if (action.type === "caret") {
+            if (action.start === action.end) {
+                cursorIndex = action.start;
+            }
             continue;
         }
 
@@ -27,10 +32,17 @@ export const convertReplayToWords = (
             quoteWordIndex++;
             correctWords.push(currentWord);
             currentWord = "";
+            cursorIndex = 0;
             continue;
         }
 
-        currentWord += action.letter;
+        // Insert the letter at the cursor index
+        currentWord =
+            currentWord.slice(0, cursorIndex) +
+            action.letter +
+            currentWord.slice(cursorIndex);
+
+        cursorIndex += 1;
     }
 
     correctWords.push(currentWord);
