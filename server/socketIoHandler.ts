@@ -17,7 +17,7 @@ import registerCasualHandler, {
 
 import { rankedRooms, casualRooms, rankedQueue } from "./state";
 
-const MAX_MATCH_LENGTH = 60 * 1000;
+const MAX_MATCH_LENGTH = 120 * 1000;
 
 const MAX_CONNECTION_ATTEMPTS = 5;
 const COOLDOWN_DURATION = 10000;

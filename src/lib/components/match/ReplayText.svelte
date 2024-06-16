@@ -4,7 +4,10 @@
     import { START_TIME_LENIENCY } from "$lib/config";
     import type { Replay, BasicRoomInfoStarted } from "$lib/types";
     import { calculateWpm } from "$lib/utils/stats";
-    import { getCompletedAndIncorrectWords } from "$lib/utils/textProcessing";
+    import {
+        convertReplayToWords,
+        getCompletedAndIncorrectWords,
+    } from "$lib/utils/textProcessing";
 
     import WordDisplay from "./WordDisplay.svelte";
 
@@ -28,22 +31,13 @@
 
     let timeElapsed = 0;
     let actionIndex = 0;
-    let replayText = "";
 
     let replaySpeed = 1;
 
-    $: ({ completedWords } = getCompletedAndIncorrectWords(
-        replayText.split(" "),
-        startedRoomInfo.quote
-    ));
+    $: slicedReplay = replay.slice(0, actionIndex);
 
-    $: slicedReplay = replay.slice(
-        0,
-        actionIndex - (actionIndex === replay.length ? 0 : 1)
-    );
-
-    let animationFrameId: number;
-    let wpm = NaN;
+    let animationFrameId: number | null = null;
+    let wpm = 0;
     let resetWordDisplay = false;
 
     const play = () => {
@@ -55,28 +49,13 @@
 
         timeElapsed = Date.now() - actualStartTime;
 
-        wpm = calculateWpm(Date.now(), actualStartTime, completedWords.length);
-
         const replayTimeElapsedUntilAction = action.timestamp - startTime;
 
-        if (replayTimeElapsedUntilAction - timeElapsed <= 0) {
-            if (action.type === "character") {
-                replayText += action.letter;
-            } else if (action.type === "delete") {
-                replayText =
-                    replayText.slice(0, action.slice[0]) +
-                    replayText.slice(action.slice[1]);
-            }
-
+        if (replayTimeElapsedUntilAction - timeElapsed * replaySpeed <= 0) {
             actionIndex++;
 
             // Checking if the replay is over
             if (actionIndex === replay.length) {
-                wpm = calculateWpm(
-                    replay[replay.length - 1].timestamp,
-                    startTime,
-                    completedWords.length + 1 // TODO: Quick fix for the last character not being counted
-                );
                 return;
             }
         }
@@ -85,20 +64,28 @@
     };
 
     onDestroy(() => {
+        if (animationFrameId === null) return;
+
         cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
     });
 
-    const resetLastReplay = () => {
-        replayText = "";
+    const reset = () => {
+        stop();
+
         timeElapsed = 0;
         actionIndex = 0;
 
         resetWordDisplay = !resetWordDisplay;
+
+        replaySpeed = 1;
     };
 
-    const reset = () => {
-        resetLastReplay();
-        replaySpeed = 1;
+    const stop = () => {
+        if (animationFrameId === null) return;
+
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
     };
 
     const increaseReplaySpeed = () => {
@@ -112,17 +99,30 @@
             replaySpeed += 0.25;
         }
     };
+
+    $: replayText = convertReplayToWords(
+        replay.slice(0, actionIndex),
+        startedRoomInfo.quote
+    ).join(" ");
+
+    $: ({ completedWords } = getCompletedAndIncorrectWords(
+        replayText.split(" "),
+        startedRoomInfo.quote
+    ));
 </script>
 
 <button
     on:click={() => {
-        resetLastReplay();
-        actualStartTime = Date.now();
+        if (animationFrameId !== null) return;
+
+        actualStartTime = Date.now() - timeElapsed;
         play();
     }}
 >
     Play
 </button>
+
+<button on:click={stop}>Stop</button>
 
 <button on:click={reset}>Reset</button>
 

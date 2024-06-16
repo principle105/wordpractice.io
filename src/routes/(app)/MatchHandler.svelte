@@ -21,7 +21,7 @@
     let finished = false;
     let countDown: number | null = null;
 
-    let interval: ReturnType<typeof setInterval> | null = null;
+    let interval: ReturnType<typeof setInterval>;
 
     let previousReplayLength = 0;
 
@@ -37,10 +37,11 @@
         toast.error(errorMessage);
     });
 
-    socket.on("update-start-time", (startTime: number | null) => {
-        if (roomInfo === null) return;
-
-        roomInfo = { ...roomInfo, startTime };
+    socket.on("connect", () => {
+        // Quick way of checking if the user is a guest or not
+        if (user.email === "" && socket.id) {
+            user.id = socket.id;
+        }
     });
 
     socket.on("disconnect", () => {
@@ -51,13 +52,6 @@
         finished = true;
 
         invalidateAll();
-    });
-
-    socket.on("connect", () => {
-        // Quick way of checking if the user is a guest or not
-        if (user.email === "" && socket.id) {
-            user.id = socket.id;
-        }
     });
 
     const sendNewReplayAction = (replay: Replay) => {
@@ -82,45 +76,32 @@
     };
 
     onMount(() => {
-        doCountDown();
-
         return () => {
             socket.disconnect();
+
+            if (interval) {
+                clearInterval(interval);
+            }
         };
     });
 
-    $: roomInfo, doCountDown();
-
-    const doCountDown = () => {
+    interval = setInterval(() => {
         if (
             !roomInfo ||
             roomInfo.startTime === null ||
             roomInfo.quote === null
         ) {
-            countDown = null;
-
-            if (interval !== null) {
-                clearInterval(interval);
-            }
-
             return;
         }
 
-        countDown = Math.ceil((roomInfo.startTime - Date.now()) / 1000);
+        const timeUntilStart = roomInfo.startTime - Date.now();
 
-        interval = setInterval(() => {
-            if (countDown === null || countDown <= 1) {
-                countDown = null;
-
-                if (interval !== null) {
-                    clearInterval(interval);
-                }
-                return;
-            }
-
-            countDown -= 1;
-        }, 1000);
-    };
+        if (timeUntilStart <= 0) {
+            countDown = null;
+        } else {
+            countDown = Math.ceil(timeUntilStart / 1000);
+        }
+    }, 100);
 
     $: replay, sendNewReplayAction(replay);
     $: started = countDown === null;

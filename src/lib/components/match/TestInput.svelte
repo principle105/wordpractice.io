@@ -8,6 +8,7 @@
         BasicRoomInfoStarted,
     } from "$lib/types";
     import { convertReplayToWords } from "$lib/utils/textProcessing";
+    import { onMount } from "svelte";
 
     export let startedRoomInfo: BasicRoomInfoStarted;
     export let replay: Replay;
@@ -22,6 +23,10 @@
 
     $: started, inputElement, focusInputWhenRaceStarts();
 
+    onMount(() => {
+        replay = replay;
+    });
+
     const focusInputWhenRaceStarts = () => {
         if (!started) return;
 
@@ -31,13 +36,17 @@
     const findRemovedSlice = (
         wordBefore: string,
         wordAfter: string,
-        newChar: string | null
+        newChar: string | null,
+        cursorPosition: number
     ): [number, number] | null => {
         if (newChar !== null) {
-            wordAfter = wordAfter.slice(0, -1);
+            wordAfter =
+                wordAfter.slice(0, cursorPosition - 1) +
+                wordAfter.slice(cursorPosition);
         }
 
         let i = 0;
+
         while (i < wordBefore.length && i < wordAfter.length) {
             if (wordBefore[i] !== wordAfter[i]) {
                 break;
@@ -49,7 +58,7 @@
             return null;
         }
 
-        return [i, wordBefore.length];
+        return [i, i + (wordBefore.length - wordAfter.length)];
     };
 
     const handleInput: EventHandler<Event, HTMLInputElement> = (e) => {
@@ -62,34 +71,38 @@
         let removedSlice = findRemovedSlice(
             wordsTyped[wordsTyped.length - 1],
             wordInput,
-            newChar
+            newChar,
+            inputElement?.selectionStart ?? 0
         );
 
         if (removedSlice !== null) {
+            const lastAction = replay[replay.length - 1];
+
             replay.push({
                 type: "delete",
                 slice: removedSlice,
                 timestamp: now,
             } satisfies Delete);
 
-            if (inputElement === null) {
-                return;
+            if (lastAction && lastAction.type === "caret") {
+                if (inputElement === null) {
+                    return;
+                }
+
+                const selectionStart = inputElement.selectionStart;
+                const selectionEnd = inputElement.selectionEnd;
+
+                if (selectionStart === null || selectionEnd === null) {
+                    return;
+                }
+
+                replay.push({
+                    type: "caret",
+                    start: selectionStart,
+                    end: selectionEnd,
+                    timestamp: now,
+                } satisfies CaretMovement);
             }
-
-            const selectionStart = inputElement.selectionStart;
-            const selectionEnd = inputElement.selectionEnd;
-
-            if (selectionStart === null || selectionEnd === null) {
-                return;
-            }
-
-            // TODO: Limit doing this only when the caret has actually moved
-            replay.push({
-                type: "caret",
-                start: selectionStart,
-                end: selectionEnd,
-                timestamp: now,
-            } satisfies CaretMovement);
         }
 
         // Checking if the word is completed
@@ -155,6 +168,9 @@
     placeholder={wordsTyped.join(" ") === "" ? "Type here" : ""}
     class="w-full p-3 outline-none border-zinc-500 border rounded-md"
     on:keydown={checkForCursorEvent}
+    on:mousedown={checkForCursorEvent}
+    on:click={checkForCursorEvent}
+    on:select={checkForCursorEvent}
     bind:value={wordInput}
     on:input={handleInput}
     bind:this={inputElement}

@@ -44,7 +44,7 @@
 <svelte:window on:resize={updateWrapperSize} />
 
 <div
-    class="whitespace-pre-line font-mono overflow-hidden my-4 relative"
+    class="whitespace-pre-line font-mono overflow-hidden my-4 relative pb-2.5"
     style="font-size: {fontSize}px; max-height: {fontSize * 0.15 +
         fontSize * DEFAULT_MAX_LINES_SHOWN * 1.5}px;"
 >
