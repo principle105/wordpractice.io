@@ -51,7 +51,7 @@ export const calculateAccuracy = (
         return 0;
     }
 
-    return Math.round((totalCorrectChars / totalChars) * 100);
+    return Math.round((totalCorrectChars / totalChars) * 100 * 10) / 10;
 };
 
 export const calculateWpm = (

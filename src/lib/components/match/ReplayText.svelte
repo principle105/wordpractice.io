@@ -3,7 +3,11 @@
 
     import { START_TIME_LENIENCY } from "$lib/config";
     import type { Replay, BasicRoomInfoStarted } from "$lib/types";
-    import { calculateWpm } from "$lib/utils/stats";
+    import {
+        calculateWpm,
+        calculateAccuracy,
+        getTotalCorrectAndIncorrectChars,
+    } from "$lib/utils/stats";
     import {
         convertReplayToWords,
         getCompletedAndIncorrectWords,
@@ -34,11 +38,11 @@
 
     let replaySpeed = 1;
 
-    $: slicedReplay = replay.slice(0, actionIndex);
-
     let animationFrameId: number | null = null;
-    let wpm = 0;
     let resetWordDisplay = false;
+
+    let replayText = "";
+    let wpm = 0;
 
     const play = () => {
         if (replay.length === 0) {
@@ -51,14 +55,29 @@
 
         const replayTimeElapsedUntilAction = action.timestamp - startTime;
 
+        // Checking if it is time to for the next action
         if (replayTimeElapsedUntilAction - timeElapsed * replaySpeed <= 0) {
             actionIndex++;
-
-            // Checking if the replay is over
-            if (actionIndex === replay.length) {
-                return;
-            }
         }
+
+        replayText = convertReplayToWords(
+            replay.slice(0, actionIndex + 1),
+            startedRoomInfo.quote
+        ).join(" ");
+
+        const { completedWords } = getCompletedAndIncorrectWords(
+            replayText.split(" "),
+            startedRoomInfo.quote
+        );
+
+        const endTime =
+            actionIndex === replay.length
+                ? replay[replay.length - 1].timestamp
+                : timeElapsed + startTime;
+
+        wpm = calculateWpm(endTime, startTime, completedWords.length);
+
+        if (actionIndex === replay.length) return;
 
         animationFrameId = requestAnimationFrame(play);
     };
@@ -100,15 +119,13 @@
         }
     };
 
-    $: replayText = convertReplayToWords(
-        replay.slice(0, actionIndex),
-        startedRoomInfo.quote
-    ).join(" ");
+    $: slicedReplay = replay.slice(0, actionIndex);
 
-    $: ({ completedWords } = getCompletedAndIncorrectWords(
-        replayText.split(" "),
-        startedRoomInfo.quote
-    ));
+    $: ({ totalCorrectChars, totalIncorrectChars } =
+        getTotalCorrectAndIncorrectChars(slicedReplay, startedRoomInfo.quote));
+
+    // The accuracy is not dependent on the time elapsed so it is not in the play function
+    $: accuracy = calculateAccuracy(totalCorrectChars, totalIncorrectChars);
 </script>
 
 <button
@@ -133,6 +150,7 @@
     <div>{2 - replaySpeed}x speed</div>
     <div>{(timeElapsed / 1000).toFixed(1)}</div>
     <div>{wpm} wpm</div>
+    <div>{accuracy}% accuracy</div>
 </div>
 
 {#if startTime !== null}

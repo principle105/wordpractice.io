@@ -82,7 +82,7 @@
                 : 'bg-red-300'}"
             style="width: {(completedWords.length /
                 startedRoomInfo.quote.join(' ').length) *
-                100}%"
+                100}%; transition-timing-function: cubic-bezier(.02, .01, .47, 1);"
         />
     </div>
     <div class="w-28 text-right">
