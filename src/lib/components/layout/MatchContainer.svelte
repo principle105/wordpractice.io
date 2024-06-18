@@ -9,22 +9,24 @@
 </script>
 
 {#key started}
-    <div class="h-[86vh] max-w-screen-lg mx-auto flex flex-col">
+    <div class="h-full mx-auto flex flex-col">
         {#if roomInfo === null}
             <slot name="loading" />
         {:else if roomInfo.startTime === null || roomInfo.quote === null}
             {#if finished}
                 <slot name="end-screen" />
             {:else}
+                <slot name="extra-info" />
                 <slot name="before-start" />
             {/if}
         {:else}
-            <div class="my-auto bg-zinc-100 p-8 rounded-lg">
+            <div class="my-auto p-8">
                 <slot name="racers" {startedRoomInfo} />
 
                 {#if finished}
                     <slot name="end-screen" />
                 {:else}
+                    <slot name="extra-info" />
                     <slot name="word-display" {startedRoomInfo} />
                     <slot name="input" {startedRoomInfo} />
                 {/if}

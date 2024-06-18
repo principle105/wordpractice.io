@@ -1,56 +1,55 @@
 <script lang="ts">
-    import { START_TIME_LENIENCY } from "$lib/config";
-    import type { Replay, BasicRoomInfoStarted } from "$lib/types";
+    import type {
+        BasicRoomInfo,
+        BasicRoomInfoStarted,
+        Replay,
+    } from "$lib/types";
+    import type { User } from "@prisma/client";
 
-    import {
-        convertReplayToWords,
-        getCompletedAndIncorrectWords,
-    } from "$lib/utils/textProcessing";
-    import {
-        calculateWpm,
-        calculateAccuracy,
-        getTotalCorrectAndIncorrectChars,
-    } from "$lib/utils/stats";
+    import RoundStats from "./RoundStats.svelte";
+    import ReplayText from "./ReplayText.svelte";
 
-    export let replay: Replay;
-    export let startedRoomInfo: BasicRoomInfoStarted;
+    import { BASE_FONT_SIZE } from "$lib/config";
 
-    const getWpm = (): number => {
-        if (replay.length === 0) return 0;
+    export let user: User;
+    export let roomInfo: BasicRoomInfo;
+    export let replays: { [key: string]: Replay };
 
-        const startTime = Math.min(
-            replay[0]?.timestamp,
-            startedRoomInfo.startTime + START_TIME_LENIENCY
-        );
+    let showReplay = false;
+    let replay: Replay | null = replays[Object.keys(replays)[0]] ?? null;
 
-        const wordsTyped = convertReplayToWords(replay, startedRoomInfo.quote);
-        const { completedWords } = getCompletedAndIncorrectWords(
-            wordsTyped,
-            startedRoomInfo.quote
-        );
+    const fontSize: number = user.fontScale * BASE_FONT_SIZE;
 
-        return calculateWpm(
-            replay[replay.length - 1]?.timestamp,
-            startTime,
-            completedWords.length
-        );
+    const changeReplay = (replayName: string) => {
+        replay = replays[replayName];
     };
 
-    const getAccuracy = (): number => {
-        const { totalCorrectChars, totalIncorrectChars } =
-            getTotalCorrectAndIncorrectChars(replay, startedRoomInfo.quote);
-
-        return calculateAccuracy(totalCorrectChars, totalIncorrectChars);
-    };
+    $: startedRoomInfo = roomInfo as BasicRoomInfoStarted;
+    $: raceStarted = !(roomInfo.startTime === null || roomInfo.quote === null);
 </script>
 
-<section class="flex flex-col">
+{#if replay !== null}
     <div>
-        <div>WPM</div>
-        <div>{getWpm()}</div>
+        {#if Object.keys(replays).length > 1}
+            <div class="flex gap-5">
+                {#each Object.keys(replays) as replayName}
+                    <button on:click={() => changeReplay(replayName)}>
+                        {replayName}
+                    </button>
+                {/each}
+            </div>
+        {/if}
+        <button
+            class="bg-zinc-500 p-3 rounded-md text-white"
+            on:click={() => (showReplay = true)}
+        >
+            Replay
+        </button>
+        {#if raceStarted}
+            <RoundStats {replay} {startedRoomInfo} />
+        {/if}
+        {#if showReplay}
+            <ReplayText {fontSize} {replay} {startedRoomInfo} />
+        {/if}
     </div>
-    <div>
-        <div>Accuracy</div>
-        <div>{getAccuracy()}%</div>
-    </div>
-</section>
+{/if}

@@ -19,6 +19,7 @@
     import TestInput from "$lib/components/match/TestInput.svelte";
     import MatchContainer from "$lib/components/layout/MatchContainer.svelte";
     import EndScreen from "$lib/components/match/EndScreen.svelte";
+    import MatchStats from "$lib/components/match/MatchStats.svelte";
 
     export let user: User;
     export let roomInfo: BasicRoomInfo | null;
@@ -118,7 +119,7 @@
 </svelte:head>
 
 <MatchContainer {finished} {started} {roomInfo}>
-    <div slot="racers" class="flex flex-col gap-3" let:startedRoomInfo>
+    <div slot="racers" let:startedRoomInfo>
         <OpponentDisplay
             matchUser={clientMatchUser}
             {startedRoomInfo}
@@ -131,7 +132,14 @@
 
     <div slot="end-screen">
         {#if roomInfo !== null}
-            <EndScreen {user} {roomInfo} replays={{ replay }} />
+            <EndScreen>
+                <div slot="overview">
+                    <div>Casual Match</div>
+                </div>
+                <div slot="stats">
+                    <MatchStats {user} {roomInfo} replays={{ replay }} />
+                </div>
+            </EndScreen>
         {/if}
 
         <button

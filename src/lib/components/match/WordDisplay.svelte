@@ -21,6 +21,7 @@
 
     let wrapperElement: HTMLElement | null = null;
     let topPos = 0;
+    let lastWordIndex = 0;
 
     $: maxHeight =
         wrapperElement !== null
@@ -73,6 +74,7 @@
                 {wrapperElement}
                 username={matchUser.username}
                 quote={startedRoomInfo.quote}
+                clientUserLastIndex={lastWordIndex}
             />
         {/each}
     </div>
@@ -82,6 +84,7 @@
         {replay}
         {wrapperElement}
         bind:topPos
+        bind:lastWordIndex
         quote={startedRoomInfo.quote}
     />
 </div>

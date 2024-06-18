@@ -11,7 +11,7 @@
         NewActionPayload,
     } from "$lib/types";
     import { matchType } from "$lib/stores/matchType";
-    import { BASE_FONT_SIZE } from "$lib/config";
+    import { BASE_FONT_SIZE, BEST_OF } from "$lib/config";
     import type { TextCategory } from "$lib/types";
 
     import OpponentDisplay from "$lib/components/match/OpponentDisplay.svelte";
@@ -25,6 +25,7 @@
     import toast from "svelte-french-toast";
     import WaitingForOpponent from "$lib/components/match/ranked/WaitingForOpponent.svelte";
     import EndScreen from "$lib/components/match/EndScreen.svelte";
+    import MatchStats from "$lib/components/match/MatchStats.svelte";
 
     export let user: User;
     export let roomInfo: BasicRoomInfo | null;
@@ -214,12 +215,12 @@
     <title>Ranked Match - WordPractice</title>
 </svelte:head>
 
-<div class="fixed bottom-0 right-0 left-0 font-mono">
-    Round: {roundNumber}
-</div>
-
 <MatchContainer {finished} {started} {roomInfo}>
-    <div slot="racers" class="flex flex-col gap-3" let:startedRoomInfo>
+    <div slot="extra-info">
+        <div>Round {roundNumber}</div>
+        <div>Best of {BEST_OF}</div>
+    </div>
+    <div slot="racers" let:startedRoomInfo>
         <OpponentDisplay
             matchUser={clientMatchUser}
             {startedRoomInfo}
@@ -233,7 +234,15 @@
 
     <div slot="end-screen">
         {#if roomInfo !== null}
-            <EndScreen {user} {roomInfo} {replays} />
+            <EndScreen>
+                <div slot="overview">
+                    <div>Ranked Match</div>
+                    <div>New Rating: {user.rating}</div>
+                </div>
+                <div slot="stats">
+                    <MatchStats {user} {roomInfo} {replays} />
+                </div>
+            </EndScreen>
         {/if}
 
         <button

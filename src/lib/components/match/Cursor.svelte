@@ -18,13 +18,15 @@
     export let quote: string[];
     export let wrapperElement: HTMLElement | null;
     export let username: string | null = null;
+    export let clientUserLastIndex: number | null = null;
+
     export let topPos = 0;
+    export let lastWordIndex = 0;
 
     let leftPos = 0;
     let highlightWidth = 0;
 
     let lastWordPositions: [number, number] = [0, 0];
-    let lastWordIndex = 0;
 
     let currentTime: number = Date.now();
 
@@ -35,6 +37,8 @@
 
         return () => clearInterval(interval);
     });
+
+    const cursorSize = fontSize * 0.1;
 
     // TODO: Fix correcting a word in the middle
     const updatePositioning = (replay: Replay) => {
@@ -52,7 +56,7 @@
 
         const words = completedWords.split(" ");
 
-        let word: string;
+        let typedWord: string;
 
         const currentIndex = words.length - 1;
 
@@ -66,12 +70,12 @@
             newLeftPos = lastWordPositions[0];
             newTopPos = lastWordPositions[1];
 
-            word = words[lastWordIndex];
+            typedWord = words[lastWordIndex];
         } else {
-            word = words[0];
+            typedWord = words[0];
         }
 
-        if (word === undefined) return;
+        if (typedWord === undefined) return;
 
         const caretMovement = getCaretData(replay);
 
@@ -94,20 +98,24 @@
             highlightWidth = 0;
         }
 
-        const wordWidth = word.length * charWidthIncrease;
+        const typedWordWidth = typedWord.length * charWidthIncrease;
 
         let createNewLine = false;
 
-        if (words[currentIndex] === "" && currentIndex !== 0) {
+        if (
+            words[currentIndex] === "" &&
+            currentIndex !== 0 &&
+            lastWordIndex !== currentIndex
+        ) {
             const nextWordWidth =
                 quote[currentIndex].length * charWidthIncrease;
-            const cursorSize = fontSize * 0.1;
 
+            // If the word with a space is too long to fit the next word on the same line
             if (
                 newLeftPos +
-                    wordWidth +
-                    charWidthIncrease +
+                    typedWordWidth +
                     nextWordWidth +
+                    charWidthIncrease +
                     cursorSize >=
                 maxWidth
             ) {
@@ -124,7 +132,7 @@
             newLeftPos = 0;
             newTopPos += charHeightIncrease;
         } else {
-            newLeftPos += wordWidth;
+            newLeftPos += typedWordWidth;
         }
 
         if (lastWordIndex !== currentIndex || createNewLine) {
@@ -179,21 +187,33 @@
             timingOffset +
             CARET_BLINKING_INTERVAL <=
             currentTime;
+
+    // check if the opponent is 3 words away from the client user
+    $: isCloseToClient =
+        clientUserLastIndex === null ||
+        Math.abs(lastWordIndex - clientUserLastIndex) <= 4;
 </script>
 
 <svelte:window on:resize={handleResize} />
 
+<!-- <div class="fixed bottom-0 left-0 font-mono">
+</div> -->
+
 <!-- Source of Cubic Bezier: https://stackoverflow.com/questions/9245030/looking-for-a-swing-like-easing-expressible-both-with-jquery-and-css3 -->
 <div
-    class="absolute"
+    class="absolute {isCloseToClient
+        ? 'opacity-100 z-50'
+        : 'opacity-30 -z-50'} transition-all duration-1000"
     style="top: {getTopPos(topPos) +
         fontSize *
-            0.1}px; left: {leftPos}px; transition: left 100ms cubic-bezier(.02, .01, .47, 1);"
+            0.125}px; left: {leftPos}px; transition: left 100ms cubic-bezier(.02, .01, .47, 1);"
 >
-    <div class="flex">
+    <div class="flex relative">
         <div
-            class="bg-zinc-500 rounded-full"
-            style="height: {fontSize * 1.25}px; width: {fontSize * 0.1}px;"
+            class="rounded-full {username !== null
+                ? 'bg-zinc-400'
+                : 'bg-teal-600'}"
+            style="height: {fontSize * 1.2}px; width: {cursorSize}px;"
             id={isCaretBlinking ? "caret-blinking" : ""}
         />
         <div
@@ -201,16 +221,16 @@
             style="height: {fontSize *
                 1.25}px; width: {highlightWidth}px; transition: width 100ms cubic-bezier(.02, .01, .47, 1);"
         />
+        {#if username !== null}
+            <div
+                class="bg-zinc-200 px-px absolute top-full right-0 font-mono rounded-md"
+                style="font-size: {fontSize * 0.35}px; padding: {fontSize *
+                    0.025}px {fontSize * 0.15}px;"
+            >
+                {username}
+            </div>
+        {/if}
     </div>
-    {#if username !== null}
-        <div
-            class="bg-zinc-300 px-1"
-            style="font-size: {fontSize * 0.35}px; padding: {fontSize *
-                0.025}px {fontSize * 0.15}px;"
-        >
-            {username}
-        </div>
-    {/if}
 </div>
 
 <style>
