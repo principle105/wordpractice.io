@@ -1,11 +1,11 @@
 <script lang="ts">
+    import type { User } from "@prisma/client";
     import type {
         BasicRoomInfo,
         BasicRoomInfoStarted,
         CasualMatchUser,
         Round,
     } from "$lib/types";
-    import type { User } from "@prisma/client";
 
     import RoundStats from "./RoundStats.svelte";
     import ReplayText from "./ReplayText.svelte";

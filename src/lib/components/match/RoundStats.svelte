@@ -1,4 +1,5 @@
 <script lang="ts">
+    import type { User } from "@prisma/client";
     import type { BasicRoomInfoStarted, Round, Replay } from "$lib/types";
 
     import {
@@ -11,7 +12,6 @@
         calculateAccuracy,
         getTotalCorrectAndIncorrectChars,
     } from "$lib/utils/stats";
-    import type { User } from "@prisma/client";
 
     export let round: Round;
     export let user: User;

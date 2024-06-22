@@ -1,4 +1,6 @@
 <script lang="ts">
+    import type { User } from "@prisma/client";
+
     import { BASE_FONT_SIZE, DEFAULT_MAX_LINES_SHOWN } from "$lib/config";
     import type { CasualMatchUser, Round } from "$lib/types";
     import {
@@ -6,7 +8,6 @@
         getCompletedAndIncorrectWords,
         getStartTime,
     } from "$lib/utils/textProcessing";
-    import type { User } from "@prisma/client";
 
     import Cursor from "./Cursor.svelte";
 

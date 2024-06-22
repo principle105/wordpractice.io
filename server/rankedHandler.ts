@@ -193,12 +193,12 @@ export const handleIfRankedMatchOver = async (
         room.prevRounds.push(round);
     }
 
-    // Resetting the replays
-    user1.replay = [];
-    user2.replay = [];
-
     // If the match is not entirely over (i.e moving to the next round)
     if (matchWinner === null) {
+        // Resetting the replays
+        user1.replay = [];
+        user2.replay = [];
+
         room.users[user1.id] = user1;
         room.users[user2.id] = user2;
 
@@ -292,7 +292,6 @@ const doQuoteAutoSelectionTimeout = (room: RankedRoom, socket: Socket) => {
         ).filter(
             (category) => !room.blacklistedTextCategories.includes(category)
         );
-
         const randomCategory =
             nonEliminatedTextCategories[
                 Math.floor(Math.random() * nonEliminatedTextCategories.length)

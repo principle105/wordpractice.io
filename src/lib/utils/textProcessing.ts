@@ -114,3 +114,31 @@ export const getStartTime = (replay: Replay, startTime: number) => {
 
     return Math.min(replay[0]?.timestamp, maxStartTime);
 };
+
+export const findRemovedSlice = (
+    wordBefore: string,
+    wordAfter: string,
+    newChar: string | null,
+    cursorPosition: number
+): [number, number] | null => {
+    if (newChar !== null) {
+        wordAfter =
+            wordAfter.slice(0, cursorPosition - 1) +
+            wordAfter.slice(cursorPosition);
+    }
+
+    let i = 0;
+
+    while (i < wordBefore.length && i < wordAfter.length) {
+        if (wordBefore[i] !== wordAfter[i]) {
+            break;
+        }
+        i++;
+    }
+
+    if (i === wordBefore.length) {
+        return null;
+    }
+
+    return [i, i + (wordBefore.length - wordAfter.length)];
+};

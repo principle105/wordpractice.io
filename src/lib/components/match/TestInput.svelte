@@ -1,5 +1,7 @@
 <script lang="ts">
+    import { onMount } from "svelte";
     import type { EventHandler } from "svelte/elements";
+
     import type {
         CaretMovement,
         Character,
@@ -7,14 +9,14 @@
         Replay,
         BasicRoomInfoStarted,
     } from "$lib/types";
-    import { convertReplayToWords } from "$lib/utils/textProcessing";
-    import { onMount } from "svelte";
+    import {
+        convertReplayToWords,
+        findRemovedSlice,
+    } from "$lib/utils/textProcessing";
 
     export let startedRoomInfo: BasicRoomInfoStarted;
     export let replay: Replay;
     export let started: boolean;
-
-    $: wordsTyped = convertReplayToWords(replay, startedRoomInfo.quote.text);
 
     let currentWordIndex = 0;
     let wordInput = "";
@@ -33,40 +35,17 @@
         inputElement?.focus();
     };
 
-    const findRemovedSlice = (
-        wordBefore: string,
-        wordAfter: string,
-        newChar: string | null,
-        cursorPosition: number
-    ): [number, number] | null => {
-        if (newChar !== null) {
-            wordAfter =
-                wordAfter.slice(0, cursorPosition - 1) +
-                wordAfter.slice(cursorPosition);
-        }
-
-        let i = 0;
-
-        while (i < wordBefore.length && i < wordAfter.length) {
-            if (wordBefore[i] !== wordAfter[i]) {
-                break;
-            }
-            i++;
-        }
-
-        if (i === wordBefore.length) {
-            return null;
-        }
-
-        return [i, i + (wordBefore.length - wordAfter.length)];
-    };
-
     const handleInput: EventHandler<Event, HTMLInputElement> = (e) => {
         if (e.target === null) return;
 
         const now = Date.now();
 
         const newChar = (e as any as InputEvent).data;
+
+        const wordsTyped = convertReplayToWords(
+            replay,
+            startedRoomInfo.quote.text
+        );
 
         let removedSlice = findRemovedSlice(
             wordsTyped[wordsTyped.length - 1],
@@ -145,6 +124,7 @@
             ) {
                 return;
             }
+
             replay.push({
                 type: "caret",
                 start: selectionStart,
@@ -165,7 +145,7 @@
     autocapitalize="off"
     spellcheck="false"
     maxlength={50}
-    placeholder={wordsTyped.join(" ") === "" ? "Type here" : ""}
+    placeholder={replay.length === 0 ? "Type here" : ""}
     class="w-full p-3 outline-none border-zinc-500 border rounded-md"
     on:keydown={checkForCursorEvent}
     on:mousedown={checkForCursorEvent}

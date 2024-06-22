@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onDestroy } from "svelte";
+    import type { User } from "@prisma/client";
 
     import type { CasualMatchUser, Round, Replay, Replays } from "$lib/types";
     import {
@@ -14,7 +15,6 @@
     } from "$lib/utils/textProcessing";
 
     import WordDisplay from "./WordDisplay.svelte";
-    import type { User } from "@prisma/client";
 
     export let round: Round;
     export let user: User;

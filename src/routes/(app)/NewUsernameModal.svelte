@@ -1,8 +1,10 @@
 <script lang="ts">
-    import Modal from "$lib/components/misc/Modal.svelte";
-    import { findErrorWithUsername } from "$lib/utils/validation";
-    import type { User } from "@prisma/client";
     import toast from "svelte-french-toast";
+    import type { User } from "@prisma/client";
+
+    import { findErrorWithUsername } from "$lib/utils/validation";
+
+    import Modal from "$lib/components/misc/Modal.svelte";
 
     export let user: User;
 

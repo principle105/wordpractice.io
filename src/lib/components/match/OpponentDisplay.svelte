@@ -8,6 +8,7 @@
         getStartTime,
     } from "$lib/utils/textProcessing";
     import { calculateWpm } from "$lib/utils/stats";
+    import { WPM_UPDATE_INTERVAL } from "$lib/config";
 
     export let startedRoomInfo: BasicRoomInfoStarted;
     export let matchUser: CasualMatchUser;
@@ -51,7 +52,7 @@
                     completedWords.length
                 );
             }
-        }, 250);
+        }, WPM_UPDATE_INTERVAL);
 
         return () => clearInterval(interval);
     });

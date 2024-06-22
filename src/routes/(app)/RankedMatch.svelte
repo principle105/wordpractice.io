@@ -1,7 +1,9 @@
 <script lang="ts">
     // TODO: add max wrong characters and add server-side validation for it
+    import { onMount } from "svelte";
     import type { User } from "@prisma/client";
     import type { Socket } from "socket.io-client";
+    import toast from "svelte-french-toast";
 
     import type {
         RankedMatchUser,
@@ -15,6 +17,7 @@
     import { matchType } from "$lib/stores/matchType";
     import { BEST_OF } from "$lib/config";
     import type { TextCategory } from "$lib/types";
+    import { textCategoryToName } from "$lib/utils/conversions";
 
     import OpponentDisplay from "$lib/components/match/OpponentDisplay.svelte";
     import WordDisplay from "$lib/components/match/WordDisplay.svelte";
@@ -23,12 +26,9 @@
     import OpponentSearch from "$lib/components/match/ranked/OpponentSearch.svelte";
     import TextEliminator from "$lib/components/match/ranked/TextEliminator.svelte";
     import TextSelector from "$lib/components/match/ranked/TextSelector.svelte";
-    import { onMount } from "svelte";
-    import toast from "svelte-french-toast";
     import WaitingForOpponent from "$lib/components/match/ranked/WaitingForOpponent.svelte";
     import EndScreen from "$lib/components/match/EndScreen.svelte";
     import MatchStats from "$lib/components/match/MatchStats.svelte";
-    import { textCategories } from "$lib/constants";
 
     export let user: User;
     export let roomInfo: BasicRoomInfo | null;
@@ -197,18 +197,6 @@
         toast.error("You lost!");
     };
 
-    $: clientMatchUser = {
-        id: user.id,
-        username: user.username,
-        avatar: user.avatar,
-        rating: user.rating,
-        connected: true,
-        replay,
-        score,
-    } satisfies RankedMatchUser;
-
-    $: finished, showMatchOutcome();
-
     const getReplays = (
         matchUsers: Map<string, RankedMatchUser>,
         replay: Replay
@@ -223,6 +211,8 @@
 
         return replays;
     };
+
+    $: finished, showMatchOutcome();
 </script>
 
 <svelte:head>
@@ -233,8 +223,8 @@
     <div slot="racers" let:startedRoomInfo>
         <div class="flex justify-between">
             <div>
-                <div>{textCategories[startedRoomInfo.quote.category]}</div>
-                <div>{startedRoomInfo.quote.source}</div>
+                <div>{textCategoryToName(startedRoomInfo.quote.category)}</div>
+                <div>"{startedRoomInfo.quote.source}"</div>
             </div>
             <div>
                 <div>Round {roundNumber}</div>
@@ -242,7 +232,14 @@
             </div>
         </div>
         <OpponentDisplay
-            matchUser={clientMatchUser}
+            matchUser={{
+                id: user.id,
+                username: user.username,
+                avatar: user.avatar,
+                rating: user.rating,
+                connected: true,
+                replay,
+            }}
             {startedRoomInfo}
             showRating={true}
         />

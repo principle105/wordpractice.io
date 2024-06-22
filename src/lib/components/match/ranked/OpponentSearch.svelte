@@ -1,6 +1,7 @@
 <script lang="ts">
-    import { matchType } from "$lib/stores/matchType";
     import { onDestroy, onMount } from "svelte";
+
+    import { matchType } from "$lib/stores/matchType";
 
     export let minSearchRating: number;
     export let maxSearchRating: number;
