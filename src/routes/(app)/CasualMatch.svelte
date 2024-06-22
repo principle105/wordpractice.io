@@ -10,9 +10,9 @@
         Replay,
         BasicRoomInfo,
         NewActionPayload,
+        Replays,
     } from "$lib/types";
     import { matchType } from "$lib/stores/matchType";
-    import { BASE_FONT_SIZE } from "$lib/config";
 
     import OpponentDisplay from "$lib/components/match/OpponentDisplay.svelte";
     import WordDisplay from "$lib/components/match/WordDisplay.svelte";
@@ -28,8 +28,6 @@
     export let started: boolean;
     export let socket: Socket;
     export let finished: boolean;
-
-    const fontSize: number = user.fontScale * BASE_FONT_SIZE;
 
     socket.on("user-disconnect", (userId: string) => {
         let disconnectedUser = matchUsers.get(userId);
@@ -112,6 +110,21 @@
         connected: true,
         replay,
     } satisfies CasualMatchUser;
+
+    const getReplays = (
+        matchUsers: Map<string, CasualMatchUser>,
+        replay: Replay
+    ): Replays => {
+        const replays: Replays = {};
+
+        for (const [matchUserId, matchUser] of matchUsers.entries()) {
+            replays[matchUserId] = matchUser.replay;
+        }
+
+        replays[user.id] = replay;
+
+        return replays;
+    };
 </script>
 
 <svelte:head>
@@ -137,7 +150,20 @@
                     <div>Casual Match</div>
                 </div>
                 <div slot="stats">
-                    <MatchStats {user} {roomInfo} replays={{ replay }} />
+                    {#if roomInfo.quote !== null && roomInfo.startTime !== null}
+                        <MatchStats
+                            {user}
+                            {roomInfo}
+                            {matchUsers}
+                            prevRounds={[
+                                {
+                                    quote: roomInfo.quote,
+                                    replays: { [user.id]: replay },
+                                    startTime: roomInfo.startTime,
+                                },
+                            ]}
+                        />
+                    {/if}
                 </div>
             </EndScreen>
         {/if}
@@ -153,10 +179,13 @@
     <WordDisplay
         slot="word-display"
         let:startedRoomInfo
-        {fontSize}
-        matchUsers={Array.from(matchUsers.values())}
-        {replay}
-        {startedRoomInfo}
+        {matchUsers}
+        round={{
+            quote: startedRoomInfo.quote,
+            startTime: startedRoomInfo.startTime,
+            replays: getReplays(matchUsers, replay),
+        }}
+        {user}
     />
 
     <TestInput

@@ -1,8 +1,7 @@
 <script lang="ts">
     import { onDestroy } from "svelte";
 
-    import { START_TIME_LENIENCY } from "$lib/config";
-    import type { Replay, BasicRoomInfoStarted } from "$lib/types";
+    import type { CasualMatchUser, Round, Replay, Replays } from "$lib/types";
     import {
         calculateWpm,
         calculateAccuracy,
@@ -11,47 +10,45 @@
     import {
         convertReplayToWords,
         getCompletedAndIncorrectWords,
+        getStartTime,
     } from "$lib/utils/textProcessing";
 
     import WordDisplay from "./WordDisplay.svelte";
+    import type { User } from "@prisma/client";
 
-    export let replay: Replay;
-    export let fontSize: number;
-    export let startedRoomInfo: BasicRoomInfoStarted;
+    export let round: Round;
+    export let user: User;
+    export let matchUsers = new Map<string, CasualMatchUser>();
 
-    const getStartTime = () => {
-        const maxStartTime = startedRoomInfo.startTime + START_TIME_LENIENCY;
-
-        if (replay.length === 0) {
-            return maxStartTime;
-        }
-
-        return Math.min(replay[0]?.timestamp, maxStartTime);
-    };
-
-    const startTime = getStartTime();
+    let matchUserActionIndices = new Map<string, number>();
+    let replays: Replays;
 
     let actualStartTime = 0;
-
     let timeElapsed = 0;
-    let actionIndex = 0;
-
     let replaySpeed = 1;
 
     let animationFrameId: number | null = null;
     let resetWordDisplay = false;
 
-    let replayText = "";
     let wpm = 0;
+    let accuracy = 0;
 
-    const play = () => {
-        if (replay.length === 0) {
-            return;
+    $: round, (replays = getNewReplays());
+
+    const getNewReplays = () => {
+        return Object.fromEntries(
+            Object.keys(round.replays).map((userId) => [userId, []])
+        );
+    };
+
+    const getUserActionIndex = (replay: Replay, actionIndex: number) => {
+        if (replay.length === 0 || replay.length - 1 === actionIndex) {
+            return null;
         }
 
         const action = replay[actionIndex];
 
-        timeElapsed = Date.now() - actualStartTime;
+        const startTime = getStartTime(replay, round.startTime);
 
         const replayTimeElapsedUntilAction = action.timestamp - startTime;
 
@@ -60,24 +57,79 @@
             actionIndex++;
         }
 
-        replayText = convertReplayToWords(
-            replay.slice(0, actionIndex + 1),
-            startedRoomInfo.quote
-        ).join(" ");
+        return actionIndex;
+    };
 
-        const { completedWords } = getCompletedAndIncorrectWords(
-            replayText.split(" "),
-            startedRoomInfo.quote
-        );
+    const play = () => {
+        timeElapsed = Date.now() - actualStartTime;
 
-        const endTime =
-            actionIndex === replay.length
-                ? replay[replay.length - 1].timestamp
-                : timeElapsed + startTime;
+        let replaysFinished = 0;
 
-        wpm = calculateWpm(endTime, startTime, completedWords.length);
+        for (const matchUserId in replays) {
+            const fullReplay = round.replays[matchUserId];
 
-        if (actionIndex === replay.length) return;
+            const matchUserActionIndex = getUserActionIndex(
+                fullReplay,
+                matchUserActionIndices.get(matchUserId) ?? 0
+            );
+
+            if (matchUserActionIndex === null) {
+                replaysFinished += 1;
+                continue;
+            }
+
+            matchUserActionIndices.set(matchUserId, matchUserActionIndex);
+
+            const matchUserSlicedReplay = fullReplay.slice(
+                0,
+                matchUserActionIndex + 1
+            );
+
+            replays[matchUserId] = matchUserSlicedReplay;
+
+            if (user.id !== matchUserId) continue;
+
+            const startTime = getStartTime(fullReplay, round.startTime);
+
+            const replayText = convertReplayToWords(
+                matchUserSlicedReplay,
+                round.quote.text
+            ).join(" ");
+
+            const { completedWords } = getCompletedAndIncorrectWords(
+                replayText.split(" "),
+                round.quote.text
+            );
+
+            if (matchUserActionIndex === fullReplay.length - 1) {
+                wpm = calculateWpm(
+                    fullReplay[fullReplay.length - 1].timestamp,
+                    startTime,
+                    completedWords.length
+                );
+            } else {
+                wpm = calculateWpm(
+                    timeElapsed + startTime,
+                    startTime,
+                    completedWords.length
+                );
+            }
+
+            const { totalCorrectChars, totalIncorrectChars } =
+                getTotalCorrectAndIncorrectChars(
+                    matchUserSlicedReplay,
+                    round.quote.text
+                );
+
+            accuracy = calculateAccuracy(
+                totalCorrectChars,
+                totalIncorrectChars
+            );
+        }
+
+        if (replaysFinished === Object.keys(replays).length) {
+            return;
+        }
 
         animationFrameId = requestAnimationFrame(play);
     };
@@ -93,7 +145,8 @@
         stop();
 
         timeElapsed = 0;
-        actionIndex = 0;
+        matchUserActionIndices = new Map<string, number>();
+        replays = getNewReplays();
 
         resetWordDisplay = !resetWordDisplay;
 
@@ -118,14 +171,6 @@
             replaySpeed += 0.25;
         }
     };
-
-    $: slicedReplay = replay.slice(0, actionIndex);
-
-    $: ({ totalCorrectChars, totalIncorrectChars } =
-        getTotalCorrectAndIncorrectChars(slicedReplay, startedRoomInfo.quote));
-
-    // The accuracy is not dependent on the time elapsed so it is not in the play function
-    $: accuracy = calculateAccuracy(totalCorrectChars, totalIncorrectChars);
 </script>
 
 <button
@@ -153,14 +198,14 @@
     <div>{accuracy}% accuracy</div>
 </div>
 
-{#if startTime !== null}
-    {#key resetWordDisplay}
-        <WordDisplay
-            {fontSize}
-            {startedRoomInfo}
-            replay={slicedReplay}
-            timingOffset={Date.now() - (timeElapsed + startTime)}
-            matchUsers={[]}
-        />
-    {/key}
-{/if}
+{#key resetWordDisplay}
+    <WordDisplay
+        round={{
+            ...round,
+            replays,
+        }}
+        {user}
+        {timeElapsed}
+        {matchUsers}
+    />
+{/key}

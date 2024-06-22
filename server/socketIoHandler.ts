@@ -187,9 +187,9 @@ const injectSocketIO = (server: ViteDevServer["httpServer"]) => {
         }
 
         if (matchType === "ranked") {
-            registerRankedHandler(socket, user);
+            await registerRankedHandler(socket, user);
         } else if (matchType === "casual") {
-            registerCasualHandler(socket, user);
+            await registerCasualHandler(socket, user);
         } else {
             socket.disconnect();
             return;

@@ -15,7 +15,7 @@
     export let fontSize: number;
     export let timingOffset: number;
     export let replay: Replay;
-    export let quote: string[];
+    export let text: string[];
     export let wrapperElement: HTMLElement | null;
     export let username: string | null = null;
     export let clientUserLastIndex: number | null = null;
@@ -48,10 +48,10 @@
         const charWidthIncrease = fontSize * 0.6;
         const charHeightIncrease = fontSize * 1.5;
 
-        const wordsTyped = convertReplayToWords(replay, quote);
+        const wordsTyped = convertReplayToWords(replay, text);
         const { completedWords } = getCompletedAndIncorrectWords(
             wordsTyped,
-            quote
+            text
         );
 
         const words = completedWords.split(" ");
@@ -107,8 +107,7 @@
             currentIndex !== 0 &&
             lastWordIndex !== currentIndex
         ) {
-            const nextWordWidth =
-                quote[currentIndex].length * charWidthIncrease;
+            const nextWordWidth = text[currentIndex].length * charWidthIncrease;
 
             // If the word with a space is too long to fit the next word on the same line
             if (
@@ -195,9 +194,6 @@
 </script>
 
 <svelte:window on:resize={handleResize} />
-
-<!-- <div class="fixed bottom-0 left-0 font-mono">
-</div> -->
 
 <!-- Source of Cubic Bezier: https://stackoverflow.com/questions/9245030/looking-for-a-swing-like-easing-expressible-both-with-jquery-and-css3 -->
 <div

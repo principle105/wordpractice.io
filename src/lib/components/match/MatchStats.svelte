@@ -2,43 +2,47 @@
     import type {
         BasicRoomInfo,
         BasicRoomInfoStarted,
-        Replay,
+        CasualMatchUser,
+        Round,
     } from "$lib/types";
     import type { User } from "@prisma/client";
 
     import RoundStats from "./RoundStats.svelte";
     import ReplayText from "./ReplayText.svelte";
 
-    import { BASE_FONT_SIZE } from "$lib/config";
-
     export let user: User;
     export let roomInfo: BasicRoomInfo;
-    export let replays: { [key: string]: Replay };
+    export let prevRounds: Round[];
+    export let matchUsers = new Map<string, CasualMatchUser>();
 
     let showReplay = false;
-    let replay: Replay | null = replays[Object.keys(replays)[0]] ?? null;
+    let roundNumber = 0;
 
-    const fontSize: number = user.fontScale * BASE_FONT_SIZE;
-
-    const changeReplay = (replayName: string) => {
-        replay = replays[replayName];
-    };
+    $: activeRound = prevRounds[roundNumber];
 
     $: startedRoomInfo = roomInfo as BasicRoomInfoStarted;
     $: raceStarted = !(roomInfo.startTime === null || roomInfo.quote === null);
 </script>
 
-{#if replay !== null}
+{#if activeRound}
     <div>
-        {#if Object.keys(replays).length > 1}
+        {#if prevRounds.length > 1}
             <div class="flex gap-5">
-                {#each Object.keys(replays) as replayName}
-                    <button on:click={() => changeReplay(replayName)}>
-                        {replayName}
+                {#each prevRounds as _, i}
+                    <button
+                        on:click={() => {
+                            roundNumber = i;
+                        }}
+                        class="underline-offset-[3px] {roundNumber === i
+                            ? 'underline'
+                            : ''}"
+                    >
+                        Round {i + 1}
                     </button>
                 {/each}
             </div>
         {/if}
+
         <button
             class="bg-zinc-500 p-3 rounded-md text-white"
             on:click={() => (showReplay = true)}
@@ -46,10 +50,10 @@
             Replay
         </button>
         {#if raceStarted}
-            <RoundStats {replay} {startedRoomInfo} />
+            <RoundStats round={activeRound} {startedRoomInfo} {user} />
         {/if}
         {#if showReplay}
-            <ReplayText {fontSize} {replay} {startedRoomInfo} />
+            <ReplayText round={activeRound} {matchUsers} {user} />
         {/if}
     </div>
 {/if}

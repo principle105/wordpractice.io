@@ -9,9 +9,11 @@
         BasicRoomInfo,
         RankedRoom,
         NewActionPayload,
+        Round,
+        Replays,
     } from "$lib/types";
     import { matchType } from "$lib/stores/matchType";
-    import { BASE_FONT_SIZE, BEST_OF } from "$lib/config";
+    import { BEST_OF } from "$lib/config";
     import type { TextCategory } from "$lib/types";
 
     import OpponentDisplay from "$lib/components/match/OpponentDisplay.svelte";
@@ -26,6 +28,7 @@
     import WaitingForOpponent from "$lib/components/match/ranked/WaitingForOpponent.svelte";
     import EndScreen from "$lib/components/match/EndScreen.svelte";
     import MatchStats from "$lib/components/match/MatchStats.svelte";
+    import { textCategories } from "$lib/constants";
 
     export let user: User;
     export let roomInfo: BasicRoomInfo | null;
@@ -35,8 +38,6 @@
     export let socket: Socket;
     export let finished: boolean;
 
-    const fontSize: number = user.fontScale * BASE_FONT_SIZE;
-
     let minSearchRating = 0;
     let maxSearchRating = 0;
 
@@ -45,15 +46,11 @@
     let blacklistDecisionEndTime: number | null;
     let quoteSelectionDecisionEndTime: number | null;
 
-    let replays: { [key: string]: Replay } = {};
-
     let currentTime: number = Date.now();
     let score = 0;
+    let prevRounds: Round[] = [];
 
-    $: roundNumber =
-        score +
-        Array.from(matchUsers).reduce((acc, curr) => acc + curr[1].score, 0) +
-        1;
+    $: roundNumber = prevRounds.length + 1;
 
     socket.on("user-disconnect", (userId: string) => {
         let disconnectedUser = matchUsers.get(userId);
@@ -107,6 +104,7 @@
         blacklistDecisionEndTime = newRoomInfo.blacklistDecisionEndTime;
         quoteSelectionDecisionEndTime =
             newRoomInfo.quoteSelectionDecisionEndTime;
+        prevRounds = newRoomInfo.prevRounds;
 
         isFirstUserToBlacklist = newRoomInfo.firstUserToBlacklist === user.id;
     });
@@ -136,6 +134,7 @@
         blacklistDecisionEndTime = newRoomInfo.blacklistDecisionEndTime;
         quoteSelectionDecisionEndTime =
             newRoomInfo.quoteSelectionDecisionEndTime;
+        prevRounds = newRoomInfo.prevRounds;
 
         isFirstUserToBlacklist = newRoomInfo.firstUserToBlacklist === user.id;
     });
@@ -209,6 +208,21 @@
     } satisfies RankedMatchUser;
 
     $: finished, showMatchOutcome();
+
+    const getReplays = (
+        matchUsers: Map<string, RankedMatchUser>,
+        replay: Replay
+    ): Replays => {
+        const replays: Replays = {};
+
+        for (const [matchUserId, matchUser] of matchUsers.entries()) {
+            replays[matchUserId] = matchUser.replay;
+        }
+
+        replays[user.id] = replay;
+
+        return replays;
+    };
 </script>
 
 <svelte:head>
@@ -216,11 +230,17 @@
 </svelte:head>
 
 <MatchContainer {finished} {started} {roomInfo}>
-    <div slot="extra-info">
-        <div>Round {roundNumber}</div>
-        <div>Best of {BEST_OF}</div>
-    </div>
     <div slot="racers" let:startedRoomInfo>
+        <div class="flex justify-between">
+            <div>
+                <div>{textCategories[startedRoomInfo.quote.category]}</div>
+                <div>{startedRoomInfo.quote.source}</div>
+            </div>
+            <div>
+                <div>Round {roundNumber}</div>
+                <div>Best of {BEST_OF}</div>
+            </div>
+        </div>
         <OpponentDisplay
             matchUser={clientMatchUser}
             {startedRoomInfo}
@@ -240,7 +260,7 @@
                     <div>New Rating: {user.rating}</div>
                 </div>
                 <div slot="stats">
-                    <MatchStats {user} {roomInfo} {replays} />
+                    <MatchStats {user} {roomInfo} {prevRounds} {matchUsers} />
                 </div>
             </EndScreen>
         {/if}
@@ -256,10 +276,13 @@
     <WordDisplay
         slot="word-display"
         let:startedRoomInfo
-        {fontSize}
-        matchUsers={Array.from(matchUsers.values())}
-        {replay}
-        {startedRoomInfo}
+        {user}
+        round={{
+            quote: startedRoomInfo.quote,
+            startTime: startedRoomInfo.startTime,
+            replays: getReplays(matchUsers, replay),
+        }}
+        {matchUsers}
     />
 
     <TestInput
@@ -312,7 +335,7 @@
         {/if}
     </div>
 
-    <div slot="loading">
+    <div slot="loading" class="h-full">
         {#if minSearchRating === 0 && maxSearchRating === 0}
             <div class="flex justify-center items-center h-[86vh]">
                 <div

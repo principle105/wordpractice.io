@@ -11,6 +11,7 @@ import {
     convertReplayToWords,
 } from "../src/lib/utils/textProcessing";
 import { casualRooms } from "./state";
+import { getRandomQuoteFromCategory } from "../data/utils";
 
 const MAX_ROOM_SIZE = 5;
 const COUNTDOWN_TIME = 7 * 1000;
@@ -50,12 +51,12 @@ export const handleIfCasualMatchOver = async (
             if (user.connected === false) return true;
 
             const { completedWords } = getCompletedAndIncorrectWords(
-                convertReplayToWords(user.replay, quote),
-                quote
+                convertReplayToWords(user.replay, quote.text),
+                quote.text
             );
 
             const isUserFinished =
-                completedWords.length === quote.join(" ").length;
+                completedWords.length === quote.text.join(" ").length;
 
             return isUserFinished;
         });
@@ -73,7 +74,10 @@ export const handleIfCasualMatchOver = async (
     }
 };
 
-const registerCasualHandler = (socket: Socket, userProfile: UserProfile) => {
+const registerCasualHandler = async (
+    socket: Socket,
+    userProfile: UserProfile
+) => {
     const user: CasualMatchUser = {
         ...userProfile,
         replay: [],
@@ -113,10 +117,7 @@ const registerCasualHandler = (socket: Socket, userProfile: UserProfile) => {
     if (!hasUserJoinedARoom) {
         const roomId = Math.random().toString(36).substring(2, 8);
 
-        const quote =
-            "The thing about a story is that you dream it as you tell it, hoping that others might then dream along with you, and in this way memory and imagination and language combine to make spirits in the head. There is the illusion of aliveness.".split(
-                " "
-            );
+        const quote = await getRandomQuoteFromCategory("dictionary easy");
 
         const room: CasualRoom = {
             matchType: "casual",

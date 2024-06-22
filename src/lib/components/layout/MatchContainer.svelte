@@ -13,10 +13,7 @@
         {#if roomInfo === null}
             <slot name="loading" />
         {:else if roomInfo.startTime === null || roomInfo.quote === null}
-            {#if finished}
-                <slot name="end-screen" />
-            {:else}
-                <slot name="extra-info" />
+            {#if !finished}
                 <slot name="before-start" />
             {/if}
         {:else}
@@ -26,7 +23,6 @@
                 {#if finished}
                     <slot name="end-screen" />
                 {:else}
-                    <slot name="extra-info" />
                     <slot name="word-display" {startedRoomInfo} />
                     <slot name="input" {startedRoomInfo} />
                 {/if}

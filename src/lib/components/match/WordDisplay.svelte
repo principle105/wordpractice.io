@@ -1,27 +1,33 @@
 <script lang="ts">
-    import { DEFAULT_MAX_LINES_SHOWN } from "$lib/config";
-    import type {
-        CasualMatchUser,
-        Replay,
-        BasicRoomInfoStarted,
-    } from "$lib/types";
+    import { BASE_FONT_SIZE, DEFAULT_MAX_LINES_SHOWN } from "$lib/config";
+    import type { CasualMatchUser, Round } from "$lib/types";
     import {
         convertReplayToWords,
         getCompletedAndIncorrectWords,
+        getStartTime,
     } from "$lib/utils/textProcessing";
+    import type { User } from "@prisma/client";
 
     import Cursor from "./Cursor.svelte";
 
-    export let startedRoomInfo: BasicRoomInfoStarted;
-    export let fontSize: number;
-    export let timingOffset = 0;
+    export let round: Round;
+    export let timeElapsed: number | null = null;
 
-    export let replay: Replay;
-    export let matchUsers: CasualMatchUser[];
+    export let matchUsers: Map<string, CasualMatchUser>;
+    export let user: User;
 
     let wrapperElement: HTMLElement | null = null;
     let topPos = 0;
     let lastWordIndex = 0;
+
+    const fontSize: number = user.fontScale * BASE_FONT_SIZE;
+
+    $: userReplay = round.replays[user.id];
+
+    const updateWrapperSize = () => {
+        // Force updating the wrapper size
+        wrapperElement = wrapperElement;
+    };
 
     $: maxHeight =
         wrapperElement !== null
@@ -29,17 +35,16 @@
               DEFAULT_MAX_LINES_SHOWN * fontSize * 1.5
             : 0;
 
-    $: wordsTyped = convertReplayToWords(replay, startedRoomInfo.quote);
+    $: wordsTyped = convertReplayToWords(userReplay, round.quote.text);
 
     $: ({ completedWords, incorrectChars } = getCompletedAndIncorrectWords(
         wordsTyped,
-        startedRoomInfo.quote
+        round.quote.text
     ));
 
-    const updateWrapperSize = () => {
-        // Force updating the wrapper size
-        wrapperElement = wrapperElement;
-    };
+    $: clientUserTimingOffset = timeElapsed
+        ? Date.now() - (timeElapsed + getStartTime(userReplay, round.startTime))
+        : 0;
 </script>
 
 <svelte:window on:resize={updateWrapperSize} />
@@ -55,36 +60,44 @@
         bind:this={wrapperElement}
     >
         <span class="text-black">{completedWords}</span><span class="bg-red-400"
-            >{startedRoomInfo.quote
+            >{round.quote.text
                 .join(" ")
                 .slice(
                     completedWords.length,
                     completedWords.length + incorrectChars
                 )}</span
         ><span class="text-zinc-500"
-            >{startedRoomInfo.quote
+            >{round.quote.text
                 .join(" ")
                 .slice(completedWords.length + incorrectChars)}</span
         >
-        {#each matchUsers as matchUser}
-            <Cursor
-                {fontSize}
-                {timingOffset}
-                replay={matchUser.replay}
-                {wrapperElement}
-                username={matchUser.username}
-                quote={startedRoomInfo.quote}
-                clientUserLastIndex={lastWordIndex}
-            />
+        {#each Object.entries(round.replays) as [matchUserId, matchUserReplay]}
+            {@const matchUser = matchUsers.get(matchUserId)}
+            {#if user.id !== matchUserId && matchUser}
+                {@const timingOffset = timeElapsed
+                    ? Date.now() -
+                      (timeElapsed +
+                          getStartTime(matchUserReplay, round.startTime))
+                    : 0}
+                <Cursor
+                    {fontSize}
+                    {timingOffset}
+                    replay={matchUserReplay}
+                    {wrapperElement}
+                    username={matchUser.username}
+                    text={round.quote.text}
+                    clientUserLastIndex={lastWordIndex}
+                />
+            {/if}
         {/each}
     </div>
     <Cursor
         {fontSize}
-        {timingOffset}
-        {replay}
+        timingOffset={clientUserTimingOffset}
+        replay={userReplay}
         {wrapperElement}
         bind:topPos
         bind:lastWordIndex
-        quote={startedRoomInfo.quote}
+        text={round.quote.text}
     />
 </div>

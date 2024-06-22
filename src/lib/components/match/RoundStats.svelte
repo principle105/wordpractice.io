@@ -1,32 +1,33 @@
 <script lang="ts">
-    import { START_TIME_LENIENCY } from "$lib/config";
-    import type { Replay, BasicRoomInfoStarted } from "$lib/types";
+    import type { BasicRoomInfoStarted, Round, Replay } from "$lib/types";
 
     import {
         convertReplayToWords,
         getCompletedAndIncorrectWords,
+        getStartTime,
     } from "$lib/utils/textProcessing";
     import {
         calculateWpm,
         calculateAccuracy,
         getTotalCorrectAndIncorrectChars,
     } from "$lib/utils/stats";
+    import type { User } from "@prisma/client";
 
-    export let replay: Replay;
+    export let round: Round;
+    export let user: User;
     export let startedRoomInfo: BasicRoomInfoStarted;
 
-    const getWpm = (): number => {
+    $: userReplay = round.replays[user.id];
+
+    const getWpm = (replay: Replay): number => {
         if (replay.length === 0) return 0;
 
-        const startTime = Math.min(
-            replay[0]?.timestamp,
-            startedRoomInfo.startTime + START_TIME_LENIENCY
-        );
+        const startTime = getStartTime(replay, startedRoomInfo.startTime);
 
-        const wordsTyped = convertReplayToWords(replay, startedRoomInfo.quote);
+        const wordsTyped = convertReplayToWords(replay, round.quote.text);
         const { completedWords } = getCompletedAndIncorrectWords(
             wordsTyped,
-            startedRoomInfo.quote
+            round.quote.text
         );
 
         return calculateWpm(
@@ -36,9 +37,9 @@
         );
     };
 
-    const getAccuracy = (): number => {
+    const getAccuracy = (replay: Replay): number => {
         const { totalCorrectChars, totalIncorrectChars } =
-            getTotalCorrectAndIncorrectChars(replay, startedRoomInfo.quote);
+            getTotalCorrectAndIncorrectChars(replay, round.quote.text);
 
         return calculateAccuracy(totalCorrectChars, totalIncorrectChars);
     };
@@ -47,10 +48,10 @@
 <section class="flex flex-col">
     <div>
         <div>WPM</div>
-        <div>{getWpm()}</div>
+        <div>{getWpm(userReplay)}</div>
     </div>
     <div>
         <div>Accuracy</div>
-        <div>{getAccuracy()}%</div>
+        <div>{getAccuracy(userReplay)}%</div>
     </div>
 </section>

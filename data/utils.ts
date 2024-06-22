@@ -2,7 +2,7 @@ import type {
     TextCategory,
     QuoteCategory,
     DictionaryCategory,
-    Text,
+    Quote,
 } from "../src/lib/types";
 
 const DICTIONARY_LENGTH = 30;
@@ -20,9 +20,9 @@ const dictionaryDirectories = {
     "dictionary hard": [import("./dictionary/hard/english-10k.json")],
 };
 
-export const getQuoteFromCategory = async (
+export const getRandomQuoteFromCategory = async (
     textCategory: TextCategory
-): Promise<Text | null> => {
+): Promise<Quote | null> => {
     if (textCategory in quoteDirectories) {
         const allQuotes = (
             await quoteDirectories[textCategory as QuoteCategory]
@@ -30,13 +30,13 @@ export const getQuoteFromCategory = async (
 
         const categoryInfo = allQuotes.quotes;
 
-        const textInfo =
+        const quoteInfo =
             categoryInfo[Math.floor(Math.random() * categoryInfo.length)];
 
         return {
-            category: allQuotes.name,
-            text: textInfo.text,
-            source: textInfo.source,
+            category: textCategory,
+            text: quoteInfo.text.split(" "),
+            source: quoteInfo.source,
         };
     }
 
@@ -60,9 +60,9 @@ export const getQuoteFromCategory = async (
         }
 
         return {
-            category: categoryInfo.name,
-            text: text.join(" "),
-            source: "unknown",
+            category: textCategory,
+            text,
+            source: categoryInfo.source,
         };
     }
 

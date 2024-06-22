@@ -8,26 +8,34 @@ export type MatchType = "ranked" | "casual" | "private";
 
 // Replay
 
-export interface Character {
-    type: "character";
-    letter: string;
+export interface BaseAction {
+    type: string;
     timestamp: number;
 }
 
-export interface CaretMovement {
+export interface Character extends BaseAction {
+    type: "character";
+    letter: string;
+}
+
+export interface CaretMovement extends BaseAction {
     type: "caret";
     start: number;
     end: number;
-    timestamp: number;
 }
 
-export interface Delete {
+export interface Delete extends BaseAction {
     type: "delete";
     slice: [number, number];
-    timestamp: number;
 }
 
-export type Replay = (Character | Delete | CaretMovement)[];
+// export interface Disconnect extends BaseAction {
+//     type: "disconnect";
+// }
+
+export type Action = Character | Delete | CaretMovement;
+
+export type Replay = Action[];
 
 // Match
 
@@ -55,13 +63,21 @@ export interface RankedMatchUser extends CasualMatchUser {
 export interface BasicRoomInfo {
     id: string;
     matchType: MatchType;
-    quote: string[] | null;
+    quote: Quote | null;
     startTime: number | null;
 }
 
 export interface BasicRoomInfoStarted extends BasicRoomInfo {
     startTime: number;
-    quote: string[];
+    quote: Quote;
+}
+
+export type Replays = { [key: string]: Replay };
+
+export interface Round {
+    quote: Quote;
+    replays: Replays;
+    startTime: number;
 }
 
 export interface RankedRoom extends BasicRoomInfo {
@@ -71,6 +87,7 @@ export interface RankedRoom extends BasicRoomInfo {
     firstUserToBlacklist: string | null;
     blacklistDecisionEndTime: number | null;
     quoteSelectionDecisionEndTime: number | null;
+    prevRounds: Round[];
     sockets: Map<string, Socket>;
 }
 
@@ -105,8 +122,8 @@ export type DictionaryCategory = "dictionary easy" | "dictionary hard";
 
 export type TextCategory = QuoteCategory | DictionaryCategory;
 
-export interface Text {
-    category: string;
-    text: string;
+export interface Quote {
+    category: TextCategory;
+    text: string[];
     source: string;
 }

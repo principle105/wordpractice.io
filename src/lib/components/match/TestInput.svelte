@@ -14,7 +14,7 @@
     export let replay: Replay;
     export let started: boolean;
 
-    $: wordsTyped = convertReplayToWords(replay, startedRoomInfo.quote);
+    $: wordsTyped = convertReplayToWords(replay, startedRoomInfo.quote.text);
 
     let currentWordIndex = 0;
     let wordInput = "";
@@ -108,7 +108,7 @@
         // Checking if the word is completed
         if (
             newChar === " " &&
-            startedRoomInfo.quote[currentWordIndex] ===
+            startedRoomInfo.quote.text[currentWordIndex] ===
                 wordsTyped.slice(currentWordIndex).join(" ")
         ) {
             wordInput = "";

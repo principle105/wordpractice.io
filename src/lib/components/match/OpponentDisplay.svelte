@@ -1,11 +1,11 @@
 <script lang="ts">
     import { onMount } from "svelte";
 
-    import { START_TIME_LENIENCY } from "$lib/config";
     import type { CasualMatchUser, BasicRoomInfoStarted } from "$lib/types";
     import {
         convertReplayToWords,
         getCompletedAndIncorrectWords,
+        getStartTime,
     } from "$lib/utils/textProcessing";
     import { calculateWpm } from "$lib/utils/stats";
 
@@ -18,22 +18,22 @@
 
     $: wordsTyped = convertReplayToWords(
         matchUser.replay,
-        startedRoomInfo.quote
+        startedRoomInfo.quote.text
     );
     $: ({ completedWords } = getCompletedAndIncorrectWords(
         wordsTyped,
-        startedRoomInfo.quote
+        startedRoomInfo.quote.text
     ));
 
     $: finished =
-        completedWords.length === startedRoomInfo.quote.join(" ").length ||
+        completedWords.length === startedRoomInfo.quote.text.join(" ").length ||
         !matchUser.connected;
 
     onMount(() => {
         const interval = setInterval(() => {
-            const startTime = Math.min(
-                matchUser.replay[0]?.timestamp,
-                startedRoomInfo.startTime + START_TIME_LENIENCY
+            const startTime = getStartTime(
+                matchUser.replay,
+                startedRoomInfo.startTime
             );
 
             if (finished) {
@@ -55,6 +55,10 @@
 
         return () => clearInterval(interval);
     });
+
+    $: progressCompletion =
+        (completedWords.length / startedRoomInfo.quote.text.join(" ").length) *
+        100;
 </script>
 
 <tr class="align-middle">
@@ -67,13 +71,13 @@
     </td>
     <td>
         <div
-            class="pl-2 flex {matchUser.connected
+            class="pl-2 flex gap-1 {matchUser.connected
                 ? 'text-black'
                 : 'text-red-500'}"
         >
             <div class="truncate max-w-44">{matchUser.username}</div>
             {#if showRating}
-                <div>({matchUser.rating})</div>
+                <div>[{matchUser.rating}]</div>
             {/if}
         </div>
     </td>
@@ -87,9 +91,7 @@
                 class="h-full transition-all duration-200 rounded-r-lg {matchUser.connected
                     ? 'bg-green-500'
                     : 'bg-red-300'}"
-                style="width: {(completedWords.length /
-                    startedRoomInfo.quote.join(' ').length) *
-                    100}%; transition-timing-function: cubic-bezier(.02, .01, .47, 1);"
+                style="width: {progressCompletion}%; transition-timing-function: cubic-bezier(.02, .01, .47, 1);"
             />
         </div>
     </td>
