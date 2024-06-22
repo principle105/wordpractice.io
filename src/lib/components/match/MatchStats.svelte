@@ -1,56 +1,59 @@
 <script lang="ts">
-    import { START_TIME_LENIENCY } from "$lib/config";
-    import type { Replay, BasicRoomInfoStarted } from "$lib/types";
+    import type { User } from "@prisma/client";
+    import type {
+        BasicRoomInfo,
+        BasicRoomInfoStarted,
+        CasualMatchUser,
+        Round,
+    } from "$lib/types";
 
-    import {
-        convertReplayToWords,
-        getCompletedAndIncorrectWords,
-    } from "$lib/utils/textProcessing";
-    import {
-        calculateWpm,
-        calculateAccuracy,
-        getTotalCorrectAndIncorrectChars,
-    } from "$lib/utils/stats";
+    import RoundStats from "./RoundStats.svelte";
+    import ReplayText from "./ReplayText.svelte";
 
-    export let replay: Replay;
-    export let startedRoomInfo: BasicRoomInfoStarted;
+    export let user: User;
+    export let roomInfo: BasicRoomInfo;
+    export let prevRounds: Round[];
+    export let matchUsers = new Map<string, CasualMatchUser>();
 
-    const getWpm = (): number => {
-        if (replay.length === 0) return 0;
+    let showReplay = false;
+    let roundNumber = 0;
 
-        const startTime = Math.min(
-            replay[0]?.timestamp,
-            startedRoomInfo.startTime + START_TIME_LENIENCY
-        );
+    $: activeRound = prevRounds[roundNumber];
 
-        const wordsTyped = convertReplayToWords(replay, startedRoomInfo.quote);
-        const { completedWords } = getCompletedAndIncorrectWords(
-            wordsTyped,
-            startedRoomInfo.quote
-        );
-
-        return calculateWpm(
-            replay[replay.length - 1]?.timestamp,
-            startTime,
-            completedWords.length
-        );
-    };
-
-    const getAccuracy = (): number => {
-        const { totalCorrectChars, totalIncorrectChars } =
-            getTotalCorrectAndIncorrectChars(replay, startedRoomInfo.quote);
-
-        return calculateAccuracy(totalCorrectChars, totalIncorrectChars);
-    };
+    $: startedRoomInfo = roomInfo as BasicRoomInfoStarted;
+    $: raceStarted = !(roomInfo.startTime === null || roomInfo.quote === null);
 </script>
 
-<section class="flex flex-col">
+{#if activeRound}
     <div>
-        <div>WPM</div>
-        <div>{getWpm()}</div>
+        {#if prevRounds.length > 1}
+            <div class="flex gap-5">
+                {#each prevRounds as _, i}
+                    <button
+                        on:click={() => {
+                            roundNumber = i;
+                        }}
+                        class="underline-offset-[3px] {roundNumber === i
+                            ? 'underline'
+                            : ''}"
+                    >
+                        Round {i + 1}
+                    </button>
+                {/each}
+            </div>
+        {/if}
+
+        <button
+            class="bg-zinc-500 p-3 rounded-md text-white"
+            on:click={() => (showReplay = true)}
+        >
+            Replay
+        </button>
+        {#if raceStarted}
+            <RoundStats round={activeRound} {startedRoomInfo} {user} />
+        {/if}
+        {#if showReplay}
+            <ReplayText round={activeRound} {matchUsers} {user} />
+        {/if}
     </div>
-    <div>
-        <div>Accuracy</div>
-        <div>{getAccuracy()}%</div>
-    </div>
-</section>
+{/if}

@@ -6,10 +6,10 @@ import {
 
 export const getTotalCorrectAndIncorrectChars = (
     replay: Replay,
-    quote: string[]
+    text: string[]
 ) => {
-    const wordsTyped = convertReplayToWords(replay, quote);
-    const { completedWords } = getCompletedAndIncorrectWords(wordsTyped, quote);
+    const wordsTyped = convertReplayToWords(replay, text);
+    const { completedWords } = getCompletedAndIncorrectWords(wordsTyped, text);
 
     const totalCorrectChars = completedWords.length;
 
@@ -20,12 +20,12 @@ export const getTotalCorrectAndIncorrectChars = (
         if (action.type === "character") {
             const wordsTyped = convertReplayToWords(
                 replay.slice(0, i + 1),
-                quote
+                text
             );
 
             const { incorrectChars } = getCompletedAndIncorrectWords(
                 wordsTyped,
-                quote
+                text
             );
 
             const newIncorrectChars = incorrectChars - prevIncorrectChars;
@@ -51,7 +51,7 @@ export const calculateAccuracy = (
         return 0;
     }
 
-    return Math.round((totalCorrectChars / totalChars) * 100);
+    return Math.round((totalCorrectChars / totalChars) * 100 * 10) / 10;
 };
 
 export const calculateWpm = (

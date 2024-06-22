@@ -10,15 +10,16 @@
         Replay,
         BasicRoomInfo,
         NewActionPayload,
+        Replays,
     } from "$lib/types";
     import { matchType } from "$lib/stores/matchType";
-    import { BASE_FONT_SIZE } from "$lib/config";
 
     import OpponentDisplay from "$lib/components/match/OpponentDisplay.svelte";
     import WordDisplay from "$lib/components/match/WordDisplay.svelte";
     import TestInput from "$lib/components/match/TestInput.svelte";
     import MatchContainer from "$lib/components/layout/MatchContainer.svelte";
     import EndScreen from "$lib/components/match/EndScreen.svelte";
+    import MatchStats from "$lib/components/match/MatchStats.svelte";
 
     export let user: User;
     export let roomInfo: BasicRoomInfo | null;
@@ -27,8 +28,6 @@
     export let started: boolean;
     export let socket: Socket;
     export let finished: boolean;
-
-    const fontSize: number = user.fontScale * BASE_FONT_SIZE;
 
     socket.on("user-disconnect", (userId: string) => {
         let disconnectedUser = matchUsers.get(userId);
@@ -111,6 +110,21 @@
         connected: true,
         replay,
     } satisfies CasualMatchUser;
+
+    const getReplays = (
+        matchUsers: Map<string, CasualMatchUser>,
+        replay: Replay
+    ): Replays => {
+        const replays: Replays = {};
+
+        for (const [matchUserId, matchUser] of matchUsers.entries()) {
+            replays[matchUserId] = matchUser.replay;
+        }
+
+        replays[user.id] = replay;
+
+        return replays;
+    };
 </script>
 
 <svelte:head>
@@ -118,7 +132,7 @@
 </svelte:head>
 
 <MatchContainer {finished} {started} {roomInfo}>
-    <div slot="racers" class="flex flex-col gap-3" let:startedRoomInfo>
+    <div slot="racers" let:startedRoomInfo>
         <OpponentDisplay
             matchUser={clientMatchUser}
             {startedRoomInfo}
@@ -131,7 +145,27 @@
 
     <div slot="end-screen">
         {#if roomInfo !== null}
-            <EndScreen {user} {roomInfo} replays={{ replay }} />
+            <EndScreen>
+                <div slot="overview">
+                    <div>Casual Match</div>
+                </div>
+                <div slot="stats">
+                    {#if roomInfo.quote !== null && roomInfo.startTime !== null}
+                        <MatchStats
+                            {user}
+                            {roomInfo}
+                            {matchUsers}
+                            prevRounds={[
+                                {
+                                    quote: roomInfo.quote,
+                                    replays: { [user.id]: replay },
+                                    startTime: roomInfo.startTime,
+                                },
+                            ]}
+                        />
+                    {/if}
+                </div>
+            </EndScreen>
         {/if}
 
         <button
@@ -145,10 +179,13 @@
     <WordDisplay
         slot="word-display"
         let:startedRoomInfo
-        {fontSize}
-        matchUsers={Array.from(matchUsers.values())}
-        {replay}
-        {startedRoomInfo}
+        {matchUsers}
+        round={{
+            quote: startedRoomInfo.quote,
+            startTime: startedRoomInfo.startTime,
+            replays: getReplays(matchUsers, replay),
+        }}
+        {user}
     />
 
     <TestInput

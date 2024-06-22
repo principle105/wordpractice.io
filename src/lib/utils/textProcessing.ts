@@ -1,12 +1,13 @@
+import { START_TIME_LENIENCY } from "../config";
 import type { Replay } from "../types";
 
 export const convertReplayToWords = (
     replay: Replay,
-    quote: string[]
+    text: string[]
 ): string[] => {
     const correctWords: string[] = [];
 
-    let quoteWordIndex = 0;
+    let textWordIndex = 0;
     let currentWord = "";
 
     let cursorIndex = 0;
@@ -26,10 +27,10 @@ export const convertReplayToWords = (
             continue;
         }
 
-        const word = quote[quoteWordIndex];
+        const word = text[textWordIndex];
 
         if (action.letter === " " && currentWord === word) {
-            quoteWordIndex++;
+            textWordIndex++;
             correctWords.push(currentWord);
             currentWord = "";
             cursorIndex = 0;
@@ -52,13 +53,13 @@ export const convertReplayToWords = (
 
 export const getCompletedAndIncorrectWords = (
     wordsTyped: string[],
-    quote: string[]
+    text: string[]
 ) => {
     const completedWords: string[] = [];
 
     let i = 0;
 
-    for (const word of quote) {
+    for (const word of text) {
         if (i > wordsTyped.length - 1) {
             break;
         }
@@ -102,4 +103,42 @@ export const getCaretData = (replay: Replay) => {
     }
 
     return latestAction;
+};
+
+export const getStartTime = (replay: Replay, startTime: number) => {
+    const maxStartTime = startTime + START_TIME_LENIENCY;
+
+    if (replay.length === 0) {
+        return maxStartTime;
+    }
+
+    return Math.min(replay[0]?.timestamp, maxStartTime);
+};
+
+export const findRemovedSlice = (
+    wordBefore: string,
+    wordAfter: string,
+    newChar: string | null,
+    cursorPosition: number
+): [number, number] | null => {
+    if (newChar !== null) {
+        wordAfter =
+            wordAfter.slice(0, cursorPosition - 1) +
+            wordAfter.slice(cursorPosition);
+    }
+
+    let i = 0;
+
+    while (i < wordBefore.length && i < wordAfter.length) {
+        if (wordBefore[i] !== wordAfter[i]) {
+            break;
+        }
+        i++;
+    }
+
+    if (i === wordBefore.length) {
+        return null;
+    }
+
+    return [i, i + (wordBefore.length - wordAfter.length)];
 };

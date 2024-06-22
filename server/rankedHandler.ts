@@ -6,6 +6,7 @@ import type {
     TextCategory,
     RankedRoomPayload,
     UserProfile,
+    Round,
 } from "../src/lib/types";
 
 import { client } from "../src/lib/server/auth/clients";
@@ -13,13 +14,13 @@ import { calculateWpm } from "../src/lib/utils/stats";
 import {
     getCompletedAndIncorrectWords,
     convertReplayToWords,
+    getStartTime,
 } from "../src/lib/utils/textProcessing";
 import { rankedQueue, rankedRooms } from "./state";
-import { START_TIME_LENIENCY } from "../src/lib/config";
-import { getQuoteFromCategory } from "../data/utils";
+import { BEST_OF } from "../src/lib/config";
+import { getRandomQuoteFromCategory } from "../data/utils";
 import { textCategories } from "../src/lib/constants";
 
-const BEST_OF = 3;
 const COUNTDOWN_TIME = 6 * 1000;
 
 const K_FACTOR = 32;
@@ -73,15 +74,16 @@ const handleTextCategorySelection = async (
     room: RankedRoom,
     textCategory: TextCategory
 ) => {
-    const quote = await getQuoteFromCategory(textCategory);
+    const quote = await getRandomQuoteFromCategory(textCategory);
 
     if (!quote) {
         socket.emit("error", "Something went wrong, please try again");
         return;
     }
 
-    room.quote = quote.text.split(" ");
+    room.quote = quote;
     room.startTime = Date.now() + COUNTDOWN_TIME;
+    room.quoteSelectionDecisionEndTime = null;
 
     rankedRooms.set(room.id, room);
 
@@ -110,47 +112,47 @@ export const handleIfRankedMatchOver = async (
     }
 
     if (!matchWinner) {
-        const quote = room.quote;
+        if (!room.quote) return;
 
-        if (!quote) return;
+        const text = room.quote.text;
 
         const { completedWords: user1CompletedWords } =
             getCompletedAndIncorrectWords(
-                convertReplayToWords(user1.replay, quote),
-                quote
+                convertReplayToWords(user1.replay, text),
+                text
             );
 
         const { completedWords: user2CompletedWords } =
             getCompletedAndIncorrectWords(
-                convertReplayToWords(user2.replay, quote),
-                quote
+                convertReplayToWords(user2.replay, text),
+                text
             );
 
-        const quoteLength = quote.join(" ").length;
+        const textLength = text.join(" ").length;
 
         if (
-            user1CompletedWords.length === quoteLength &&
-            user2CompletedWords.length !== quoteLength
+            user1CompletedWords.length === textLength &&
+            user2CompletedWords.length !== textLength
         ) {
             user1.score += 1;
         } else if (
-            user2CompletedWords.length === quoteLength &&
-            user1CompletedWords.length !== quoteLength
+            user2CompletedWords.length === textLength &&
+            user1CompletedWords.length !== textLength
         ) {
             user2.score += 1;
         } else {
             // Check if neither are finished and the force flag is not set
-            if (user1CompletedWords.length !== quoteLength && !force) return;
+            if (user1CompletedWords.length !== textLength && !force) return;
 
             // If both are finished
-            const user1StartTime = Math.min(
-                user1.replay[0]?.timestamp,
-                (room.startTime as number) + START_TIME_LENIENCY
+            const user1StartTime = getStartTime(
+                user1.replay,
+                room.startTime as number
             );
 
-            const user2StartTime = Math.min(
-                user2.replay[0]?.timestamp,
-                (room.startTime as number) + START_TIME_LENIENCY
+            const user2StartTime = getStartTime(
+                user2.replay,
+                room.startTime as number
             );
 
             const user1Wpm = calculateWpm(
@@ -181,6 +183,16 @@ export const handleIfRankedMatchOver = async (
         }
     }
 
+    if (room.quote !== null && room.startTime !== null) {
+        const round: Round = {
+            quote: room.quote,
+            replays: { [user1.id]: user1.replay, [user2.id]: user2.replay },
+            startTime: room.startTime,
+        };
+
+        room.prevRounds.push(round);
+    }
+
     // If the match is not entirely over (i.e moving to the next round)
     if (matchWinner === null) {
         // Resetting the replays
@@ -200,6 +212,8 @@ export const handleIfRankedMatchOver = async (
         socket.broadcast
             .to(room.id)
             .emit("ranked:update-room-info", getRankedRoomPayload(room));
+
+        doBlacklistAutoSelectionTimeout(room, socket);
 
         return;
     }
@@ -261,7 +275,66 @@ export const handleIfRankedMatchOver = async (
     }
 };
 
-const registerRankedHandler = (socket: Socket, userProfile: UserProfile) => {
+const doQuoteAutoSelectionTimeout = (room: RankedRoom, socket: Socket) => {
+    const roundNumber = room.prevRounds.length + 1;
+
+    setTimeout(async () => {
+        const newRoundNumber = room.prevRounds.length + 1;
+
+        if (
+            room.quoteSelectionDecisionEndTime === null ||
+            roundNumber !== newRoundNumber
+        )
+            return;
+
+        const nonEliminatedTextCategories = Object.values(
+            textCategories
+        ).filter(
+            (category) => !room.blacklistedTextCategories.includes(category)
+        );
+        const randomCategory =
+            nonEliminatedTextCategories[
+                Math.floor(Math.random() * nonEliminatedTextCategories.length)
+            ];
+
+        await handleTextCategorySelection(socket, room, randomCategory);
+    }, MAX_DECISION_MAKING_TIME);
+};
+
+const doBlacklistAutoSelectionTimeout = (room: RankedRoom, socket: Socket) => {
+    const roundNumber = room.prevRounds.length + 1;
+
+    setTimeout(async () => {
+        const newRoundNumber = room.prevRounds.length + 1;
+
+        // Check if the user has already eliminated a category
+        if (
+            room.blacklistDecisionEndTime === null ||
+            roundNumber !== newRoundNumber
+        )
+            return;
+
+        const nonEliminatedTextCategories = Object.values(
+            textCategories
+        ).filter(
+            (category) => !room.blacklistedTextCategories.includes(category)
+        );
+
+        const randomCategory =
+            nonEliminatedTextCategories[
+                Math.floor(Math.random() * nonEliminatedTextCategories.length)
+            ];
+
+        doQuoteAutoSelectionTimeout(room, socket);
+
+        handleTextCategoryElimination(socket, room, randomCategory);
+    }, MAX_DECISION_MAKING_TIME);
+};
+
+const registerRankedHandler = async (
+    socket: Socket,
+    userProfile: UserProfile
+) => {
     const user: RankedMatchUser = {
         ...userProfile,
         replay: [],
@@ -332,6 +405,7 @@ const registerRankedHandler = (socket: Socket, userProfile: UserProfile) => {
                 firstUserToBlacklist,
                 blacklistDecisionEndTime: Date.now() + MAX_DECISION_MAKING_TIME,
                 quoteSelectionDecisionEndTime: null,
+                prevRounds: [],
             };
 
             // Removing the users from the queue
@@ -359,26 +433,7 @@ const registerRankedHandler = (socket: Socket, userProfile: UserProfile) => {
                 .to(roomId)
                 .emit("ranked:new-room-info", getRankedRoomPayload(room));
 
-            setTimeout(() => {
-                // Check if the user has already eliminated a category
-                if (room.blacklistDecisionEndTime === null) return;
-
-                const nonEliminatedTextCategories = Object.values(
-                    textCategories
-                ).filter(
-                    (category) =>
-                        !room.blacklistedTextCategories.includes(category)
-                );
-
-                const randomCategory =
-                    nonEliminatedTextCategories[
-                        Math.floor(
-                            Math.random() * nonEliminatedTextCategories.length
-                        )
-                    ];
-
-                handleTextCategoryElimination(socket, room, randomCategory);
-            }, MAX_DECISION_MAKING_TIME);
+            doBlacklistAutoSelectionTimeout(room, socket);
 
             break;
         }
@@ -414,12 +469,7 @@ const registerRankedHandler = (socket: Socket, userProfile: UserProfile) => {
             return;
         }
 
-        // TODO: create a util for this
-        const roundNumber =
-            Object.values(room.users).reduce(
-                (acc, curr) => acc + curr.score,
-                0
-            ) + 1;
+        const roundNumber = room.prevRounds.length + 1;
 
         // Check if it's the user's turn to blacklist
         if (
@@ -435,24 +485,7 @@ const registerRankedHandler = (socket: Socket, userProfile: UserProfile) => {
             return;
         }
 
-        setTimeout(async () => {
-            if (room.quoteSelectionDecisionEndTime) return;
-
-            const nonEliminatedTextCategories = Object.values(
-                textCategories
-            ).filter(
-                (category) => !room.blacklistedTextCategories.includes(category)
-            );
-
-            const randomCategory =
-                nonEliminatedTextCategories[
-                    Math.floor(
-                        Math.random() * nonEliminatedTextCategories.length
-                    )
-                ];
-
-            await handleTextCategorySelection(socket, room, randomCategory);
-        }, MAX_DECISION_MAKING_TIME);
+        doQuoteAutoSelectionTimeout(room, socket);
 
         handleTextCategoryElimination(socket, room, textCategory);
     });
@@ -484,11 +517,7 @@ const registerRankedHandler = (socket: Socket, userProfile: UserProfile) => {
             return;
         }
 
-        const roundNumber =
-            Object.values(room.users).reduce(
-                (acc, curr) => acc + curr.score,
-                0
-            ) + 1;
+        const roundNumber = room.prevRounds.length + 1;
 
         // Check if the other user has not already blacklisted a category
         if (room.blacklistedTextCategories.length !== roundNumber) {
