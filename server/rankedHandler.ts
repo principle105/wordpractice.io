@@ -21,12 +21,12 @@ import { BEST_OF } from "../src/lib/config";
 import { getRandomQuoteFromCategory } from "../data/utils";
 import { textCategories } from "../src/lib/constants";
 
-const COUNTDOWN_TIME = 6 * 1000;
+const COUNTDOWN_TIME = 5 * 1000;
 
 const K_FACTOR = 32;
 
 const RATING_SEARCH_STEP = 100;
-const BASE_SEARCHING_TIME_PER_STEP = 1; // seconds
+const BASE_SEARCHING_TIME_PER_STEP = 10; // seconds
 const SEARCHING_TIME_STEP_MULTIPLIER = 1.5;
 
 const MAX_DECISION_MAKING_TIME = 20 * 1000;
