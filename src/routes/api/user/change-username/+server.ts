@@ -11,11 +11,11 @@ export const POST: RequestHandler = async ({ locals, url }) => {
     const newUsername = url.searchParams.get("newUsername");
 
     if (!newUsername) {
-        throw error(400, "No new username provided");
+        throw error(400, "Blank username");
     }
 
     if (locals.user.pickedInitalUsername) {
-        throw error(400, "Username already picked");
+        throw error(400, "You've already picked a username");
     }
 
     const errorWithUsername = findErrorWithUsername(newUsername);

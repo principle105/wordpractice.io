@@ -1,3 +1,7 @@
+// Validation
+export const MAX_USERNAME_LENGTH = 16;
+export const MIN_USERNAME_LENGTH = 3;
+
 // User
 export const DEFAULT_FONT_SCALE = 1;
 export const DEFAULT_RATING = 600;

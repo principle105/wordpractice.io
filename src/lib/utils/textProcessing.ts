@@ -43,7 +43,7 @@ export const convertReplayToWords = (
             action.letter +
             currentWord.slice(cursorIndex);
 
-        cursorIndex += 1;
+        cursorIndex++;
     }
 
     correctWords.push(currentWord);
