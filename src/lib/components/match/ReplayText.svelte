@@ -35,6 +35,13 @@
 
     $: round, (replays = getNewReplays());
 
+    onDestroy(() => {
+        if (animationFrameId === null) return;
+
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+    });
+
     const getNewReplays = () => {
         return Object.fromEntries(
             Object.keys(round.replays).map((userId) => [userId, []])
@@ -127,19 +134,13 @@
             );
         }
 
+        // Stopping the animatoin if all the replays are finished
         if (replaysFinished === Object.keys(replays).length) {
             return;
         }
 
         animationFrameId = requestAnimationFrame(play);
     };
-
-    onDestroy(() => {
-        if (animationFrameId === null) return;
-
-        cancelAnimationFrame(animationFrameId);
-        animationFrameId = null;
-    });
 
     const reset = () => {
         stop();

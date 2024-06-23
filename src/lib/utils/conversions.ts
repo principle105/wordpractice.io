@@ -20,3 +20,10 @@ export const textCategoryToName = (
 
     return null;
 };
+
+export const secondsToMinutesAndSeconds = (seconds: number): string => {
+    const minDisplay = String(Math.floor(seconds / 60)).padStart(2, "0");
+    const secDisplay = String(seconds % 60).padStart(2, "0");
+
+    return `${minDisplay}:${secDisplay}`;
+};

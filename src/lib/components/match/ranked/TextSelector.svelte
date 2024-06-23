@@ -4,13 +4,13 @@
     import type { TextCategory } from "$lib/types";
     import { textCategories } from "$lib/constants";
 
-    const dispatch = createEventDispatcher<{
-        selection: TextCategory;
-    }>();
-
     export let blacklist: TextCategory[] = [];
     export let quoteSelectionDecisionEndTime: number | null = null;
     export let currentTime: number;
+
+    const dispatch = createEventDispatcher<{
+        selection: TextCategory;
+    }>();
 
     let selection: TextCategory | null = null;
 
@@ -43,8 +43,8 @@
         {@const isCategoryBlacklisted = blacklist.includes(textCategory)}
 
         <button
-            class="border bg-zinc-100 p-5 text-center rounded-lg disabled:opacity-30 {isCategorySelected &&
-                'border-emerald-400'}"
+            class="border bg-zinc-100 p-5 text-center rounded-lg disabled:opacity-30"
+            class:border-emerald-400={isCategorySelected}
             disabled={isCategoryBlacklisted}
             on:click={() => makeSelection(textCategory)}
         >

@@ -114,16 +114,23 @@
             const selectionStart = inputElement.selectionStart;
             const selectionEnd = inputElement.selectionEnd;
 
+            // Checking if there is any selection data
+            if (selectionStart === null || selectionEnd === null) return;
+
             // Checking if the caret is at the end of the word and not selecting
             if (
-                selectionStart === null ||
-                selectionEnd === null ||
-                (selectionEnd === selectionStart &&
-                    selectionEnd === wordInput.length &&
-                    !(replay[replay.length - 1]?.type === "caret"))
-            ) {
+                selectionEnd === selectionStart &&
+                selectionEnd === wordInput.length &&
+                !(replay[replay.length - 1]?.type === "caret")
+            )
                 return;
-            }
+
+            // Checking if the selections are greater than the word length
+            if (
+                selectionStart > wordInput.length ||
+                selectionEnd > wordInput.length
+            )
+                return;
 
             replay.push({
                 type: "caret",

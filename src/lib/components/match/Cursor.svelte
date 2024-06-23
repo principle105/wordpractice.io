@@ -17,6 +17,7 @@
     export let replay: Replay;
     export let text: string[];
     export let wrapperElement: HTMLElement | null;
+
     export let username: string | null = null;
     export let clientUserLastIndex: number | null = null;
 
@@ -26,6 +27,7 @@
     let leftPos = 0;
     let highlightWidth = 0;
 
+    // The left and top position are stored for each word to prevent unnecessary calculations
     let lastWordPositions: [number, number] = [0, 0];
 
     let currentTime: number = Date.now();
@@ -40,7 +42,6 @@
 
     const cursorSize = fontSize * 0.1;
 
-    // TODO: Fix correcting a word in the middle
     const updatePositioning = (replay: Replay) => {
         if (wrapperElement === null) return;
 
@@ -193,13 +194,11 @@
         Math.abs(lastWordIndex - clientUserLastIndex) <= 4;
 </script>
 
-<svelte:window on:resize={handleResize} />
-
 <!-- Source of Cubic Bezier: https://stackoverflow.com/questions/9245030/looking-for-a-swing-like-easing-expressible-both-with-jquery-and-css3 -->
 <div
-    class="absolute {isCloseToClient
+    class="absolute transition-all duration-1000 {isCloseToClient
         ? 'opacity-100 z-50'
-        : 'opacity-30 -z-50'} transition-all duration-1000"
+        : 'opacity-30 -z-50'}"
     style="top: {getTopPos(topPos) +
         fontSize *
             0.125}px; left: {leftPos}px; transition: left 100ms cubic-bezier(.02, .01, .47, 1);"
