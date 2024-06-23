@@ -22,3 +22,11 @@ export const getRedirectURLFromState = (state: string) => {
 
     return decoded.slice(10);
 };
+
+export const generateRandomString = (length: number) => {
+    return String(
+        Math.floor(Math.random() * Math.pow(10, length))
+            .toString()
+            .padStart(length, "0")
+    );
+};

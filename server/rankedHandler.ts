@@ -105,10 +105,10 @@ export const handleIfRankedMatchOver = async (
 
     if (!user1.connected) {
         matchWinner = user2.id;
-        user2.score += 1;
+        user2.score++;
     } else if (!user2.connected) {
         matchWinner = user1.id;
-        user1.score += 1;
+        user1.score++;
     }
 
     if (!matchWinner) {
@@ -134,12 +134,12 @@ export const handleIfRankedMatchOver = async (
             user1CompletedWords.length === textLength &&
             user2CompletedWords.length !== textLength
         ) {
-            user1.score += 1;
+            user1.score++;
         } else if (
             user2CompletedWords.length === textLength &&
             user1CompletedWords.length !== textLength
         ) {
-            user2.score += 1;
+            user2.score++;
         } else {
             // Check if neither are finished and the force flag is not set
             if (user1CompletedWords.length !== textLength && !force) return;
@@ -168,9 +168,9 @@ export const handleIfRankedMatchOver = async (
             );
 
             if (user1Wpm > user2Wpm) {
-                user1.score += 1;
+                user1.score++;
             } else {
-                user2.score += 1;
+                user2.score++;
             }
         }
 

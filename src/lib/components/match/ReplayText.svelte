@@ -81,7 +81,7 @@
             );
 
             if (matchUserActionIndex === null) {
-                replaysFinished += 1;
+                replaysFinished++;
                 continue;
             }
 

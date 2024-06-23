@@ -5,6 +5,7 @@
     import { findErrorWithUsername } from "$lib/utils/validation";
 
     import Modal from "$lib/components/misc/Modal.svelte";
+    import { MAX_USERNAME_LENGTH, MIN_USERNAME_LENGTH } from "$lib/config";
 
     export let user: User;
 
@@ -31,6 +32,14 @@
         if (res.ok) {
             user.pickedInitalUsername = true;
             user.username = newUsername;
+            return;
+        }
+
+        try {
+            const { message } = await res.json();
+            toast.error(message);
+        } catch (error) {
+            toast.error("Something went wrong while changing your username.");
         }
     };
 </script>
@@ -38,14 +47,14 @@
 <Modal isOpen={!user.pickedInitalUsername}>
     <h1 class="text-2xl text-center">Select Username</h1>
     <div>
-        Usernames must be between 6 and 20 characters. Only letters, numbers and
-        underscores are allowed.
+        Usernames must be between {MIN_USERNAME_LENGTH} and {MAX_USERNAME_LENGTH}
+        characters. Only letters, numbers and underscores are allowed.
     </div>
     <div>Keep in mind that you can only change your username once.</div>
     <input
         type="text"
         class="w-full p-3 outline-none border-zinc-500 border rounded-md mb-2"
-        maxlength="20"
+        maxlength={MAX_USERNAME_LENGTH}
         placeholder={user.username}
         bind:value={newUsername}
     />

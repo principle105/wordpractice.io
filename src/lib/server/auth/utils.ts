@@ -1,33 +1,46 @@
-import { DEFAULT_FONT_SCALE, DEFAULT_RATING } from "$lib/config";
+import {
+    DEFAULT_FONT_SCALE,
+    DEFAULT_RATING,
+    MAX_USERNAME_LENGTH,
+} from "$lib/config";
 import type { Provider } from "$lib/types";
+import { generateRandomString } from "$lib/utils/random";
 
 import { client } from "./clients";
 
-export const generateUsername = async (oAuthName: string) => {
+const MAX_ATTEMPTS_TO_GENERATE_USERNAME = 15;
+const RANDOM_NUMBER_LENGTH = 4;
+
+export const generateDefaultUsername = async (oAuthName: string) => {
     // Setting the username to lowercase and removing all characters that are not letters, numbers and/or underscores
     let username = oAuthName.toLowerCase().replace(/[^a-z0-9_]/g, "");
 
-    if (username.length > 12) {
-        username = username.slice(0, 12);
+    if (username.length > MAX_USERNAME_LENGTH) {
+        username = username.slice(0, MAX_USERNAME_LENGTH);
     }
 
-    const isUsernameAvailable = await client.user.findUnique({
+    const isUsernameTaken = await client.user.findUnique({
         where: {
             username,
         },
     });
 
-    if (!isUsernameAvailable) {
+    if (!isUsernameTaken) {
         return username;
     }
 
-    let uniqueUsername = "";
-    let isUnique = false;
+    // Slicing the username to allow for the random number to be appended
+    username = username.slice(
+        0,
+        MAX_USERNAME_LENGTH - RANDOM_NUMBER_LENGTH - 1
+    );
 
-    while (!isUnique) {
-        const random = Math.floor(Math.random() * 10000)
-            .toString()
-            .padStart(4, "0");
+    let uniqueUsername: string | null = null;
+    let usernameGenerationAttempts = 0;
+
+    while (uniqueUsername === null) {
+        const random = generateRandomString(RANDOM_NUMBER_LENGTH);
+
         uniqueUsername = `${username}-${random}`;
 
         const existingUser = await client.user.findUnique({
@@ -36,12 +49,27 @@ export const generateUsername = async (oAuthName: string) => {
             },
         });
 
-        if (!existingUser) {
-            isUnique = true;
+        if (!existingUser) continue;
+
+        usernameGenerationAttempts++;
+
+        // Generating a completely random username if the username generation attempts exceeds the limit
+        if (usernameGenerationAttempts >= MAX_ATTEMPTS_TO_GENERATE_USERNAME) {
+            uniqueUsername = generateRandomString(MAX_USERNAME_LENGTH);
         }
     }
 
     return uniqueUsername;
+};
+
+export const checkUsernameAvailability = async (username: string) => {
+    const existingUser = await client.user.findUnique({
+        where: {
+            username,
+        },
+    });
+
+    return !existingUser;
 };
 
 interface UserAttributes {
@@ -61,7 +89,7 @@ export const getExistingOrCreateNewUser = async (
     });
 
     if (!existingUser) {
-        const username = await generateUsername(userAttributes.name);
+        const username = await generateDefaultUsername(userAttributes.name);
 
         return await client.user.create({
             data: {
