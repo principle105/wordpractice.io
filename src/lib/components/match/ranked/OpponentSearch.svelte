@@ -1,7 +1,8 @@
 <script lang="ts">
-    import { onDestroy, onMount } from "svelte";
+    import { onMount } from "svelte";
 
     import { matchType } from "$lib/stores/matchType";
+    import { secondsToMinutesAndSeconds } from "$lib/utils/conversions";
 
     export let minSearchRating: number;
     export let maxSearchRating: number;
@@ -13,16 +14,11 @@
         interval = setInterval(() => {
             startSearchTime++;
         }, 1000);
+
+        return () => clearInterval(interval);
     });
 
-    onDestroy(() => {
-        clearInterval(interval);
-    });
-
-    $: timeDisplay = `${String(Math.floor(startSearchTime / 60)).padStart(
-        2,
-        "0"
-    )}:${String(startSearchTime % 60).padStart(2, "0")}`;
+    $: timeDisplay = secondsToMinutesAndSeconds(startSearchTime);
 </script>
 
 <div class="max-w-screen-lg mx-auto h-full flex flex-col items-center">
@@ -38,9 +34,7 @@
 
     <button
         class="bg-red-500 p-3 rounded-md text-white"
-        on:click={() => {
-            matchType.set(null);
-        }}
+        on:click={() => matchType.set(null)}
     >
         Cancel
     </button>

@@ -12,7 +12,7 @@
 </div>
 
 {#if pageIndex === 0}
-    <slot name="overview" {pageIndex} />
+    <slot name="overview" />
 {:else if pageIndex === 1}
-    <slot name="stats" {pageIndex} />
+    <slot name="stats" />
 {/if}

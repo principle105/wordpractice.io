@@ -30,3 +30,17 @@ To start the development server, run
 ```shell
 pnpm run dev
 ```
+
+## Production
+
+To build the project for production, run
+
+```shell
+pnpm run build
+```
+
+To start the production server, run
+
+```shell
+pnpm start
+```

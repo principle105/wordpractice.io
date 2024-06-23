@@ -21,7 +21,6 @@
     $: activeRound = prevRounds[roundNumber];
 
     $: startedRoomInfo = roomInfo as BasicRoomInfoStarted;
-    $: raceStarted = !(roomInfo.startTime === null || roomInfo.quote === null);
 </script>
 
 {#if activeRound}
@@ -49,9 +48,12 @@
         >
             Replay
         </button>
-        {#if raceStarted}
+
+        <!-- Checking if the race started -->
+        {#if !(roomInfo.startTime === null || roomInfo.quote === null)}
             <RoundStats round={activeRound} {startedRoomInfo} {user} />
         {/if}
+
         {#if showReplay}
             <ReplayText round={activeRound} {matchUsers} {user} />
         {/if}
