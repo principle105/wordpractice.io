@@ -11,14 +11,14 @@
 
 ### Setup
 
-1. Install [Node.js 20.x.x](https://nodejs.org/en) and [PNPM](https://pnpm.io/installation)
+1. Install [Node.js 20.x.x](https://nodejs.org/en)
 2. Clone the repository locally.
     ```shell
     git clone https://github.com/principle105/wordpractice.io
     ```
 3. Install the dependencies.
     ```shell
-    pnpm i
+    npm install
     ```
 4. Create a `.env` file in the root directory of the repository.
 5. Copy the content from `.env.example` into `.env` and fill it with the necessary information.
@@ -28,19 +28,5 @@
 To start the development server, run
 
 ```shell
-pnpm run dev
-```
-
-## Production
-
-To build the project for production, run
-
-```shell
-pnpm run build
-```
-
-To start the production server, run
-
-```shell
-pnpm start
+npm run dev
 ```
