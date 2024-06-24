@@ -44,7 +44,7 @@
 <div class="grid min-h-screen" style="grid-template-rows: auto 1fr auto;">
     <header class="flex justify-between items-center px-20 py-10 z-50">
         <nav class="flex gap-12 items-center">
-            <h3 class="text-3xl">WordPractice</h3>
+            <h3 class="text-3xl">WordPractice hi</h3>
             <a href="/" on:click={exitActiveMatch}>Play</a>
             <a href="/leaderboards">Leaderboards</a>
         </nav>
