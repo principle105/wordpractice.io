@@ -7,17 +7,6 @@ on:
 jobs:
     lint:
         runs-on: ubuntu-latest
-        services:
-            mongodb:
-                image: prismagraphql/mongo-single-replica:4.4.3-bionic
-                env:
-                    MONGO_INITDB_ROOT_USERNAME: root
-                    MONGO_INITDB_ROOT_PASSWORD: prisma
-                ports:
-                    - 27017:27017
-
-        env:
-            MONGODB_CONNECTION_URI: mongodb://root:prisma@localhost:27017/prisma-mongo?authSource=admin&retryWrites=true&w=majority
 
         steps:
             - name: Checkout
@@ -28,35 +17,14 @@ jobs:
               with:
                   node-version: 20.x
 
-            - name: Install pnpm
-              uses: pnpm/action-setup@v2
-              id: pnpm-install
-              with:
-                  version: 8
-                  run_install: false
-
-            - name: Get pnpm store directory
-              id: pnpm-cache
-              shell: bash
-              run: |
-                  echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-
-            - uses: actions/cache@v3
-              name: Setup pnpm cache
-              with:
-                  path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-                  key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-                  restore-keys: |
-                      ${{ runner.os }}-pnpm-store-
-
             - name: Install dependencies
-              run: pnpm install
+              run: npm install
 
             - name: Generating prisma client
-              run: pnpm prisma generate
+              run: npx prisma generate
 
             - name: Check
-              run: pnpm run check
+              run: npm run check
 
             - name: Lint
-              run: pnpm run lint
+              run: npm run lint
