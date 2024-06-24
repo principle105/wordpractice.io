@@ -14,6 +14,15 @@ jobs:
             matrix:
                 node-version: [20.x]
 
+        env:
+            BASE_URL: ${{ secrets.BASE_URL }}
+            MONGODB_CONNECTION_URI: ${{ secrets.MONGODB_CONNECTION_URI }}
+            GH_CLIENT_ID: ${{ secrets.GH_CLIENT_ID }}
+            DISCORD_CLIENT_ID: ${{ secrets.DISCORD_CLIENT_ID }}
+            DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }}
+            GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+            GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+
         steps:
             - uses: actions/checkout@v4
             - name: Use Node.js ${{ matrix.node-version }}
@@ -22,5 +31,14 @@ jobs:
                   node-version: ${{ matrix.node-version }}
                   cache: "npm"
 
-            - run: npm ci
-            - run: npm run build
+            - name: Install Dependencies
+              run: npm ci
+
+            - name: Build
+              run: npm run build
+
+            - name: Change Directory
+              run: cd /home/principle105/actions-runner/_work/wordpractice.io/wordpractice.io
+
+            - name: Restart PM2
+              run: pm2 restart 0
