@@ -38,8 +38,8 @@ export const lucia = new Lucia(adapter, {
 const BASE_URL = process.env.BASE_URL as string;
 
 export const github = new GitHub(
-    process.env.GITHUB_CLIENT_ID as string,
-    process.env.GITHUB_CLIENT_SECRET as string,
+    process.env.GH_CLIENT_ID as string,
+    process.env.GH_CLIENT_SECRET as string,
     {
         redirectURI: `${BASE_URL}/api/oauth/github/redirect`,
     }
