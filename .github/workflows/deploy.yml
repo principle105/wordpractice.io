@@ -36,7 +36,6 @@ jobs:
               run: |
                   touch .env
                   echo BASE_URL=${{ secrets.BASE_URL }} >> .env
-                  echo BASE_URL=${{ secrets.BASE_URL }} >> .env
                   echo MONGODB_CONNECTION_URI=${{ secrets.MONGODB_CONNECTION_URI }} >> .env
                   echo GH_CLIENT_ID=${{ secrets.GH_CLIENT_ID }} >> .env
                   echo GH_CLIENT_SECRET=${{ secrets.GH_CLIENT_SECRET }} >> .env
@@ -47,5 +46,8 @@ jobs:
         needs: [build, create-envfile]
 
         steps:
-            - name: Reload PM2
-              run: pm2 reload all
+            - name: Restart PM2
+              run: |
+                  pm2 stop ecosystem.config.cjs
+                  pm2 start ecosystem.config.cjs
+                  pm2 save
