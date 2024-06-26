@@ -61,4 +61,5 @@ jobs:
 
         steps:
             - name: Reload PM2
-              run: env $(cat .env | grep -v \"#\" | xargs) pm2 startOrReload ecosystem.config.cjs --update-env
+              run: |
+                  env BASE_URL: ${{ secrets.BASE_URL }} MONGODB_CONNECTION_URI: ${{ secrets.MONGODB_CONNECTION_URI }} GH_CLIENT_ID: ${{ secrets.GH_CLIENT_ID }} GH_CLIENT_SECRET: ${{ secrets.GH_CLIENT_SECRET }} DISCORD_CLIENT_ID: ${{ secrets.DISCORD_CLIENT_ID }} DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }} GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }} GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }} pm2 startOrReload ecosystem.config.cjs --update-env
