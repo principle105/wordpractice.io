@@ -51,4 +51,4 @@ jobs:
 
         steps:
             - name: Reload PM2
-              run: env $(cat .env | grep -v \"#\" | xargs) pm2 deploy ecosystem.config.js staging pm2 startOrReload ecosystem.config.cjs --update-env
+              run: env $(cat .env | grep -v \"#\" | xargs) pm2 startOrReload ecosystem.config.cjs --update-env
