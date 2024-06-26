@@ -3,6 +3,8 @@ name: Build
 on:
     push:
         branches: ["main"]
+    pull_request:
+        branches: ["main"]
 
 jobs:
     build:
@@ -27,26 +29,18 @@ jobs:
             - name: Build
               run: npm run build
 
-    create-envfile:
-        runs-on: self-hosted
-        needs: build
-
-        steps:
-            - name: Create .env file
-              run: |
-                  touch .env
-                  echo BASE_URL=${{ secrets.BASE_URL }} > .env
-                  echo MONGODB_CONNECTION_URI=${{ secrets.MONGODB_CONNECTION_URI }} >> .env
-                  echo GH_CLIENT_ID=${{ secrets.GH_CLIENT_ID }} >> .env
-                  echo GH_CLIENT_SECRET=${{ secrets.GH_CLIENT_SECRET }} >> .env
-                  echo DISCORD_CLIENT_ID=${{ secrets.DISCORD_CLIENT_ID }} >> .env
-                  echo DISCORD_CLIENT_SECRET=${{ secrets.DISCORD_CLIENT_SECRET }} >> .env
-                  echo GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }} >> .env
-                  echo GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }} >> .env
-                  echo PORT=${{ secrets.PORT }} >> .env
     deploy:
         runs-on: self-hosted
-        needs: [build, create-envfile]
+        needs: [build]
+
+        env:
+            BASE_URL: ${{ secrets.BASE_URL }}
+            MONGODB_CONNECTION_URI: ${{ secrets.MONGODB_CONNECTION_URI }}
+            GH_CLIENT_ID: ${{ secrets.GH_CLIENT_ID }}
+            DISCORD_CLIENT_ID: ${{ secrets.DISCORD_CLIENT_ID }}
+            DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }}
+            GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+            GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
 
         steps:
             - name: Reload PM2
