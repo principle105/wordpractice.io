@@ -6,6 +6,7 @@ module.exports = {
             watch: true,
             env: {
                 PORT: 3000,
+                NODE_ENV: "production",
                 BASE_URL: process.env.BASE_URL,
                 MONGODB_CONNECTION_URI: process.env.MONGODB_CONNECTION_URI,
                 GH_CLIENT_ID: process.env.GH_CLIENT_ID,
