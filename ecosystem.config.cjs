@@ -3,6 +3,7 @@ module.exports = {
         {
             name: "wp-web",
             script: "npm start",
+            node_args: "--env-file .env",
             watch: true,
             env: {
                 PORT: 5173,
