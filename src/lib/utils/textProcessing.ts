@@ -13,6 +13,10 @@ export const convertReplayToWords = (
     let cursorIndex = 0;
 
     for (const action of replay) {
+        if (action.type === "disconnect") {
+            continue;
+        }
+
         if (action.type === "caret") {
             if (action.start === action.end) {
                 cursorIndex = action.start;

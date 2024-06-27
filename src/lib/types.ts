@@ -29,11 +29,11 @@ export interface Delete extends BaseAction {
     slice: [number, number];
 }
 
-// export interface Disconnect extends BaseAction {
-//     type: "disconnect";
-// }
+export interface Disconnect extends BaseAction {
+    type: "disconnect";
+}
 
-export type Action = Character | Delete | CaretMovement;
+export type Action = Character | Delete | CaretMovement | Disconnect;
 
 export type Replay = Action[];
 
