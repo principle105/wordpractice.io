@@ -1,11 +1,11 @@
-name: Lint and check
+name: Testing
 
 on:
     pull_request:
         branches: [main]
 
 jobs:
-    lint:
+    test:
         runs-on: ubuntu-latest
 
         steps:
@@ -28,3 +28,6 @@ jobs:
 
             - name: Lint
               run: npm run lint
+
+            - name: Build
+              run: npm run build

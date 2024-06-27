@@ -51,13 +51,16 @@
 <svelte:window on:resize={updateWrapperSize} />
 
 <div
-    class="whitespace-pre-line font-mono overflow-hidden my-4 relative pb-2.5"
+    class="whitespace-pre-line font-mono overflow-y-clip my-4 relative pb-3.5"
     style="font-size: {fontSize}px; max-height: {fontSize * 0.15 +
         fontSize * DEFAULT_MAX_LINES_SHOWN * 1.5}px;"
 >
     <div
-        class="ease-in transition-[margin-top] relative duration-150"
-        style="margin-top: -{Math.min(topPos, maxHeight)}px;"
+        class="relative"
+        style="top: -{Math.min(
+            topPos,
+            maxHeight
+        )}px; transition: top 150ms cubic-bezier(.02, .01, .47, 1);"
         bind:this={wrapperElement}
     >
         <span class="text-black">{completedWords}</span><span class="bg-red-400"

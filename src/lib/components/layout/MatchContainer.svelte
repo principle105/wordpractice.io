@@ -17,7 +17,7 @@
                 <slot name="before-start" />
             {/if}
         {:else}
-            <div class="my-auto p-8">
+            <div class="my-auto py-8 px-20">
                 <slot name="racers" {startedRoomInfo} />
 
                 {#if finished}
