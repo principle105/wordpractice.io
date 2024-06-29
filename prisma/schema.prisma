@@ -4,16 +4,20 @@ datasource db {
 }
 
 model User {
-  id                   String    @id @default(auto()) @map("_id") @db.ObjectId
-  username             String    @unique
-  email                String    @unique
+  id                   String  @id @default(auto()) @map("_id") @db.ObjectId
+  username             String  @unique
+  email                String  @unique
   provider             String
   pickedInitalUsername Boolean
   avatar               String
   rating               Int
-  fontScale            Int
-  authSession          Session[]
-  key                  Key[]
+
+  fontScale          Int
+  statUpdateInterval Int
+  showOpponentCursor Boolean
+
+  authSession Session[]
+  key         Key[]
 
   @@index([id, email, provider, username])
 }

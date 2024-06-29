@@ -1,6 +1,8 @@
 import {
     DEFAULT_FONT_SCALE,
     DEFAULT_RATING,
+    DEFAULT_SHOW_CURSOR,
+    DEFAULT_STATE_UPDATE_INTERVAL,
     MAX_USERNAME_LENGTH,
 } from "$lib/config";
 import type { Provider } from "$lib/types";
@@ -100,6 +102,8 @@ export const getExistingOrCreateNewUser = async (
                 fontScale: DEFAULT_FONT_SCALE,
                 avatar: userAttributes.avatar,
                 pickedInitalUsername: false,
+                showOpponentCursor: DEFAULT_SHOW_CURSOR,
+                statUpdateInterval: DEFAULT_STATE_UPDATE_INTERVAL,
             },
         });
     }

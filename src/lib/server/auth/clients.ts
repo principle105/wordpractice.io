@@ -5,7 +5,7 @@ import { GitHub, Discord, Google } from "arctic";
 
 import { PrismaClient } from "../prisma";
 
-export const client = global.__prisma || new PrismaClient();
+export const client: PrismaClient = global.__prisma || new PrismaClient();
 
 if (process.env.NODE_ENV === "development") {
     global.__prisma = client;
@@ -20,18 +20,8 @@ export const lucia = new Lucia(adapter, {
         },
     },
     sessionExpiresIn: new TimeSpan(30, "d"),
-    // TODO: fix typing for getUserAttributes
     getUserAttributes: (databaseUser: any): User => {
-        return {
-            id: databaseUser.id,
-            username: databaseUser.username,
-            email: databaseUser.email,
-            rating: databaseUser.rating,
-            fontScale: databaseUser.fontScale,
-            avatar: databaseUser.avatar,
-            pickedInitalUsername: databaseUser.pickedInitalUsername,
-            provider: databaseUser.provider,
-        };
+        return databaseUser;
     },
 });
 
