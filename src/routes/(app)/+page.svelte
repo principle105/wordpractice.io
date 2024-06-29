@@ -4,7 +4,11 @@
     import type { User } from "@prisma/client";
 
     import { guestAccountSeed } from "$lib/stores/guestAccountSeed";
-    import { DEFAULT_FONT_SCALE } from "$lib/config";
+    import {
+        DEFAULT_FONT_SCALE,
+        DEFAULT_SHOW_CURSOR,
+        DEFAULT_STATE_UPDATE_INTERVAL,
+    } from "$lib/config";
     import { getGuestAvatar, getGuestUsername } from "$lib/utils/random";
     import type { MatchType } from "$lib/types";
     import { matchType } from "$lib/stores/matchType";
@@ -30,6 +34,8 @@
             avatar: getGuestAvatar(username),
             provider: "",
             pickedInitalUsername: true,
+            showOpponentCursor: DEFAULT_SHOW_CURSOR,
+            statUpdateInterval: DEFAULT_STATE_UPDATE_INTERVAL,
         } satisfies User;
     };
 
