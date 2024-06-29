@@ -20,6 +20,9 @@ export const lucia = new Lucia(adapter, {
         },
     },
     sessionExpiresIn: new TimeSpan(30, "d"),
+    getUserAttributes: (databaseUser: any): User => {
+        return databaseUser;
+    },
 });
 
 const BASE_URL = process.env.BASE_URL as string;
